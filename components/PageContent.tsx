@@ -22,6 +22,7 @@ interface PageItem {
   tokenGated?: boolean;
 }
 
+<<<<<<< Updated upstream
 // Helper function to get icon for social link
 const getSocialIcon = (type: ItemType) => {
   switch (type) {
@@ -49,6 +50,78 @@ const getSocialIcon = (type: ItemType) => {
       return '🔗';
   }
 };
+=======
+  const fetchTokenGatedContent = async (itemId: string) => {
+    try {
+      const response = await fetch("/api/token-gated-content", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          slug: window.location.pathname.slice(1),
+          itemId,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        console.error("Token gated content error:", {
+          status: response.status,
+          data,
+          itemId,
+          slug: window.location.pathname.slice(1),
+        });
+        return;
+      }
+
+      if (data.url) {
+        setTokenGatedUrls((prev) => new Map(prev).set(itemId, data.url));
+      }
+    } catch (error) {
+      console.error("Error fetching token gated content:", error);
+    }
+  };
+
+  const verifyAccess = async (
+    itemId: string,
+    tokenAddress: string,
+    requiredAmount: string
+  ) => {
+    setVerifying(itemId);
+    try {
+      const response = await fetch("/api/verify-token-access", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          tokenAddress,
+          requiredAmount,
+          slug: window.location.pathname.slice(1),
+        }),
+      });
+
+      const data = await response.json();
+
+      setAccessStates((prev) => new Map(prev).set(itemId, data.hasAccess));
+
+      if (data.hasAccess) {
+        await fetchTokenGatedContent(itemId);
+      }
+    } catch (error) {
+      console.error("Error verifying access:", error);
+      setAccessStates((prev) => new Map(prev).set(itemId, false));
+    } finally {
+      setVerifying(null);
+    }
+  };
+
+  const handleTokenGatedClick = (itemId: string) => {
+    setOpenDrawer(itemId);
+  };
+>>>>>>> Stashed changes
 
 export default function PageContent({ pageData }: { pageData: PageData }) {
   return (
@@ -68,10 +141,18 @@ export default function PageContent({ pageData }: { pageData: PageData }) {
         {pageData?.items && pageData.items.length > 0 && (
           <div className="pf-links">
             <div className="pf-links__grid">
+<<<<<<< Updated upstream
               {pageData.items
                 .sort((a: PageItem, b: PageItem) => a.order - b.order)
                 .map((item: PageItem) => (
                   <div
+=======
+              {items
+                .filter((item) => item && item.id)
+                .sort((a, b) => (a.order || 0) - (b.order || 0))
+                .map((item) => (
+                  <PageLink
+>>>>>>> Stashed changes
                     key={item.id}
                     className={`pf-link-item ${item.tokenGated ? 'pf-link-item--token-gated' : ''}`}
                   >

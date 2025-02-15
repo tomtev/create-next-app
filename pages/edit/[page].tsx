@@ -40,6 +40,14 @@ import { ItemType, PageItem } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import { Toaster } from '@/components/ui/toaster';
 import { isSolanaWallet } from '@/utils/wallet';
+<<<<<<< Updated upstream
+=======
+import { SettingsTabs } from '@/components/SettingsTabs';
+import { GOOGLE_FONTS } from '@/lib/fonts';
+import { PageData, PageItem } from '@/types';
+import { LINK_CONFIGS, validateLinkUrl } from '@/lib/links';
+import { getLinkPreset } from '@/lib/linkPresets';
+>>>>>>> Stashed changes
 
 import {
   Accordion,
@@ -709,6 +717,21 @@ export default function EditPage({ slug, pageData, error }: PageProps) {
     }
   }, [pageDetails]);
 
+<<<<<<< Updated upstream
+=======
+  const validateLinks = (items: PageItem[] = []): { [key: string]: string } => {
+    const errors: { [key: string]: string } = {};
+    
+    items.forEach(item => {
+      if (!item.url) {
+        errors[item.id] = `URL is required`;
+      }
+    });
+
+    return errors;
+  };
+
+>>>>>>> Stashed changes
   const handleSavePageDetails = async () => {
     if (!pageDetails) return;
 
@@ -735,6 +758,7 @@ export default function EditPage({ slug, pageData, error }: PageProps) {
     
     setIsSaving(true);
     try {
+<<<<<<< Updated upstream
       // Prepare items array with order preserved
       const items = pageDetails.items?.map((item, index) => ({
         ...item,
@@ -743,6 +767,12 @@ export default function EditPage({ slug, pageData, error }: PageProps) {
 
       console.log('Current pageDetails:', pageDetails);
       console.log('Current fonts:', pageDetails.fonts);
+=======
+      const items = pageDetails.items?.map((item, index) => ({
+        ...item,
+        order: index,
+      })) || [];
+>>>>>>> Stashed changes
 
       const fonts = {
         global: pageDetails.fonts?.global === 'system' ? undefined : pageDetails.fonts?.global,
@@ -762,6 +792,16 @@ export default function EditPage({ slug, pageData, error }: PageProps) {
         items,
         designStyle: pageDetails.designStyle,
         fonts,
+<<<<<<< Updated upstream
+=======
+        ...(pageDetails.connectedToken && pageDetails.connectedToken.length > 0 ? {
+          connectedToken: pageDetails.connectedToken,
+          tokenSymbol: pageDetails.tokenSymbol,
+        } : {
+          connectedToken: null,
+          tokenSymbol: null,
+        }),
+>>>>>>> Stashed changes
         isSetupWizard: false
       };
 
@@ -778,8 +818,12 @@ export default function EditPage({ slug, pageData, error }: PageProps) {
 
       if (!response.ok) {
         const errorData = await response.json();
+<<<<<<< Updated upstream
         console.error('Save response error:', errorData);
         throw new Error('Failed to save page details');
+=======
+        throw new Error(errorData.error || 'Failed to save page details');
+>>>>>>> Stashed changes
       }
 
       const responseData = await response.json();

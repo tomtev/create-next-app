@@ -1,6 +1,7 @@
 import "../styles/globals.css";
 import type { AppProps } from "next/app";
 import Head from "next/head";
+<<<<<<< Updated upstream
 import { PrivyProvider, usePrivy } from "@privy-io/react-auth";
 import { toSolanaWalletConnectors } from '@privy-io/react-auth/solana';
 import Header from '@/components/Header';
@@ -23,6 +24,20 @@ function AppContent({ Component, pageProps }: AppProps) {
           onUnlinkWallet={unlinkWallet}
           canRemoveAccount={canRemoveAccount}
         />
+=======
+import { PrivyProvider } from "@privy-io/react-auth";
+import { toSolanaWalletConnectors } from "@privy-io/react-auth/solana";
+import { GlobalProvider } from "@/lib/context";
+import AppMenu from "@/components/AppMenu";
+import "../styles/globals.css";
+import "../styles/page.css";
+
+function AppContent({ Component, pageProps }: AppProps) {
+  return (
+    <GlobalProvider>
+      <div className="fixed top-2 left-2 z-50">
+        <AppMenu />
+>>>>>>> Stashed changes
       </div>
       
       <Component {...pageProps} />
