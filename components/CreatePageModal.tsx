@@ -46,7 +46,7 @@ export default function CreatePageModal({
       toast({
         title: "Page limit reached",
         description:
-          "You need to hold at least 10,000 PAGE.FUN tokens to create more than one page",
+          `You need to hold at least ${process.env.NEXT_PUBLIC_PAGE_DOT_FUN_TOKEN_REQUIRED_HOLDING} PAGE.FUN tokens to create more than one page`,
         variant: "destructive",
       });
       onClose();
@@ -254,7 +254,7 @@ export default function CreatePageModal({
       toast({
         title: "Page limit reached",
         description:
-          "You need to hold at least 10,000 PAGE.FUN tokens to create more than one page",
+          `You need to hold at least ${process.env.NEXT_PUBLIC_PAGE_DOT_FUN_TOKEN_REQUIRED_HOLDING} PAGE.FUN tokens to create more than one page`,
         variant: "destructive",
       });
       return;
@@ -313,7 +313,7 @@ export default function CreatePageModal({
       <DrawerContent direction="left">
         {userPages.length > 0 && !hasPageTokenAccess && (
           <p className="text-sm text-amber-600 mb-4">
-            Note: You need to hold at least 10,000 PAGE.FUN tokens to create
+            Note: You need to hold at least {process.env.NEXT_PUBLIC_PAGE_DOT_FUN_TOKEN_REQUIRED_HOLDING} PAGE.FUN tokens to create
             more than one page
           </p>
         )}

@@ -8,6 +8,11 @@ import { validateLinkUrl } from "../../lib/links";
 const urlPattern = /^[a-zA-Z0-9-]+$/;
 const urlRegex = /^https?:\/\/[^\s/$.?#].[^\s]*$/i;
 
+type TokenHolding = {
+  tokenAddress: string;
+  balance: string;
+};
+
 // Reserved slugs that cannot be used for pages
 const RESERVED_SLUGS = [
   'pricing',
@@ -344,7 +349,7 @@ function sanitizePageData(pageData: PageData | null, isOwner: boolean = false): 
 async function checkRateLimit(userId: string): Promise<{ allowed: boolean; timeLeft?: number }> {
   const rateKey = `rate:page-create:${userId}`;
   const maxPages = 10; // Maximum pages per window
-  const windowSeconds = 24 * 60 * 60; // 24 hours in seconds
+  const windowSeconds = 60 * 60; // 1 hour in seconds
 
   try {
     // Get current count and timestamp
@@ -382,6 +387,44 @@ async function checkRateLimit(userId: string): Promise<{ allowed: boolean; timeL
   } catch (error) {
     // In case of error, allow the request
     return { allowed: true };
+  }
+}
+
+// Helper function to check token holdings
+async function checkTokenHoldings(walletAddress: string): Promise<boolean> {
+  try {
+    // Fetch token holdings
+    const response = await fetch(`${process.env.KV_REST_API_URL}/api/token-holdings?walletAddress=${walletAddress}`, {
+      headers: {
+        Authorization: `Bearer ${process.env.KV_REST_API_TOKEN}`
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to fetch token holdings');
+    }
+
+    const { tokens } = await response.json();
+    const pageDotFunToken = process.env.NEXT_PUBLIC_PAGE_DOT_FUN_TOKEN;
+    const requiredHolding = process.env.NEXT_PUBLIC_PAGE_DOT_FUN_TOKEN_REQUIRED_HOLDING;
+
+    if (!pageDotFunToken || !requiredHolding) {
+      console.error('Token configuration missing');
+      return false;
+    }
+
+    const tokenHolding = tokens?.find((t: TokenHolding) => 
+      t.tokenAddress.toLowerCase() === pageDotFunToken.toLowerCase()
+    );
+
+    if (!tokenHolding) {
+      return false;
+    }
+
+    return parseFloat(tokenHolding.balance) >= parseFloat(requiredHolding);
+  } catch (error) {
+    console.error('Error checking token holdings:', error);
+    return false;
   }
 }
 
@@ -481,8 +524,23 @@ export default async function handler(
           });
       }
 
-      // Only apply rate limiting for new page creation, not updates
+      // Only check token holdings and rate limit for new page creation, not updates
       if (!existingPage) {
+        // Get user's existing pages
+        const { pages } = await getPagesForWallet(walletAddress, req);
+        
+        // If user already has a page, check token holdings
+        if (pages.length > 0) {
+          const hasRequiredTokens = await checkTokenHoldings(walletAddress);
+          if (!hasRequiredTokens) {
+            return res.status(403).json({ 
+              error: "Token requirement not met",
+              message: `You need to hold at least ${process.env.NEXT_PUBLIC_PAGE_DOT_FUN_TOKEN_REQUIRED_HOLDING} PAGE.FUN tokens to create more than one page`
+            });
+          }
+        }
+
+        // Check rate limit after token check
         const rateLimit = await checkRateLimit(user.id);
         if (!rateLimit.allowed) {
           return res.status(429).json({

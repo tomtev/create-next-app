@@ -139,8 +139,9 @@ export function GlobalProvider({
         return;
       }
         
-      // Check if user has 10,000 or more tokens
-      const hasEnoughTokens = parseFloat(tokenHolding.balance) >= 10000;
+      // Check if user has required amount of tokens
+      const requiredHolding = process.env.NEXT_PUBLIC_PAGE_DOT_FUN_TOKEN_REQUIRED_HOLDING;
+      const hasEnoughTokens = parseFloat(tokenHolding.balance) >= parseFloat(requiredHolding || "100000");
       setHasPageTokenAccess(hasEnoughTokens);
     } catch (error) {
       console.error('Error fetching token holdings:', error);

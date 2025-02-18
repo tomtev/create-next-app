@@ -39,9 +39,9 @@ export default function HomePage() {
               <span className="text-xs opacity-75 text-green-600">beta</span>
             </h1>
             <h1 className="text-4xl font-semibold mb-4">
-              Tokenize yourself, memes and AI bots
+              Decentralized and fun Linktree alternative
             </h1>
-            <p className="text-lg opacity-75 mb-4">A Linktree alternative for Solana tokens.</p>
+            <p className="text-base opacity-75 mb-4">Simplest way to add token utility to memes, AI agents and personal tokens.</p>
             {typeof isAuthenticated === 'undefined' ? (
               <Button variant="skeleton" disabled className="w-[180px]">
                 Loading...
