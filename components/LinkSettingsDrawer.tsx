@@ -55,9 +55,15 @@ export function LinkSettingsDrawer({
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const titleInputRef = useRef<HTMLInputElement>(null);
   
+  const isMobileDevice = () => {
+    return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+      navigator.userAgent
+    );
+  };
+
   useEffect(() => {
-    // Focus the title input when the component mounts
-    if (titleInputRef.current) {
+    // Only focus the title input on desktop devices
+    if (titleInputRef.current && !isMobileDevice()) {
       titleInputRef.current.focus();
     }
   }, []);

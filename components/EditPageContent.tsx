@@ -58,7 +58,7 @@ export default function EditPageContent({
   return (
     <div>
       <div
-        className="pf-page !pb-[100px]"
+        className="pf-page"
         style={
           {
             "--pf-font-family-global": pageData.fonts?.global
