@@ -50,8 +50,8 @@ const DrawerContent = React.forwardRef<
 >(({ className, children, direction = "bottom", ...props }, ref) => {
   const styles = {
     bottom: "fixed inset-x-2 bottom-2 flex h-auto outline-none flex-col z-50",
-    right: "fixed inset-y-2  right-2 z-50 bottom-2 outline-none w-[380px] flex data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:slide-out-to-right data-[state=open]:slide-in-from-right duration-300",
-    left: "fixed inset-y-2 left-2 z-50 top-2 bottom-2 outline-none w-[380px] flex data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:slide-out-to-left data-[state=open]:slide-in-from-left duration-300"
+    right: "fixed inset-y-2  right-2 z-50 bottom-2 outline-none w-[340px] flex data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:slide-out-to-right data-[state=open]:slide-in-from-right duration-300",
+    left: "fixed inset-y-2 left-2 z-50 top-2 bottom-2 outline-none w-[340px] flex data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:slide-out-to-left data-[state=open]:slide-in-from-left duration-300"
   };
 
   return (
