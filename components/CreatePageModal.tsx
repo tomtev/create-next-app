@@ -5,7 +5,7 @@ import Loader from "./ui/loader";
 import { useRouter } from "next/router";
 import Link from "next/link";
 import TokenSelector from "./TokenSelector";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "./ui/dialog";
+import { Drawer, DrawerContent } from "./ui/drawer";
 import { Card } from "./ui/card";
 import debounce from "lodash/debounce";
 import { useGlobalContext } from "@/lib/context";
@@ -123,43 +123,72 @@ export default function CreatePageModal({
 
   const fadeVariants = {
     enter: {
+      x: step === "type" ? 0 : 300,
       opacity: 0,
-      scale: 0.98
     },
     center: {
+      x: 0,
       opacity: 1,
-      scale: 1
     },
     exit: {
+      x: step === "type" ? 0 : -300,
       opacity: 0,
-      scale: 1.02
-    }
+    },
   };
 
   // Add this new variant for the container
   const containerVariants = {
     initial: {
-      opacity: 1
+      opacity: 1,
     },
     animate: {
       opacity: 1,
       transition: {
-        duration: 0.15,
-        ease: "easeOut"
-      }
+        duration: 0.3,
+        ease: "easeOut",
+      },
     },
     exit: {
       opacity: 1,
       transition: {
-        duration: 0.15,
-        ease: "easeIn"
-      }
-    }
+        duration: 0.3,
+        ease: "easeIn",
+      },
+    },
   };
 
   const renderPageTypeSelection = () => (
     <div className="space-y-6">
+      <h2 className="text-lg font-semibold mb-6">Create New Page</h2>
       <div className="grid gap-4">
+        <Card
+          hasHover
+          className="p-4"
+          onClick={() => handlePageTypeSelect("personal")}>
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-blue-100 rounded-lg">
+              <svg
+                className="w-5 h-5 text-blue-600"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24">
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                />
+              </svg>
+            </div>
+            <div>
+              <h4 className="font-medium">Personal</h4>
+              <p className="text-sm text-gray-500">
+                All your social media links in one place. Gate links & content to token holders and more.
+              </p>
+            </div>
+          </div>
+        </Card>
+
         <Card
           hasHover
           className="p-4"
@@ -209,37 +238,9 @@ export default function CreatePageModal({
               </svg>
             </div>
             <div>
-              <h4 className="font-medium">AI Bot</h4>
+              <h4 className="font-medium">AI Agent</h4>
               <p className="text-sm text-gray-500">
-                Create a page for AI bots. Add a token to connect your bot.
-              </p>
-            </div>
-          </div>
-        </Card>
-
-        <Card
-          hasHover
-          className="p-4"
-          onClick={() => handlePageTypeSelect("personal")}>
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-blue-100 rounded-lg">
-              <svg
-                className="w-5 h-5 text-blue-600"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24">
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                />
-              </svg>
-            </div>
-            <div>
-              <h4 className="font-medium">Personal</h4>
-              <p className="text-sm text-gray-500">
-                Create a personal landing page for yourself.
+                Create a page for tokenized AI Agents. Give access to gated content to token holders. Create content using APIs
               </p>
             </div>
           </div>
@@ -308,64 +309,16 @@ export default function CreatePageModal({
   }
 
   return (
-    <Dialog
-      open={open}
-      onOpenChange={(isOpen: boolean) => !isOpen && onClose()}>
-      <DialogContent className="max-w-md overflow-hidden">
-        <DialogHeader className="flex-row items-center gap-2">
-          {step === "details" && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setStep("type")}
-              className="h-8 w-8 p-0">
-              <span className="sr-only">Back</span>
-              <svg
-                className="h-4 w-4"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24">
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M15 19l-7-7 7-7"
-                />
-              </svg>
-            </Button>
-          )}
-          <DialogTitle>
-            {step === "type"
-              ? "Create New Page"
-              : pageType === "personal"
-              ? "Create Personal Page"
-              : pageType === "meme"
-              ? "Create Meme Page"
-              : "Create AI Bot Page"}
-          </DialogTitle>
-        </DialogHeader>
-
+    <Drawer open={open} onOpenChange={(isOpen: boolean) => !isOpen && onClose()} direction="left">
+      <DrawerContent direction="left">
         {userPages.length > 0 && !hasPageTokenAccess && (
-          <p className="text-sm text-amber-600 mt-2">
+          <p className="text-sm text-amber-600 mb-4">
             Note: You need to hold at least 10,000 PAGE.FUN tokens to create
             more than one page
           </p>
         )}
 
-        <motion.div
-          layout
-          initial="initial"
-          animate="animate"
-          exit="exit"
-          variants={containerVariants}
-          className="relative"
-          transition={{
-            layout: {
-              duration: 0.15,
-              ease: "easeInOut"
-            }
-          }}
-        >
+        <div className="relative">
           <AnimatePresence mode="wait">
             <motion.div
               key={step}
@@ -374,14 +327,20 @@ export default function CreatePageModal({
               animate="center"
               exit="exit"
               transition={{
-                opacity: { duration: 0.08 },
-                scale: { duration: 0.08 }
-              }}
-            >
+                duration: 0.3,
+                ease: [0.32, 0.72, 0, 1]
+              }}>
               {step === "type" ? (
                 renderPageTypeSelection()
               ) : (
                 <div className="space-y-6">
+                  <h2 className="text-lg font-semibold mb-6">
+                    {pageType === "personal"
+                      ? "Create Personal Page"
+                      : pageType === "meme"
+                      ? "Create Meme Page"
+                      : "Create AI Bot Page"}
+                  </h2>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-3">
                       Connect a Token
@@ -444,7 +403,8 @@ export default function CreatePageModal({
                           alt={tokenMetadata.name}
                           className="object-cover w-24 h-24 shadow"
                           onError={(e) => {
-                            (e.target as HTMLImageElement).style.display = "none";
+                            (e.target as HTMLImageElement).style.display =
+                              "none";
                           }}
                         />
                       )}
@@ -519,8 +479,8 @@ export default function CreatePageModal({
               )}
             </motion.div>
           </AnimatePresence>
-        </motion.div>
-      </DialogContent>
-    </Dialog>
+        </div>
+      </DrawerContent>
+    </Drawer>
   );
 }

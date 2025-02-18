@@ -45,7 +45,7 @@ export default function AppMenu({
   const [open, setOpen] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
 
-  const { userPages, isLoadingPages } = useGlobalContext();
+  const { userPages, isLoadingPages, hasPageTokenAccess } = useGlobalContext();
   const solanaWallet = user?.linkedAccounts?.find(isSolanaWallet);
   const numAccounts = user?.linkedAccounts?.length || 0;
   const canRemoveAccount = numAccounts > 1;
@@ -92,6 +92,15 @@ export default function AppMenu({
                     <div className="font-bold">page.fun</div>
                     <div className="text-xs text-green-500">beta</div>
                   </Link>
+                  {hasPageTokenAccess ? ( 
+                    <div className="text-xs text-green-500">
+                      You have access to PAGE.FUN tokens
+                    </div>
+                  ) : (
+                    <div className="text-xs text-red-500">
+                      You do not have access to PAGE.FUN tokens
+                    </div>
+                  )}
                 </div>
 
                 {ready && authenticated ? (
