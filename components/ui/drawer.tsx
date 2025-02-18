@@ -13,13 +13,27 @@ const Drawer = ({
   shouldScaleBackground = true,
   direction = "bottom",
   ...props
-}: DrawerProps) => (
-  <DrawerPrimitive.Root
-    shouldScaleBackground={shouldScaleBackground}
-    direction={direction}
-    {...props}
-  />
-);
+}: DrawerProps) => {
+  const [isMobile, setIsMobile] = React.useState(false);
+
+  React.useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  return (
+    <DrawerPrimitive.Root
+      shouldScaleBackground={shouldScaleBackground}
+      direction={isMobile ? "bottom" : direction}
+      {...props}
+    />
+  );
+};
 Drawer.displayName = "Drawer";
 
 const DrawerTrigger = DrawerPrimitive.Trigger;
@@ -48,10 +62,22 @@ const DrawerContent = React.forwardRef<
   React.ElementRef<typeof DrawerPrimitive.Content>,
   DrawerContentProps
 >(({ className, children, direction = "bottom", ...props }, ref) => {
+  const [isMobile, setIsMobile] = React.useState(false);
+
+  React.useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
   const styles = {
-    bottom: "fixed inset-x-2 bottom-2 flex h-auto outline-none flex-col z-50",
-    right: "fixed inset-y-2  right-2 z-50 bottom-2 outline-none w-[340px] flex data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:slide-out-to-right data-[state=open]:slide-in-from-right duration-300",
-    left: "fixed inset-y-2 left-2 z-50 top-2 bottom-2 outline-none w-[340px] flex data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:slide-out-to-left data-[state=open]:slide-in-from-left duration-300"
+    bottom: "fixed inset-x-2 bottom-2 flex h-auto max-h-[60vh] md:max-h-none outline-none flex-col z-50 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:slide-out-to-bottom data-[state=open]:slide-in-from-bottom duration-300",
+    right: "fixed md:inset-y-2 inset-x-2 md:right-2 md:w-[340px] bottom-2 md:bottom-2 max-h-[60vh] md:max-h-none outline-none flex z-50 data-[state=open]:animate-in data-[state=closed]:animate-out md:data-[state=closed]:slide-out-to-right md:data-[state=open]:slide-in-from-right data-[state=closed]:slide-out-to-bottom data-[state=open]:slide-in-from-bottom duration-300",
+    left: "fixed md:inset-y-2 inset-x-2 md:left-2 md:w-[340px] bottom-2 md:bottom-2 max-h-[60vh] md:max-h-none outline-none flex z-50 data-[state=open]:animate-in data-[state=closed]:animate-out md:data-[state=closed]:slide-out-to-left md:data-[state=open]:slide-in-from-left data-[state=closed]:slide-out-to-bottom data-[state=open]:slide-in-from-bottom duration-300"
   };
 
   return (
@@ -65,14 +91,11 @@ const DrawerContent = React.forwardRef<
         )}
         {...props}>
         <div className={cn(
-          "border border-primary shadow-brutalist h-full w-full grow p-5 flex flex-col rounded-md overflow-y-auto",
-          direction === "bottom" && "bg-background",
-          direction === "right" && "bg-background", 
-          direction === "left" && "bg-background"
+          "border border-primary shadow-brutalist h-full w-full grow p-5 flex flex-col rounded-md overflow-y-auto bg-background",
         )}>
           {children}
         </div>
-        {direction === "bottom" && (
+        {(direction === "bottom" || (["left", "right"].includes(direction) && isMobile)) && (
           <div className="absolute top-2 w-[50px] h-[3px] left-1/2 -translate-x-1/2 rounded-full bg-gray-300">
           </div>
         )}

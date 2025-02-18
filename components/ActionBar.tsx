@@ -23,7 +23,7 @@ export function ActionBar({
       {/* Top bar with save controls */}
       <div className="fixed top-2 right-2 z-40 animate-slide-down">
         <div className="flex items-center gap-3">
-          <Button onClick={onSave} disabled={isSaving} className="gap-2">
+          <Button variant="secondary" onClick={onSave} disabled={isSaving} className="gap-2">
             {isSaving ? (
               <>
                 <Loader className="h-4 w-4" />
