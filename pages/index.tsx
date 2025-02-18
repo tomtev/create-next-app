@@ -31,17 +31,17 @@ export default function HomePage() {
       </Head>
 
       <main className="flex min-h-screen bg-muted min-w-full grid sm:grid-cols-2">
-        <div className="flex flex-1 min-h-[40vh] py-5 items-center text-center sm:text-left max-w-[360px] sm:max-w-[400px] px-4 w-full mx-auto">
+        <div className="flex flex-1 min-h-[40vh] py-5 items-center text-center sm:text-left max-w-[450px] px-4 w-full mx-auto">
           <div>
             <h1 className="text-xl mb-4 flex items-center gap-2 justify-center sm:justify-start">
-              <Logo className="w-8 h-8 hidden sm:block" />
+              <Logo className="w-7 h-7 text-primary" />
               page.fun
               <span className="text-xs opacity-75 text-green-600">beta</span>
             </h1>
-            <h1 className="text-4xl font-semibold mb-4">
-              Decentralized and fun Linktree alternative
+            <h1 className="text-4xl sm:text-6xl font-semibold mb-6">
+              The page that connects all your socials. 
             </h1>
-            <p className="text-base opacity-75 mb-4">Simplest way to add token utility to memes, AI agents and personal tokens.</p>
+            <p className="text-xl opacity-75 mb-6 pr-10">Simplest way to add token utility to memes, AI agents and personal tokens.</p>
             {typeof isAuthenticated === 'undefined' ? (
               <Button variant="skeleton" disabled className="w-[180px]">
                 Loading...
