@@ -37,7 +37,7 @@ function MyApp(props: AppProps) {
             showWalletLoginFirst: true,
             walletChainType: "solana-only",
             theme: "light",
-            accentColor: "#676FFF",
+            accentColor: "#86EFAC",
           },
           solanaClusters: [
             {
@@ -48,7 +48,7 @@ function MyApp(props: AppProps) {
           ],
           embeddedWallets: {
             solana: {
-              createOnLogin: "users-without-wallets", // defaults to 'off'
+              createOnLogin: "users-without-wallets"
             },
           },
           externalWallets: {
