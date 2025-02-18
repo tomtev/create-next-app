@@ -46,6 +46,11 @@ function MyApp(props: AppProps) {
                 "https://mainnet.helius-rpc.com/?api-key=3951525f-0f9c-4aab-b67b-7dbe9d79e547",
             },
           ],
+          embeddedWallets: {
+            solana: {
+              createOnLogin: "users-without-wallets", // defaults to 'off'
+            },
+          },
           externalWallets: {
             solana: { connectors: solanaConnectors },
           },
