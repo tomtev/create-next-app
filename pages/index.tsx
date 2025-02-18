@@ -18,7 +18,8 @@ export default function HomePage() {
     },
   });
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const { userPages, isLoadingPages, walletAddress, isAuthenticated } = useGlobalContext();
+  const { userPages, isLoadingPages, walletAddress, isAuthenticated } =
+    useGlobalContext();
 
   const handleDashboardClick = () => {
     window.dispatchEvent(new CustomEvent("openAppMenu"));
@@ -38,23 +39,26 @@ export default function HomePage() {
               page.fun
               <span className="text-xs opacity-75 text-green-600">beta</span>
             </h1>
-            <h1 className="text-4xl sm:text-6xl font-semibold mb-6">
-              The page that connects all your socials. 
+            <h1 className="text-3xl sm:text-4xl font-semibold mb-6">
+              The fun page that connects all your socials.
             </h1>
-            <p className="text-xl opacity-75 mb-6 pr-10">Simplest way to add token utility to memes, AI agents and personal tokens.</p>
-            {typeof isAuthenticated === 'undefined' ? (
+            <p className="text-xl opacity-75 mb-6">
+              A Linktree alternative powered by Solana.
+            </p>
+            {typeof isAuthenticated === "undefined" ? (
               <Button variant="skeleton" disabled className="w-[180px]">
                 Loading...
               </Button>
             ) : isAuthenticated ? (
               <Button
-                onClick={isLoadingPages ? undefined : (
-                  userPages.length > 0
+                onClick={
+                  isLoadingPages
+                    ? undefined
+                    : userPages.length > 0
                     ? handleDashboardClick
                     : () => setShowCreateModal(true)
-                )}
-                disabled={isLoadingPages}
-              >
+                }
+                disabled={isLoadingPages}>
                 {isLoadingPages
                   ? "Loading..."
                   : userPages.length > 0
@@ -105,7 +109,9 @@ export default function HomePage() {
           </div>
 
           <div className="absolute text-white text-xs bottom-3 left-[50%] -translate-x-1/2">
-            <span className="bg-primary text-primary-foreground px-2 py-1 rounded-md">© Page.fun - $page.</span>
+            <span className="bg-primary text-primary-foreground px-2 py-1 rounded-md">
+              © Page.fun - $page.
+            </span>
           </div>
         </div>
       </main>

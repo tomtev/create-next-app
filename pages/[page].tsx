@@ -216,7 +216,7 @@ export default function Page({ pageData, slug, error, isOwner }: PageProps) {
             setIsLoading(true);
             await router.push(`/edit/${slug}`);
           }}
-          className="fixed top-2 bg-green-300 hover:bg-green-400 right-2 z-20 gap-2 animate-slide-down"
+          className="fixed top-2 right-2 z-20 gap-2 animate-slide-down"
           disabled={isLoading}
         >
           {isLoading ? (
