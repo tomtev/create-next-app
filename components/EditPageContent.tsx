@@ -137,7 +137,7 @@ export default function EditPageContent({
         <div className="animate-slide-up">
           <Button variant={"secondary"} size={"lg"} onClick={onAddLinkClick}>
             <Plus className="h-5 w-5" />
-            <span>Add link or Apps</span>
+            <span>Add Link or App</span>
           </Button>
         </div>
       </div>

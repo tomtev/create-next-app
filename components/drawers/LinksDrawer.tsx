@@ -1,5 +1,4 @@
 import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
 import { PageData, PageItem } from "@/types";
 import React, { useState, useEffect } from "react";
 import { LINK_PRESETS } from "@/lib/linkPresets";
@@ -93,7 +92,7 @@ export function LinksDrawer({
     <Drawer open={open} onOpenChange={onOpenChange}>
       <DrawerContent>
         <DrawerHeader>
-          <DrawerTitle>Add Link</DrawerTitle>
+          <DrawerTitle>Add Link or App</DrawerTitle>
         </DrawerHeader>
         <div className="py-3">
           <div className="grid gap-4 grid-cols-2 sm:grid-cols-3">

@@ -7,6 +7,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { GeneralSettingsTab } from "@/components/tabs/GeneralSettingsTab";
 import { DesignTab } from "@/components/tabs/DesignTab";
+import { AnalyticsTab } from "@/components/tabs/AnalyticsTab";
 import { PageData } from "@/types";
 
 interface SettingsDrawerProps {
@@ -30,9 +31,10 @@ export function SettingsDrawer({
     <Drawer open={open} onOpenChange={onOpenChange} direction="right">
       <DrawerContent direction="right">
         <Tabs defaultValue={focusField === 'image' ? 'general' : 'general'}>
-          <TabsList className="grid w-full grid-cols-2">
+          <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="general">General</TabsTrigger>
             <TabsTrigger value="design">Design</TabsTrigger>
+            <TabsTrigger value="analytics">Analytics</TabsTrigger>
           </TabsList>
           <TabsContent value="general">
             <GeneralSettingsTab
@@ -46,6 +48,10 @@ export function SettingsDrawer({
               pageDetails={pageDetails}
               setPageDetails={setPageDetails}
             />
+          </TabsContent>
+
+          <TabsContent value="analytics">
+            <AnalyticsTab pageDetails={pageDetails} />
           </TabsContent>
         </Tabs>
       </DrawerContent>

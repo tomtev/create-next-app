@@ -87,6 +87,7 @@ const PageItemSchema = z
 
 const PageDataSchema = z.object({
   walletAddress: z.string().min(1),
+  slug: z.string().min(1),
   connectedToken: z.string().nullable().optional(),
   tokenSymbol: z.string().nullable().optional(),
   title: z.string().max(100).optional(),
@@ -141,7 +142,9 @@ type PageItem = {
 
 type PageData = {
   walletAddress: string;
+  slug: string;
   connectedToken?: string;
+  tokenSymbol?: string;
   title?: string;
   description?: string;
   image?: string;
@@ -555,6 +558,7 @@ export default async function handler(
       if (isSetupWizard === true) {
         const initialData = PageDataSchema.parse({
           walletAddress,
+          slug,
           createdAt: new Date().toISOString(),
         });
         await redis.set(getRedisKey(slug), initialData);
@@ -565,8 +569,9 @@ export default async function handler(
 
       // Create/Update page data, preserving existing data
       const pageData = PageDataSchema.parse({
-        ...existingPage, // Preserve existing data
+        ...(existingPage && { ...existingPage }),
         walletAddress,
+        slug,
         ...(title && { title }),
         ...(description && { description }),
         ...(items && { items }),
