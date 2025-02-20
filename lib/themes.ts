@@ -103,7 +103,7 @@ export const themes: Themes = {
     },
   },
   modern: {
-    title: "Modern Dark",
+    title: "Solana",
     effects: {
       linkGradientBorder: true,
       linkMagnet: true,

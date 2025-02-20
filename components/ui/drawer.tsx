@@ -75,7 +75,7 @@ const DrawerContent = React.forwardRef<
   }, []);
 
   const styles = {
-    bottom: "fixed inset-x-2 bottom-2 flex h-auto max-h-[60vh] md:h-auto outline-none flex-col z-50 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:slide-out-to-bottom data-[state=open]:slide-in-from-bottom duration-600",
+    bottom: "fixed inset-x-2 bottom-2 flex h-auto max-h-[70vh] md:h-auto outline-none flex-col z-50 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:slide-out-to-bottom data-[state=open]:slide-in-from-bottom duration-600",
     right: "fixed inset-x-2 md:left-auto md:inset-y-2 md:right-2 md:w-[340px] bottom-2 max-h-[60vh] md:max-h-[100vh] outline-none flex z-50 data-[state=open]:animate-in data-[state=closed]:animate-out md:data-[state=closed]:slide-out-to-right md:data-[state=open]:slide-in-from-right data-[state=closed]:slide-out-to-bottom data-[state=open]:slide-in-from-bottom duration-600",
     left: "fixed inset-x-2 md:right-auto md:inset-y-2 md:left-2 md:w-[340px] bottom-2 max-h-[60vh] md:max-h-[100vh] outline-none flex z-50 data-[state=open]:animate-in data-[state=closed]:animate-out md:data-[state=closed]:slide-out-to-left md:data-[state=open]:slide-in-from-left data-[state=closed]:slide-out-to-bottom data-[state=open]:slide-in-from-bottom duration-600"
   };
@@ -91,7 +91,8 @@ const DrawerContent = React.forwardRef<
         )}
         {...props}>
         <div className={cn(
-          "border border-primary shadow-brutalist h-full w-full grow p-5 flex flex-col rounded-md overflow-y-auto bg-background",
+          "border border-primary max-h-[60vh] shadow-brutalist h-full w-full grow p-5 flex flex-col rounded-md bg-background",
+          "overflow-y-auto overscroll-contain touch-pan-y"
         )}>
           {children}
         </div>
