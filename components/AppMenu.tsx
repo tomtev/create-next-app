@@ -1,7 +1,7 @@
 import { useRouter } from "next/router";
 import { usePrivy, useLogin } from "@privy-io/react-auth";
 import { Button } from "@/components/ui/button";
-import { Plus, Menu } from "lucide-react";
+import { Plus, Menu, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { Drawer, DrawerContent, DrawerTrigger } from "@/components/ui/drawer";
 import {
@@ -13,11 +13,12 @@ import {
 import { PageData } from "@/types";
 import { useEffect, useState } from "react";
 import { Logo } from "./logo";
-import { isSolanaWallet } from "@/utils/wallet";
+import { isSolanaWallet, truncateWalletAddress } from "@/utils/wallet";
 import { cn } from "@/lib/utils";
 import CreatePageModal from "./CreatePageModal";
 import { useGlobalContext } from "@/lib/context";
 import Spinner from "./Spinner";
+import { Skeleton } from "./ui/skeleton";
 
 type AppMenuProps = {
   className?: string;
@@ -28,6 +29,24 @@ type AppMenuProps = {
 export const isPageIncomplete = (mapping: PageData | undefined) => {
   if (!mapping) return true;
   return !mapping.title || !mapping.items || mapping.items.length === 0;
+};
+
+// Add this component for the skeleton loading state
+const PageSkeleton = () => {
+  return (
+    <div className="border rounded-md p-2 bg-background">
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex gap-3 min-w-0 flex-1">
+          <Skeleton className="w-10 h-10 rounded-md shrink-0" />
+          <div className="space-y-1 min-w-0 flex-1">
+            <Skeleton className="h-5 w-3/4" />
+            <Skeleton className="h-4 w-1/2" />
+          </div>
+        </div>
+        <Skeleton className="h-8 w-16 shrink-0" />
+      </div>
+    </div>
+  );
 };
 
 export default function AppMenu({
@@ -44,6 +63,7 @@ export default function AppMenu({
   });
   const router = useRouter();
   const [open, setOpen] = useState(false);
+  const [walletDrawerOpen, setWalletDrawerOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
 
@@ -56,6 +76,7 @@ export default function AppMenu({
   useEffect(() => {
     const handleRouteChange = () => {
       setOpen(false);
+      setWalletDrawerOpen(false);
     };
 
     router.events.on("routeChangeStart", handleRouteChange);
@@ -103,22 +124,45 @@ export default function AppMenu({
         <DrawerContent direction="left">
           <div className="flex-1 overflow-y-auto">
             <div className="space-y-4">
-              <div className="sticky top-0 bg-background z-10 pb-2">
+              <div className="sticky top-0 bg-background z-40 pb-2 flex items-center justify-between">
                 <Link href="/" className="flex items-center gap-1.5">
                   <Logo className="w-5 h-5" />
                   <div className="font-bold">page.fun</div>
                   <div className="text-xs text-green-500">beta</div>
                 </Link>
+                <div>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => {
+                      setOpen(false);
+                      setWalletDrawerOpen(true);
+                    }}>
+                    {truncateWalletAddress(solanaWallet?.address)}
+                  </Button>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="text-sm mr-auto">Your pages</div>
+                <Button
+                  size="sm"
+                  onClick={() => {
+                    setShowCreateModal(true);
+                    setOpen(false);
+                  }}>
+                  <Plus className="h-4 w-4" />
+                  New Page
+                </Button>
               </div>
 
               {ready && authenticated ? (
-                <div className="space-y-4 -mt-3">
-                  <div className="text-sm">Your pages</div>
+                <div className="space-y-4">
                   <div>
                     <div className="space-y-3">
                       {isLoadingPages ? (
-                        <div className="text-sm text-gray-600">
-                          Loading pages...
+                        <div className="space-y-3">
+                          <PageSkeleton />
+                          <PageSkeleton />
                         </div>
                       ) : userPages.length === 0 ? (
                         <div className="text-sm text-gray-600">
@@ -165,7 +209,7 @@ export default function AppMenu({
                                   <Button
                                     size="sm"
                                     variant="outline"
-                                    className="shrink-0 z-40 relative">
+                                    className="shrink-0 z-30 relative">
                                     Edit
                                   </Button>
                                 </Link>
@@ -174,18 +218,6 @@ export default function AppMenu({
                           ))
                       )}
                     </div>
-                    <div className="flex flex-col gap-2 mt-4">
-                      <Button
-                        size="sm"
-                        onClick={() => {
-                          setShowCreateModal(true);
-                          setOpen(false);
-                        }}
-                        className="w-full">
-                        <Plus className="h-4 w-4" />
-                        New Page
-                      </Button>
-                    </div>
                   </div>
                 </div>
               ) : ready ? (
@@ -193,59 +225,69 @@ export default function AppMenu({
                   Sign In
                 </Button>
               ) : (
-                <div className="text-sm text-gray-600">Loading...</div>
+                <>
+                  <PageSkeleton />
+                  <PageSkeleton />
+                </>
               )}
             </div>
           </div>
+        </DrawerContent>
+      </Drawer>
 
-          {ready && authenticated && (
-            <div className="border-t pt-3 bg-background">
-              {solanaWallet ? (
-                <div className="space-y-2">
-                  <div className="flex gap-2 items-center">
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <input
-                            type="text"
-                            value={solanaWallet.address}
-                            disabled
-                            className="flex-1 text-sm text-muted-foreground bg-muted px-2 py-1 rounded-md border"
-                          />
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>
-                            Your wallet address is hidden to visitors and kept
-                            private
-                          </p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={logout}
-                      className="shrink-0 text-destructive hover:text-destructive hover:bg-destructive/10">
-                      Logout
-                    </Button>
-                  </div>
-                  {canRemoveAccount && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => unlinkWallet(solanaWallet.address)}
-                      className="w-full">
-                      Disconnect Wallet
-                    </Button>
-                  )}
-                </div>
-              ) : (
-                <Button onClick={linkWallet} className="w-full">
-                  Connect Wallet
+      <Drawer open={walletDrawerOpen} onOpenChange={setWalletDrawerOpen} direction="left">
+        <DrawerContent direction="left">
+          <div className="flex-1 overflow-y-auto">
+            <div className="space-y-4">
+              <div className="sticky top-0 bg-background z-40 pb-2 flex items-center gap-2">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setWalletDrawerOpen(false);
+                    setOpen(true);
+                  }}>
+                  <ArrowLeft className="h-4 w-4" />
+                  Back
                 </Button>
-              )}
+                <div className="font-bold">Wallet Settings</div>
+              </div>
+              
+              <div className="space-y-3">
+                {solanaWallet && (
+                  <>
+                    <div className="p-4 border rounded-lg">
+                      <div className="text-sm font-medium mb-1">Connected Wallet</div>
+                      <div className="text-sm text-muted-foreground">{solanaWallet.address}</div>
+                    </div>
+                    <div className="space-y-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={logout}
+                        className="w-full shrink-0 text-destructive hover:text-destructive hover:bg-destructive/10">
+                        Logout
+                      </Button>
+                      {canRemoveAccount && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => unlinkWallet(solanaWallet.address)}
+                          className="w-full">
+                          Disconnect Wallet
+                        </Button>
+                      )}
+                    </div>
+                  </>
+                )}
+                {!solanaWallet && (
+                  <Button onClick={linkWallet} className="w-full">
+                    Connect Wallet
+                  </Button>
+                )}
+              </div>
             </div>
-          )}
+          </div>
         </DrawerContent>
       </Drawer>
 

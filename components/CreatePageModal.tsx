@@ -343,10 +343,9 @@ export default function CreatePageModal({
                   </h2>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-3">
-                      Connect a Token
+                      Enter Token Address
                     </label>
                     <TokenSelector
-                      walletAddress={walletAddress}
                       selectedToken={selectedToken}
                       onTokenSelect={(tokenAddress) => {
                         setSelectedToken(tokenAddress || null);

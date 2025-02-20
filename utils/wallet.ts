@@ -10,4 +10,9 @@ export function isSolanaWallet(account: WalletWithMetadata | any): account is So
     account?.chainType === 'solana' &&
     typeof account?.address === 'string'
   );
+}
+
+export function truncateWalletAddress(address: string | undefined): string {
+  if (!address) return '';
+  return address.slice(0, 5);
 } 
