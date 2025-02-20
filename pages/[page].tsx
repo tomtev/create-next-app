@@ -1,21 +1,25 @@
 import { GetServerSideProps } from "next";
 import Head from "next/head";
 import { useEffect, useState, Suspense } from "react";
-import dynamic from 'next/dynamic';
+import dynamic from "next/dynamic";
 import PageContent from "../components/PageContent";
 import { PageData, PageItem } from "@/types";
 import { themes } from "@/lib/themes";
-import { useRouter } from 'next/router';
-import { Button } from '@/components/ui/button';
-import { Pencil } from 'lucide-react';
+import { useRouter } from "next/router";
+import { Button } from "@/components/ui/button";
+import { Pencil } from "lucide-react";
 import { PrivyClient } from "@privy-io/server-auth";
 import { Redis } from "@upstash/redis";
 import Loader from "@/components/ui/loader";
 import { Drawer, DrawerContent } from "@/components/ui/drawer";
 
 // Dynamically import child routes
-const ProfilePage = dynamic(() => import('./[page]/profile'), {
-  loading: () => <div className="p-4"><Loader /></div>,
+const ProfilePage = dynamic(() => import("./[page]/profile"), {
+  loading: () => (
+    <div className="p-4">
+      <Loader />
+    </div>
+  ),
   ssr: false,
 });
 
@@ -37,25 +41,26 @@ const redis = new Redis({
 });
 
 const getRedisKey = (slug: string) => `page:${slug}`;
-const getWalletPagesKey = (walletAddress: string) => `wallet:${walletAddress.toLowerCase()}:pages`;
+const getWalletPagesKey = (walletAddress: string) =>
+  `wallet:${walletAddress.toLowerCase()}:pages`;
 
 // Helper to generate a visitor ID
 function generateVisitorId() {
-  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-    const r = Math.random() * 16 | 0;
-    const v = c === 'x' ? r : (r & 0x3 | 0x8);
+  return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, function (c) {
+    const r = (Math.random() * 16) | 0;
+    const v = c === "x" ? r : (r & 0x3) | 0x8;
     return v.toString(16);
   });
 }
 
 // Helper to get or create visitor ID
 function getVisitorId() {
-  if (typeof window === 'undefined') return null;
-  
-  let visitorId = localStorage.getItem('visitorId');
+  if (typeof window === "undefined") return null;
+
+  let visitorId = localStorage.getItem("visitorId");
   if (!visitorId) {
     visitorId = generateVisitorId();
-    localStorage.setItem('visitorId', visitorId);
+    localStorage.setItem("visitorId", visitorId);
   }
   return visitorId;
 }
@@ -88,17 +93,20 @@ export const getServerSideProps: GetServerSideProps<PageProps> = async ({
     // Check ownership if we have an identity token
     let isOwner = false;
     const idToken = req.cookies["privy-id-token"];
-    
+
     if (idToken) {
       try {
         const user = await privyClient.getUser({ idToken });
-        
+
         // Check if the wallet is in user's linked accounts
         let userWallet = null;
         for (const account of user.linkedAccounts) {
           if (account.type === "wallet" && account.chainType === "solana") {
             const walletAccount = account as { address?: string };
-            if (walletAccount.address?.toLowerCase() === pageData.walletAddress.toLowerCase()) {
+            if (
+              walletAccount.address?.toLowerCase() ===
+              pageData.walletAddress.toLowerCase()
+            ) {
               userWallet = walletAccount;
               break;
             }
@@ -109,7 +117,7 @@ export const getServerSideProps: GetServerSideProps<PageProps> = async ({
           // Check if the page exists in the user's wallet:id set
           const pagesKey = getWalletPagesKey(userWallet.address!);
           const hasPage = await redis.zscore(pagesKey, slug);
-          
+
           if (hasPage !== null) {
             isOwner = true;
           }
@@ -127,7 +135,7 @@ export const getServerSideProps: GetServerSideProps<PageProps> = async ({
         if (item.tokenGated) {
           return {
             ...item,
-            url: null // Use null for token-gated content
+            url: null, // Use null for token-gated content
           };
         }
         return item;
@@ -166,13 +174,13 @@ export default function Page({ pageData, slug, error, isOwner }: PageProps) {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
 
   // Check if this is being rendered from a child route
-  const isChildRoute = router.pathname.includes('[page]/');
+  const isChildRoute = router.pathname.includes("[page]/");
 
   // Handle drawer routes
   useEffect(() => {
     if (isChildRoute) return; // Don't handle drawer state if rendered from child route
-    
-    const childRoute = router.asPath.split('/').slice(2)[0];
+
+    const childRoute = router.asPath.split("/").slice(2)[0];
     setIsDrawerOpen(!!childRoute);
   }, [router.asPath, isChildRoute]);
 
@@ -184,14 +192,16 @@ export default function Page({ pageData, slug, error, isOwner }: PageProps) {
 
   useEffect(() => {
     if (pageData) {
-      const currentTheme = pageData.designStyle || 'default';
+      const currentTheme = pageData.designStyle || "default";
       const themePreset = themes[currentTheme];
-      
+
       const fonts = {
-        global: pageData.fonts?.global || themePreset?.fonts?.global || 'Inter',
-        heading: pageData.fonts?.heading || themePreset?.fonts?.heading || 'Inter',
-        paragraph: pageData.fonts?.paragraph || themePreset?.fonts?.paragraph || 'Inter',
-        links: pageData.fonts?.links || themePreset?.fonts?.links || 'Inter',
+        global: pageData.fonts?.global || themePreset?.fonts?.global || "Inter",
+        heading:
+          pageData.fonts?.heading || themePreset?.fonts?.heading || "Inter",
+        paragraph:
+          pageData.fonts?.paragraph || themePreset?.fonts?.paragraph || "Inter",
+        links: pageData.fonts?.links || themePreset?.fonts?.links || "Inter",
       };
 
       const initialPageData: PageData = {
@@ -212,10 +222,10 @@ export default function Page({ pageData, slug, error, isOwner }: PageProps) {
       if (!visitorId) return;
 
       try {
-        await fetch('/api/analytics/track-visit', {
-          method: 'POST',
+        await fetch("/api/analytics/track-visit", {
+          method: "POST",
           headers: {
-            'Content-Type': 'application/json',
+            "Content-Type": "application/json",
           },
           body: JSON.stringify({
             slug,
@@ -223,7 +233,7 @@ export default function Page({ pageData, slug, error, isOwner }: PageProps) {
           }),
         });
       } catch (error) {
-        console.error('Failed to track visit:', error);
+        console.error("Failed to track visit:", error);
       }
     };
 
@@ -233,14 +243,14 @@ export default function Page({ pageData, slug, error, isOwner }: PageProps) {
   // Replace placeholders in URLs
   const processedPageData: PageData = {
     ...pageData,
-    items: pageData.items?.map(item => ({
+    items: pageData.items?.map((item) => ({
       ...item,
-      url: item.url?.replace('[token]', pageData.connectedToken || '')
-    }))
+      url: item.url?.replace("[token]", pageData.connectedToken || ""),
+    })),
   };
 
   // Get the current child route
-  const childRoute = router.asPath.split('/').slice(2)[0];
+  const childRoute = router.asPath.split("/").slice(2)[0];
 
   if (error) {
     return (
@@ -260,31 +270,12 @@ export default function Page({ pageData, slug, error, isOwner }: PageProps) {
 
   return (
     <>
-      {isOwner && (
-        <Button
-          size="icon"
-          variant="outline"
-          onClick={async () => {
-            setIsLoading(true);
-            await router.push(`/edit/${slug}`);
-          }}
-          className="fixed top-2 right-2 z-20 gap-2 animate-slide-down"
-          disabled={isLoading}
-        >
-          {isLoading ? (
-            <Loader className="h-4 w-4" />
-          ) : (
-            <Pencil className="h-4 w-4" />
-          )}
-        </Button>
-      )}
-      
       <Head>
         <title>{processedPageData?.title || slug} - Page.fun</title>
         {processedPageData?.description && (
           <meta name="description" content={processedPageData.description} />
         )}
-     
+
         {(processedPageData.fonts?.global ||
           processedPageData.fonts?.heading ||
           processedPageData.fonts?.paragraph ||
@@ -323,11 +314,28 @@ export default function Page({ pageData, slug, error, isOwner }: PageProps) {
         )}
       </Head>
 
-      <PageContent 
-        pageData={processedPageData} 
+      <PageContent
+        pageData={processedPageData}
         items={processedPageData.items}
-        themeStyle={themes[pageDetails.designStyle || 'default']}
+        themeStyle={themes[pageDetails.designStyle || "default"]}
       />
+
+      {/*isOwner && (
+        <Button
+          size="icon"
+          variant="outline"
+          onClick={async () => {
+            setIsLoading(true);
+            await router.push(`/edit/${slug}`);
+          }}
+          disabled={isLoading}>
+          {isLoading ? (
+            <Loader className="h-4 w-4" />
+          ) : (
+            <Pencil className="h-4 w-4" />
+          )}
+        </Button>
+      ) */}
 
       {!isChildRoute && (
         <Drawer
@@ -335,12 +343,16 @@ export default function Page({ pageData, slug, error, isOwner }: PageProps) {
           onOpenChange={(open) => {
             if (!open) handleDrawerClose();
           }}
-          direction="right"
-        >
+          direction="right">
           <DrawerContent className="h-full">
-            <Suspense fallback={<div className="p-4"><Loader /></div>}>
-              {childRoute === 'profile' && (
-                <ProfilePage 
+            <Suspense
+              fallback={
+                <div className="p-4">
+                  <Loader />
+                </div>
+              }>
+              {childRoute === "profile" && (
+                <ProfilePage
                   pageData={pageData}
                   slug={slug}
                   isOwner={isOwner}

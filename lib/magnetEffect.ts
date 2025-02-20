@@ -12,6 +12,12 @@ export function createMagnetEffect(element: HTMLElement | null, enabled: boolean
     );
   };
 
+  // Helper to detect iOS devices
+  const isIOS = () => {
+    return /iPad|iPhone|iPod/.test(navigator.userAgent) || 
+           (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  };
+
   const handleDeviceOrientation = (e: DeviceOrientationEvent) => {
     if (!e.gamma || !e.beta) return;
 
@@ -77,27 +83,52 @@ export function createMagnetEffect(element: HTMLElement | null, enabled: boolean
     element.style.setProperty('--magnet', magnetStrength.toString());
   };
 
+  const requestOrientationAccess = async () => {
+    try {
+      if (typeof DeviceOrientationEvent !== 'undefined' && 
+          typeof (DeviceOrientationEvent as any).requestPermission === 'function') {
+        const permission = await (DeviceOrientationEvent as any).requestPermission();
+        if (permission === 'granted') {
+          window.addEventListener('deviceorientation', handleDeviceOrientation);
+        }
+      } else {
+        window.addEventListener('deviceorientation', handleDeviceOrientation);
+      }
+    } catch (error) {
+      console.error('Error requesting device orientation permission:', error);
+    }
+  };
+
   // Set up the appropriate event listeners based on device type
   if (isMobileDevice()) {
-    // Request permission for device orientation if needed (iOS 13+)
-    if (typeof DeviceOrientationEvent !== 'undefined' && typeof (DeviceOrientationEvent as any).requestPermission === 'function') {
-      (DeviceOrientationEvent as any).requestPermission()
-        .then((response: string) => {
-          if (response === 'granted') {
-            window.addEventListener('deviceorientation', handleDeviceOrientation);
-          }
-        })
-        .catch(console.error);
-    } else {
-      window.addEventListener('deviceorientation', handleDeviceOrientation);
-    }
-    
     // Set initial centered position
     element.style.setProperty('--link-mouse-x', '50%');
     element.style.setProperty('--link-mouse-y', '50%');
     element.style.setProperty('--magnet', '1');
 
-    return () => window.removeEventListener('deviceorientation', handleDeviceOrientation);
+    let handleClick: (() => Promise<void>) | null = null;
+
+    // Add a click handler to request permission on iOS
+    if (isIOS()) {
+      handleClick = async () => {
+        await requestOrientationAccess();
+        // Remove the click handler after permission is requested
+        if (element && handleClick) {
+          element.removeEventListener('click', handleClick);
+        }
+      };
+      element.addEventListener('click', handleClick);
+    } else {
+      // For non-iOS devices, just add the orientation listener
+      window.addEventListener('deviceorientation', handleDeviceOrientation);
+    }
+
+    return () => {
+      window.removeEventListener('deviceorientation', handleDeviceOrientation);
+      if (isIOS() && handleClick && element) {
+        element.removeEventListener('click', handleClick);
+      }
+    };
   } else {
     document.addEventListener('mousemove', handleMouseMove);
     return () => document.removeEventListener('mousemove', handleMouseMove);

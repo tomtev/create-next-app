@@ -1,7 +1,7 @@
 import { useRouter } from "next/router";
 import { usePrivy, useLogin } from "@privy-io/react-auth";
 import { Button } from "@/components/ui/button";
-import { ChevronDown, Plus, Menu } from "lucide-react";
+import { Plus, Menu } from "lucide-react";
 import Link from "next/link";
 import { Drawer, DrawerContent, DrawerTrigger } from "@/components/ui/drawer";
 import {
@@ -17,6 +17,7 @@ import { isSolanaWallet } from "@/utils/wallet";
 import { cn } from "@/lib/utils";
 import CreatePageModal from "./CreatePageModal";
 import { useGlobalContext } from "@/lib/context";
+import Spinner from "./Spinner";
 
 type AppMenuProps = {
   className?: string;
@@ -43,6 +44,7 @@ export default function AppMenu({
   });
   const router = useRouter();
   const [open, setOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
 
   const { userPages, isLoadingPages, hasPageTokenAccess } = useGlobalContext();
@@ -74,157 +76,176 @@ export default function AppMenu({
     };
   }, []);
 
+  // Add loading state tracking
+  useEffect(() => {
+    const handleStart = () => setIsLoading(true);
+    const handleComplete = () => setIsLoading(false);
+
+    router.events.on("routeChangeStart", handleStart);
+    router.events.on("routeChangeComplete", handleComplete);
+    router.events.on("routeChangeError", handleComplete);
+
+    return () => {
+      router.events.off("routeChangeStart", handleStart);
+      router.events.off("routeChangeComplete", handleComplete);
+      router.events.off("routeChangeError", handleComplete);
+    };
+  }, [router]);
+
   return (
     <div className={className}>
       <Drawer open={open} onOpenChange={setOpen} direction="left">
         <DrawerTrigger asChild>
           <Button variant="outline" className={cn("px-2")}>
-            <Menu className="h-5 w-5" />
+            {isLoading ? <Spinner /> : <Menu className="h-5 w-5" />}
           </Button>
         </DrawerTrigger>
         <DrawerContent direction="left">
-          <div className="h-full flex flex-col">
-            <div className="flex-1 overflow-y-auto">
-              <div className="space-y-4">
-                <div>
-                  <Link href="/" className="flex items-center gap-1.5">
-                    <Logo className="w-5 h-5" />
-                    <div className="font-bold">page.fun</div>
-                    <div className="text-xs text-green-500">beta</div>
-                  </Link>
-                  {hasPageTokenAccess ? ( 
-                    <div className="text-xs text-green-500">
-                      You have access to PAGE.FUN tokens
+          <div className="flex-1 overflow-y-auto">
+            <div className="space-y-4">
+              <div className="sticky top-0 bg-background z-10 pb-2">
+                <Link href="/" className="flex items-center gap-1.5">
+                  <Logo className="w-5 h-5" />
+                  <div className="font-bold">page.fun</div>
+                  <div className="text-xs text-green-500">beta</div>
+                </Link>
+              </div>
+
+              {ready && authenticated ? (
+                <div className="space-y-4 -mt-3">
+                  <div className="text-sm">Your pages</div>
+                  <div>
+                    <div className="space-y-3">
+                      {isLoadingPages ? (
+                        <div className="text-sm text-gray-600">
+                          Loading pages...
+                        </div>
+                      ) : userPages.length === 0 ? (
+                        <div className="text-sm text-gray-600">
+                          No pages created yet
+                        </div>
+                      ) : (
+                        userPages
+                          .sort(
+                            (a, b) => a.title?.localeCompare(b.title || "") || 0
+                          )
+                          .map((page) => (
+                            <div
+                              key={page.slug}
+                              className="border border-primary rounded-md p-2 bg-background hover:bg-muted transition-colors relative">
+                              <Link
+                                href={`/${page.slug}`}
+                                className="absolute inset-0 z-20"></Link>
+                              <div className="flex items-start justify-between gap-3">
+                                <div className="flex gap-3 min-w-0 flex-1">
+                                  {page.image && (
+                                    <div className="w-10 h-10 rounded-md overflow-hidden shrink-0 border">
+                                      <img
+                                        src={page.image}
+                                        alt={page.title || page.slug}
+                                        className="w-full h-full object-cover"
+                                        onError={(e) => {
+                                          (
+                                            e.target as HTMLImageElement
+                                          ).style.display = "none";
+                                        }}
+                                      />
+                                    </div>
+                                  )}
+                                  <div className="space-y-1 min-w-0">
+                                    <div className="block text-sm font-medium truncate text-primary hover:text-primary/80">
+                                      {page.title}
+                                    </div>
+                                    <div className="text-xs text-muted-foreground truncate">
+                                      page.fun/{page.slug}
+                                    </div>
+                                  </div>
+                                </div>
+                                <Link href={`/edit/${page.slug}`} passHref>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    className="shrink-0 z-40 relative">
+                                    Edit
+                                  </Button>
+                                </Link>
+                              </div>
+                            </div>
+                          ))
+                      )}
                     </div>
-                  ) : (
-                    <div className="text-xs text-red-500">
-                      You do not have access to PAGE.FUN tokens
+                    <div className="flex flex-col gap-2 mt-4">
+                      <Button
+                        size="sm"
+                        onClick={() => {
+                          setShowCreateModal(true);
+                          setOpen(false);
+                        }}
+                        className="w-full">
+                        <Plus className="h-4 w-4" />
+                        New Page
+                      </Button>
                     </div>
+                  </div>
+                </div>
+              ) : ready ? (
+                <Button onClick={login} className="w-full">
+                  Sign In
+                </Button>
+              ) : (
+                <div className="text-sm text-gray-600">Loading...</div>
+              )}
+            </div>
+          </div>
+
+          {ready && authenticated && (
+            <div className="border-t pt-3 bg-background">
+              {solanaWallet ? (
+                <div className="space-y-2">
+                  <div className="flex gap-2 items-center">
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <input
+                            type="text"
+                            value={solanaWallet.address}
+                            disabled
+                            className="flex-1 text-sm text-muted-foreground bg-muted px-2 py-1 rounded-md border"
+                          />
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>
+                            Your wallet address is hidden to visitors and kept
+                            private
+                          </p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={logout}
+                      className="shrink-0 text-destructive hover:text-destructive hover:bg-destructive/10">
+                      Logout
+                    </Button>
+                  </div>
+                  {canRemoveAccount && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => unlinkWallet(solanaWallet.address)}
+                      className="w-full">
+                      Disconnect Wallet
+                    </Button>
                   )}
                 </div>
-
-                {ready && authenticated ? (
-                  <div className="space-y-4">
-                    <div>
-                      <div className="flex flex-col gap-2 mb-4">
-                        <Button
-                          size="sm"
-                          onClick={() => {
-                            setShowCreateModal(true);
-                            setOpen(false);
-                          }}
-                          className="w-full">
-                          <Plus className="h-4 w-4" />
-                          New Page
-                        </Button>
-                      </div>
-
-                      <div className="space-y-3">
-                        {isLoadingPages ? (
-                          <div className="text-sm text-gray-600">
-                            Loading pages...
-                          </div>
-                        ) : userPages.length === 0 ? (
-                          <div className="text-sm text-gray-600">
-                            No pages created yet
-                          </div>
-                        ) : (
-                          userPages
-                            .sort(
-                              (a, b) =>
-                                a.title?.localeCompare(b.title || "") || 0
-                            )
-                            .map((page) => (
-                              <div
-                                key={page.slug}
-                                className="p-3 rounded-lg space-y-2 bg-muted border border-primary">
-                                <div className="flex items-start justify-between gap-2">
-                                  <div className="space-y-1 min-w-0">
-                                    <Link
-                                      href={`/${page.slug}`}
-                                      className="block text-sm font-medium truncate text-primary hover:text-primary/80">
-                                      page.fun/{page.slug}
-                                    </Link>
-                                    {page.title && (
-                                      <p className="text-xs text-muted-foreground truncate">
-                                        {page.title}
-                                      </p>
-                                    )}
-                                  </div>
-                                  <Link href={`/edit/${page.slug}`} passHref>
-                                    <Button
-                                      size="sm"
-                                      variant="outline"
-                                      className="shrink-0">
-                                      Edit
-                                    </Button>
-                                  </Link>
-                                </div>
-                              </div>
-                            ))
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                ) : ready ? (
-                  <Button onClick={login} className="w-full">
-                    Sign In
-                  </Button>
-                ) : (
-                  <div className="text-sm text-gray-600">Loading...</div>
-                )}
-              </div>
+              ) : (
+                <Button onClick={linkWallet} className="w-full">
+                  Connect Wallet
+                </Button>
+              )}
             </div>
-
-            {ready && authenticated && (
-              <div className="border-t pt-3 bg-background">
-                {solanaWallet ? (
-                  <div className="space-y-2">
-                    <div className="flex gap-2 items-center">
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <input
-                              type="text"
-                              value={solanaWallet.address}
-                              disabled
-                              className="flex-1 text-sm text-muted-foreground bg-muted px-2 py-1 rounded-md border"
-                            />
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>
-                              Your wallet address is hidden to visitors and kept
-                              private
-                            </p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={logout}
-                        className="shrink-0 text-destructive hover:text-destructive hover:bg-destructive/10">
-                        Logout
-                      </Button>
-                    </div>
-                    {canRemoveAccount && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => unlinkWallet(solanaWallet.address)}
-                        className="w-full">
-                        Disconnect Wallet
-                      </Button>
-                    )}
-                  </div>
-                ) : (
-                  <Button onClick={linkWallet} className="w-full">
-                    Connect Wallet
-                  </Button>
-                )}
-              </div>
-            )}
-          </div>
+          )}
         </DrawerContent>
       </Drawer>
 

@@ -31,7 +31,7 @@ export function SettingsDrawer({
     <Drawer open={open} onOpenChange={onOpenChange} direction="right">
       <DrawerContent direction="right">
         <Tabs defaultValue={focusField === 'image' ? 'general' : 'general'}>
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-3 sticky top-0">
             <TabsTrigger value="general">General</TabsTrigger>
             <TabsTrigger value="design">Design</TabsTrigger>
             <TabsTrigger value="analytics">Analytics</TabsTrigger>
