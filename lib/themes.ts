@@ -38,7 +38,7 @@ export const themes: Themes = {
     title: "Dark",
     styles: {
       /* Colors */
-      "--pf-page-bg-color": "#000",
+      "--pf-page-bg": "#000",
       "--pf-page-text-color": "#fff",
       "--pf-page-muted-color": "#999",
       "--pf-title-color": "#fff",
@@ -86,10 +86,10 @@ export const themes: Themes = {
       linkMagnet: true,
     },
     styles: {
-      "--pf-page-bg-color": "#000",
+      "--pf-page-bg": "#000",
       "--pf-page-text-color": "#00e653",
       "--pf-pixel-border-color": "#00e653",
-      "--pf-pixel-border-width": "4px",
+      "--pf-pixel-border-width": "5px",
       "--pf-gradient-blur": "3px",
       "--pf-gradient-border-width": "4px",
       "--pf-gradient-border":
@@ -112,13 +112,13 @@ export const themes: Themes = {
     },
     styles: {
       /* Colors */
-      "--pf-page-bg-color": "#121212",
+      "--pf-page-bg": "#121212",
       "--pf-page-text-color": "#fafafa",
       "--pf-title-color": "#fff",
 
       /* Link styles */
-      "--pf-link-background": "var(--pf-page-bg-color)",
-      "--pf-link-background-hover": "var(--pf-page-bg-color)",
+      "--pf-link-background": "var(--pf-page-bg)",
+      "--pf-link-background-hover": "var(--pf-page-bg)",
       "--pf-link-border-width": "2px",
       "--pf-link-border-color": "rgba(255, 255, 255, 0.1)",
       "--pf-link-border-radius": ".5rem",
