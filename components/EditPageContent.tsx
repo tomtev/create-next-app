@@ -4,11 +4,12 @@ import EditPageLink from "./EditPageLink";
 import { Button } from "@/components/ui/button";
 import { DragDropProvider } from "@dnd-kit/react";
 import { Plus } from "lucide-react";
+import { ThemeConfig } from "@/lib/themes";
 
 interface EditPageContentProps {
   pageData: PageData;
   items?: PageItem[];
-  themeStyle?: Record<string, any>;
+  themeStyle?: ThemeConfig;
   onLinkClick?: (itemId: string) => void;
   onTitleClick?: () => void;
   onDescriptionClick?: () => void;
@@ -73,7 +74,7 @@ export default function EditPageContent({
             "--pf-font-family-links": pageData.fonts?.links
               ? `'${pageData.fonts.links}', sans-serif`
               : "var(--pf-font-family-global)",
-            ...(themeStyle || {}),
+            ...(themeStyle?.styles || {}),
           } as React.CSSProperties
         }>
         <div className="pf-page__container">
@@ -92,13 +93,17 @@ export default function EditPageContent({
                 />
               )}
               <h1
-                className="pf-page__title cursor-pointer hover:opacity-80"
+                className={`pf-page__title cursor-pointer hover:opacity-80 ${
+                  themeStyle?.effects?.titleGradientBackground ? 'pf-gradient-text' : ''
+                }`}
                 onClick={onTitleClick}>
                 {pageData?.title || "Untitled Page"}
               </h1>
               {pageData?.description && (
                 <p
-                  className="pf-page__description cursor-pointer hover:opacity-80"
+                  className={`pf-page__description cursor-pointer hover:opacity-80 ${
+                    themeStyle?.effects?.descriptionGradientBackground ? 'pf-gradient-text' : ''
+                  }`}
                   onClick={onDescriptionClick}>
                   {pageData.description}
                 </p>
@@ -111,8 +116,8 @@ export default function EditPageContent({
             <div className="pf-links">
               <DragDropProvider onDragEnd={handleDragEnd}>
                 <div className="pf-links__grid">
-                  {items
-                    .filter((item): item is PageItem =>
+                  {(items as (PageItem | undefined)[])
+                    .filter((item): item is PageItem => 
                       Boolean(item && item.id && item.presetId)
                     )
                     .sort((a, b) => a.order - b.order)
@@ -124,6 +129,7 @@ export default function EditPageContent({
                         pageData={pageData}
                         onLinkClick={onLinkClick}
                         error={validationErrors[item.id]}
+                        themeStyle={themeStyle}
                       />
                     ))}
                 </div>

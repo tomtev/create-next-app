@@ -492,7 +492,7 @@ export default function EditPage({ slug, pageData, error }: PageProps) {
         {previewData && (
           <EditPageContent
             pageData={previewData}
-            themeStyle={themes[previewData.designStyle || 'default'].colors}
+            themeStyle={themes[previewData.designStyle || 'default']}
             onLinkClick={handleLinkClick}
             onTitleClick={() => {
               setFocusField('title');

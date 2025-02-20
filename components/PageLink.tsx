@@ -1,15 +1,13 @@
-import { Fragment } from "react";
+import { Fragment, useEffect, useRef, useState } from "react";
 import { usePrivy } from "@privy-io/react-auth";
 import { Button } from "@/components/ui/button";
 import Loader from "@/components/ui/loader";
-import {
-  Drawer,
-  DrawerContent,
-  DrawerFooter,
-} from "@/components/ui/drawer";
+import { Drawer, DrawerContent, DrawerFooter } from "@/components/ui/drawer";
 import { JupiterLogo } from "./icons/JupiterLogo";
 import { PageItem, PageData } from "@/types";
 import { LINK_PRESETS } from "@/lib/linkPresets";
+import { ThemeConfig } from "@/lib/themes";
+import { createMagnetEffect } from "@/lib/magnetEffect";
 
 interface PageLinkProps {
   item: PageItem;
@@ -27,15 +25,16 @@ interface PageLinkProps {
   ) => void;
   onLinkClick?: (itemId: string) => void;
   isPreview?: boolean;
+  themeStyle?: ThemeConfig;
 }
 
 // Helper to track link clicks
 async function trackClick(slug: string, itemId: string, isGated: boolean) {
   try {
-    await fetch('/api/analytics/track-click', {
-      method: 'POST',
+    await fetch("/api/analytics/track-click", {
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
       },
       body: JSON.stringify({
         slug,
@@ -44,7 +43,7 @@ async function trackClick(slug: string, itemId: string, isGated: boolean) {
       }),
     });
   } catch (error) {
-    console.error('Failed to track click:', error);
+    console.error("Failed to track click:", error);
   }
 }
 
@@ -60,8 +59,16 @@ export default function PageLink({
   onVerifyAccess,
   onLinkClick,
   isPreview = false,
+  themeStyle,
 }: PageLinkProps) {
   const { login, authenticated } = usePrivy();
+  const linkRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const cleanup = createMagnetEffect(linkRef.current, themeStyle?.effects?.linkMagnet);
+    return () => cleanup?.();
+  }, [themeStyle?.effects?.linkMagnet]);
+
   const preset = LINK_PRESETS[item.presetId];
   if (!preset) return null;
 
@@ -83,7 +90,7 @@ export default function PageLink({
     }
 
     // Get the page slug from the URL
-    const slug = window.location.pathname.split('/').pop();
+    const slug = window.location.pathname.split("/").pop();
     if (!slug) return;
 
     // Only track non-gated links immediately
@@ -97,7 +104,7 @@ export default function PageLink({
   };
 
   const itemContent = (
-    <div className={`pf-link`}>
+    <div className={`pf-link relative`} ref={linkRef}>
       <div className="pf-link__inner">
         <div className="pf-link__icon-container">
           <div className="pf-link__icon">
@@ -125,6 +132,11 @@ export default function PageLink({
           )}
         </div>
       </div>
+      {themeStyle?.effects?.linkGradientBorder && (
+        <div className="pf-gradient-border pointer-events-none absolute inset-0 rounded-[inherit]">
+          <div className="pf-gradient-border__inner absolute inset-0 rounded-[inherit]"></div>
+        </div>
+      )}
     </div>
   );
 
@@ -192,17 +204,16 @@ export default function PageLink({
                     Access Verified
                   </div>
                   {tokenGatedUrls.get(item.id) ? (
-                    <Button 
-                      asChild 
+                    <Button
+                      asChild
                       className="w-full"
                       onClick={async () => {
                         // Track click when user clicks the actual gated link
-                        const slug = window.location.pathname.split('/').pop();
+                        const slug = window.location.pathname.split("/").pop();
                         if (slug) {
                           await trackClick(slug, item.id, true);
                         }
-                      }}
-                    >
+                      }}>
                       <a
                         href={tokenGatedUrls.get(item.id)}
                         target="_blank"
@@ -231,9 +242,8 @@ export default function PageLink({
                         clipRule="evenodd"
                       />
                     </svg>
-                    You need {item.requiredTokens?.[0] || "0"}{" "}
-                    ${pageData.tokenSymbol}{" "}
-                    to access
+                    You need {item.requiredTokens?.[0] || "0"} $
+                    {pageData.tokenSymbol} to access
                   </div>
                   <Button variant="outline" asChild className="w-full">
                     <a

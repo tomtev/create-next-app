@@ -1,8 +1,11 @@
+import { Fragment, useEffect, useRef } from "react";
 import { PageItem, PageData } from "@/types";
 import { LINK_PRESETS } from "@/lib/linkPresets";
 import { GripVertical } from "lucide-react";
 import { useSortable } from "@dnd-kit/react/sortable";
 import { motion } from "framer-motion";
+import { ThemeConfig } from "@/lib/themes";
+import { createMagnetEffect } from "@/lib/magnetEffect";
 
 interface EditPageLinkProps {
   item: PageItem;
@@ -10,6 +13,7 @@ interface EditPageLinkProps {
   index: number;
   onLinkClick?: (itemId: string) => void;
   error?: string;
+  themeStyle?: ThemeConfig;
 }
 
 export default function EditPageLink({
@@ -17,8 +21,15 @@ export default function EditPageLink({
   index,
   onLinkClick,
   error,
+  themeStyle,
 }: EditPageLinkProps) {
-  const { ref } = useSortable({ id: item.id, index });
+  const { ref: sortableRef } = useSortable({ id: item.id, index });
+  const linkRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const cleanup = createMagnetEffect(linkRef.current, themeStyle?.effects?.linkMagnet);
+    return () => cleanup?.();
+  }, [themeStyle?.effects?.linkMagnet]);
 
   const preset = LINK_PRESETS[item.presetId];
   if (!preset) return null;
@@ -64,7 +75,7 @@ export default function EditPageLink({
 
   return (
     <div
-      ref={ref}
+      ref={sortableRef}
       className="w-full text-left cursor-pointer group relative"
       onClick={handleClick}
     >
@@ -83,11 +94,19 @@ export default function EditPageLink({
           ease: "easeOut"
         }}
       >
-        <div className={`pf-link relative ${error ? 'border border-red-500 rounded-lg' : ''}`}>
+        <div 
+          ref={linkRef}
+          className={`pf-link relative ${error ? 'border border-red-500 rounded-lg' : ''}`}
+        >
           {error && (
             <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border-2 border-background" />
           )}
           {itemContent}
+          {themeStyle?.effects?.linkGradientBorder && (
+            <div className="pf-gradient-border pointer-events-none absolute inset-0 rounded-[inherit]">
+              <div className="pf-gradient-border__inner absolute inset-0 rounded-[inherit]"></div>
+            </div>
+          )}
         </div>
       </motion.div>
     </div>

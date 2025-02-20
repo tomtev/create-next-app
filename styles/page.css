@@ -9,6 +9,12 @@
   --pf-font-family-paragraph: var(--pf-font-family-global);
   --pf-font-family-links: var(--pf-font-family-global);
 
+  /* Mouse position variables */
+  --page-mouse-x: -100%;
+  --page-mouse-y: -100%;
+  --link-mouse-x: -100%;
+  --link-mouse-y: -100%;
+
   /* Image variables */
   --pf-image-size: 100px;
   --pf-image-radius: .5rem;
@@ -215,5 +221,84 @@
   }
   100% {
     transform: rotateY(360deg);
+  }
+}
+
+/* Gradient Border Effect */
+.pf-gradient-border {
+  /* Size */
+  --glow-size: 100px;
+  --glow-offset: 20%;
+
+  /* Colors */
+  --glow-color-1: #dd7bbb;
+  --glow-color-2: #d79f1e;
+  --glow-color-3: #5a922c;
+  --glow-color-4: #4c7894;
+
+  --gradient: 
+    radial-gradient(var(--glow-size) at var(--link-mouse-x) var(--link-mouse-y), 
+      var(--glow-color-1) 0%, color-mix(in srgb, var(--glow-color-1), transparent 100%) 100%),
+    radial-gradient(var(--glow-size) at calc(var(--link-mouse-x) - var(--glow-offset)) calc(var(--link-mouse-y) - var(--glow-offset)), 
+      var(--glow-color-2) 0%, color-mix(in srgb, var(--glow-color-2), transparent 100%) 100%),
+    radial-gradient(var(--glow-size) at calc(var(--link-mouse-x) + var(--glow-offset)) calc(var(--link-mouse-y) + var(--glow-offset)), 
+      var(--glow-color-3) 0%, color-mix(in srgb, var(--glow-color-3), transparent 100%) 100%),
+    radial-gradient(var(--glow-size) at calc(var(--link-mouse-x) - calc(var(--glow-offset) / 2)) calc(var(--link-mouse-y) + calc(var(--glow-offset) / 2)), 
+      var(--glow-color-4) 0%, color-mix(in srgb, var(--glow-color-4), transparent 100%) 100%);
+}
+
+.pf-gradient-border__inner:after {
+  content: "";
+  border-radius: inherit;
+  position: absolute;
+  inset: -2px;
+  padding: 1px;
+  background: var(--gradient);
+  opacity: 1;
+  transition: opacity .3s;
+  -webkit-mask: 
+    linear-gradient(#fff 0 0) content-box, 
+    linear-gradient(#fff 0 0);
+  mask:
+    linear-gradient(#fff 0 0) content-box, 
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+}
+
+/* Add page-level gradient effect if enabled */
+.pf-page[data-page-magnet="true"] {
+  --page-gradient: 
+    radial-gradient(var(--glow-size) at var(--page-mouse-x) var(--page-mouse-y), 
+      rgba(255, 255, 255, 0.1) 0%, 
+      transparent 100%);
+  background: linear-gradient(var(--pf-background), var(--pf-background)) var(--page-gradient);
+  background-blend-mode: overlay;
+}
+
+.pf-gradient-text {
+  background: linear-gradient(
+    45deg,
+    var(--glow-color-1),
+    var(--glow-color-2),
+    var(--glow-color-3),
+    var(--glow-color-4)
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: gradient 10s ease infinite;
+  background-size: 200% 200%;
+}
+
+@keyframes gradient {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
   }
 }

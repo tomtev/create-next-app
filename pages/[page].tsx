@@ -153,8 +153,31 @@ export const getServerSideProps: GetServerSideProps<PageProps> = async ({
 export default function Page({ pageData, slug, error, isOwner }: PageProps) {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
-  const currentTheme = pageData.designStyle || 'default';
-  const themeStyle = themes[currentTheme].colors;
+  const [pageDetails, setPageDetails] = useState<PageData>(pageData);
+  const [previewData, setPreviewData] = useState<PageData>(pageData);
+
+  useEffect(() => {
+    if (pageData) {
+      const currentTheme = pageData.designStyle || 'default';
+      const themePreset = themes[currentTheme];
+      
+      const fonts = {
+        global: pageData.fonts?.global || themePreset?.fonts?.global || 'Inter',
+        heading: pageData.fonts?.heading || themePreset?.fonts?.heading || 'Inter',
+        paragraph: pageData.fonts?.paragraph || themePreset?.fonts?.paragraph || 'Inter',
+        links: pageData.fonts?.links || themePreset?.fonts?.links || 'Inter',
+      };
+
+      const initialPageData: PageData = {
+        ...pageData,
+        designStyle: currentTheme,
+        fonts: fonts,
+      };
+
+      setPageDetails(initialPageData);
+      setPreviewData(initialPageData);
+    }
+  }, [pageData]);
 
   // Track page visit
   useEffect(() => {
@@ -274,7 +297,7 @@ export default function Page({ pageData, slug, error, isOwner }: PageProps) {
       <PageContent 
         pageData={processedPageData} 
         items={processedPageData.items}
-        themeStyle={themeStyle}
+        themeStyle={themes[pageDetails.designStyle || 'default']}
       />
     </>
   );

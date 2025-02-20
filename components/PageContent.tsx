@@ -1,15 +1,17 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { PageData, PageItem } from "@/types";
 import Link from "next/link";
 import PageLink from "./PageLink";
 import { Logo } from "./logo";
+import { ThemeConfig } from "@/lib/themes";
+import { createMagnetEffect } from "@/lib/magnetEffect";
 
 interface PageContentProps {
   pageData: PageData;
   items?: PageItem[];
-  themeStyle?: Record<string, any>;
+  themeStyle?: ThemeConfig;
 }
 
 export default function PageContent({
@@ -17,6 +19,7 @@ export default function PageContent({
   items = pageData?.items || [],
   themeStyle,
 }: PageContentProps) {
+  const pageRef = useRef<HTMLDivElement>(null);
   const [openDrawer, setOpenDrawer] = useState<string | null>(null);
   const [verifying, setVerifying] = useState<string | null>(null);
   const [accessStates, setAccessStates] = useState<Map<string, boolean>>(
@@ -25,6 +28,11 @@ export default function PageContent({
   const [tokenGatedUrls, setTokenGatedUrls] = useState<Map<string, string>>(
     new Map()
   );
+
+  useEffect(() => {
+    const cleanup = createMagnetEffect(pageRef.current, themeStyle?.effects?.pageMagnet);
+    return () => cleanup?.();
+  }, [themeStyle?.effects?.pageMagnet]);
 
   const fetchTokenGatedContent = async (itemId: string) => {
     try {
@@ -106,6 +114,7 @@ export default function PageContent({
 
   return (
     <div
+      ref={pageRef}
       className="pf-page"
       style={
         {
@@ -121,7 +130,7 @@ export default function PageContent({
           "--pf-font-family-links": pageData.fonts?.links
             ? `'${pageData.fonts.links}', sans-serif`
             : "var(--pf-font-family-global)",
-          ...(themeStyle || {}),
+          ...(themeStyle?.styles || {}),
         } as React.CSSProperties
       }>
       <div className="pf-page__container">
@@ -166,6 +175,7 @@ export default function PageContent({
                     tokenGatedUrls={tokenGatedUrls}
                     onTokenGatedClick={handleTokenGatedClick}
                     onVerifyAccess={verifyAccess}
+                    themeStyle={themeStyle}
                   />
                 ))}
             </div>
