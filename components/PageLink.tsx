@@ -107,7 +107,7 @@ export default function PageLink({
   };
 
   const itemContent = (
-    <div className={`pf-link relative`} ref={linkRef}>
+    <div className={`pf-link relative ${themeStyle?.effects?.linkPixelBorder ? 'pf-link--has-pixel-border' : ''}`} ref={linkRef}>
       <div className="pf-link__inner">
         <div className="pf-link__icon-container">
           <div className="pf-link__icon">

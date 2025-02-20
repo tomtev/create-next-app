@@ -97,8 +97,10 @@ export default function EditPageLink({
         <div
           ref={linkRef}
           className={`pf-link relative ${
-            error ? "border border-red-500 rounded-lg" : ""
-          }`}>
+            themeStyle?.effects?.linkPixelBorder
+              ? "pf-link--has-pixel-border"
+              : ""
+          } ${error ? "border border-red-500 rounded-lg" : ""}`}>
           {error && (
             <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border-2 border-background" />
           )}
@@ -111,8 +113,7 @@ export default function EditPageLink({
               }}>
               <div className="pf-gradient-border__inner absolute inset-0 rounded-[inherit]"></div>
             </div>
-          )}: 
-
+          )}
           {themeStyle?.effects?.linkPixelBorder && (
             <div
               className="pf-pixel-border absolute pointer-events-none inset-0"
