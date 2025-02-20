@@ -1,6 +1,7 @@
 import { GetServerSideProps } from "next";
 import Head from "next/head";
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
+import dynamic from 'next/dynamic';
 import PageContent from "../components/PageContent";
 import { PageData, PageItem } from "@/types";
 import { themes } from "@/lib/themes";
@@ -10,6 +11,13 @@ import { Pencil } from 'lucide-react';
 import { PrivyClient } from "@privy-io/server-auth";
 import { Redis } from "@upstash/redis";
 import Loader from "@/components/ui/loader";
+import { Drawer, DrawerContent } from "@/components/ui/drawer";
+
+// Dynamically import child routes
+const ProfilePage = dynamic(() => import('./[page]/profile'), {
+  loading: () => <div className="p-4"><Loader /></div>,
+  ssr: false,
+});
 
 interface PageProps {
   pageData: PageData;
@@ -155,6 +163,24 @@ export default function Page({ pageData, slug, error, isOwner }: PageProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [pageDetails, setPageDetails] = useState<PageData>(pageData);
   const [previewData, setPreviewData] = useState<PageData>(pageData);
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+
+  // Check if this is being rendered from a child route
+  const isChildRoute = router.pathname.includes('[page]/');
+
+  // Handle drawer routes
+  useEffect(() => {
+    if (isChildRoute) return; // Don't handle drawer state if rendered from child route
+    
+    const childRoute = router.asPath.split('/').slice(2)[0];
+    setIsDrawerOpen(!!childRoute);
+  }, [router.asPath, isChildRoute]);
+
+  // Handle drawer close
+  const handleDrawerClose = () => {
+    setIsDrawerOpen(false);
+    router.back();
+  };
 
   useEffect(() => {
     if (pageData) {
@@ -212,6 +238,9 @@ export default function Page({ pageData, slug, error, isOwner }: PageProps) {
       url: item.url?.replace('[token]', pageData.connectedToken || '')
     }))
   };
+
+  // Get the current child route
+  const childRoute = router.asPath.split('/').slice(2)[0];
 
   if (error) {
     return (
@@ -299,6 +328,29 @@ export default function Page({ pageData, slug, error, isOwner }: PageProps) {
         items={processedPageData.items}
         themeStyle={themes[pageDetails.designStyle || 'default']}
       />
+
+      {!isChildRoute && (
+        <Drawer
+          open={isDrawerOpen}
+          onOpenChange={(open) => {
+            if (!open) handleDrawerClose();
+          }}
+          direction="right"
+        >
+          <DrawerContent className="h-full">
+            <Suspense fallback={<div className="p-4"><Loader /></div>}>
+              {childRoute === 'profile' && (
+                <ProfilePage 
+                  pageData={pageData}
+                  slug={slug}
+                  isOwner={isOwner}
+                  error={error}
+                />
+              )}
+            </Suspense>
+          </DrawerContent>
+        </Drawer>
+      )}
     </>
   );
 }

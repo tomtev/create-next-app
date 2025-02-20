@@ -3,6 +3,37 @@ export function createMagnetEffect(element: HTMLElement | null, enabled: boolean
 
   const PROXIMITY_THRESHOLD = 100; // Distance in pixels to start the effect
   const VERTICAL_THRESHOLD = 50; // Extra vertical distance to start the effect
+  const ORIENTATION_SENSITIVITY = 15; // Maximum degrees to reach edges
+
+  // Helper to detect mobile/tablet devices
+  const isMobileDevice = () => {
+    return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+      navigator.userAgent
+    );
+  };
+
+  const handleDeviceOrientation = (e: DeviceOrientationEvent) => {
+    if (!e.gamma || !e.beta) return;
+
+    // Normalize gamma (left to right tilt) and beta (front to back tilt)
+    // to percentage values for the magnet effect
+    const gamma = Math.min(Math.max(e.gamma, -ORIENTATION_SENSITIVITY), ORIENTATION_SENSITIVITY);
+    const beta = Math.min(Math.max(e.beta - 40, -ORIENTATION_SENSITIVITY), ORIENTATION_SENSITIVITY);
+
+    // Convert tilts to percentages (0-100)
+    const mouseX = ((gamma + ORIENTATION_SENSITIVITY) / (ORIENTATION_SENSITIVITY * 2)) * 100;
+    const mouseY = ((beta + ORIENTATION_SENSITIVITY) / (ORIENTATION_SENSITIVITY * 2)) * 100;
+
+    // Calculate magnet strength based on how centered the device is
+    const magnetStrength = Math.max(
+      0,
+      1 - (Math.abs(gamma) + Math.abs(beta)) / (ORIENTATION_SENSITIVITY * 2)
+    );
+
+    element.style.setProperty('--link-mouse-x', `${mouseX}%`);
+    element.style.setProperty('--link-mouse-y', `${mouseY}%`);
+    element.style.setProperty('--magnet', magnetStrength.toString());
+  };
 
   const handleMouseMove = (e: MouseEvent) => {
     const rect = element.getBoundingClientRect();
@@ -46,6 +77,29 @@ export function createMagnetEffect(element: HTMLElement | null, enabled: boolean
     element.style.setProperty('--magnet', magnetStrength.toString());
   };
 
-  document.addEventListener('mousemove', handleMouseMove);
-  return () => document.removeEventListener('mousemove', handleMouseMove);
+  // Set up the appropriate event listeners based on device type
+  if (isMobileDevice()) {
+    // Request permission for device orientation if needed (iOS 13+)
+    if (typeof DeviceOrientationEvent !== 'undefined' && typeof (DeviceOrientationEvent as any).requestPermission === 'function') {
+      (DeviceOrientationEvent as any).requestPermission()
+        .then((response: string) => {
+          if (response === 'granted') {
+            window.addEventListener('deviceorientation', handleDeviceOrientation);
+          }
+        })
+        .catch(console.error);
+    } else {
+      window.addEventListener('deviceorientation', handleDeviceOrientation);
+    }
+    
+    // Set initial centered position
+    element.style.setProperty('--link-mouse-x', '50%');
+    element.style.setProperty('--link-mouse-y', '50%');
+    element.style.setProperty('--magnet', '1');
+
+    return () => window.removeEventListener('deviceorientation', handleDeviceOrientation);
+  } else {
+    document.addEventListener('mousemove', handleMouseMove);
+    return () => document.removeEventListener('mousemove', handleMouseMove);
+  }
 } 
