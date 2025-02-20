@@ -1,5 +1,5 @@
-export function createMagnetEffect(element: HTMLElement | null, enabled: boolean = true) {
-  if (!element || !enabled) return;
+export function createMagnetEffect(element: HTMLElement | null, enabled: boolean | undefined = false) {
+  if (!element || enabled !== true) return;
 
   const PROXIMITY_THRESHOLD = 100; // Distance in pixels to start the effect
   const VERTICAL_THRESHOLD = 50; // Extra vertical distance to start the effect

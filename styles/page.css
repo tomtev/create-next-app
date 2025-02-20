@@ -2,7 +2,11 @@
   /* Layout */
   --pf-container-width: 600px;
 
-  /* Font variables */
+  /* Colors */
+  --pf-page-bg-color: #ececec;
+  --pf-page-text-color: #111;
+
+  /* Font families */
   --pf-font-family-default: 'Inter', sans-serif;
   --pf-font-family-global: var(--pf-font-family-default);
   --pf-font-family-heading: var(--pf-font-family-global);
@@ -18,49 +22,64 @@
   /* Image variables */
   --pf-image-size: 100px;
   --pf-image-radius: .5rem;
-  --pf-image-border: 1px solid rgba(0, 0, 0, 0.4);
+  --pf-image-border-width: 1px;
+  --pf-image-border-style: solid;
+  --pf-image-border-color: rgba(0, 0, 0, 0.4);
   --pf-image-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 
-  /* Font size and weight variables */
-  --pf-title-size: 1.75rem;
-  --pf-title-weight: 600;
-  --pf-description-size: 1rem;
-  --pf-description-weight: 400;
-  --pf-link-title-size: 1rem;
-  --pf-link-title-weight: 500;
-  --pf-link-url-size: 0.875rem;
-  --pf-link-url-weight: 400;
-  --pf-token-badge-size: 0.75rem;
-  --pf-token-badge-weight: 500;
+  /* Title and description variables */
+  --pf-title-color: var(--pf-page-text-color);
+  --pf-title-font-size: 1.75rem;
+  --pf-title-font-weight: 600;
+  --pf-title-line-height: 1.2;
+  --pf-title-margin-bottom: .5rem;
 
-  --pf-links-grid-cols: 1;
+  --pf-description-color: var(--pf-page-text-color);
+  --pf-description-font-size: 1rem;
+  --pf-description-font-weight: 400;
+  --pf-description-line-height: 1.6;
+  --pf-description-margin-bottom: 2rem;
+
+  /* Token badge variables */
+  --pf-token-badge-font-size: 0.75rem;
+  --pf-token-badge-font-weight: 500;
+
+  /* Link variables - grouped together */
+  --pf-link-font-size: 1rem;
+  --pf-link-font-weight: 500;
+  --pf-link-title-font-size: 1rem;
+  --pf-link-title-font-weight: 500;
+  --pf-link-url-font-size: 0.875rem;
+  --pf-link-url-font-weight: 400;
   --pf-link-padding: 1rem;
   --pf-link-min-height: 3.5rem;
-
-  /* Theme variables with defaults */
-  --pf-background: #ececec;
-  --pf-text: #111;
-  --pf-heading-size: 2rem;
-  --pf-heading-weight: 300;
-  --pf-description-color: #374151;
-
-  /* Link specific variables */
-  --pf-link-bg: #fff;
-  --pf-link-bg-hover: #f0f0f0;
-  --pf-link-border: 1px solid rgba(0, 0, 0, 0.4);
+  --pf-link-border-width: 1px;
+  --pf-link-border-style: solid;
+  --pf-link-border-color: rgba(0, 0, 0, 0.4);
   --pf-link-radius: .5rem;
-  --pf-link-color: #374151;
-  --pf-link-hover: #111;
+  --pf-link-color: var(--pf-page-text-color);
+  --pf-link-background: #fff;
+  --pf-link-background-hover: #f0f0f0;
+  --pf-link-color-hover: #000;
   --pf-link-transition: background 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease, color 0.2s ease;
   --pf-link-transform-hover: translateY(-2px);
   --pf-link-shadow: 1px 2px 0 0 rgba(0, 0, 0, 0.1);
   --pf-link-shadow-hover: var(--pf-link-shadow);
+
+  /* Gradient styles */
+  --pf-gradient-border-width: 2px;
+  --pf-gradient-blur: 0px;
+  --pf-gradient: 
+
+  /* Grid variables */
+  --pf-links-grid-cols: 1;
+  --pf-links-grid-gap: 1.25rem;
 }
 
 .pf-page {
-  background: var(--pf-background);
+  background: var(--pf-page-bg-color);
   font-family: var(--pf-font-family-global);
-  color: var(--pf-text);
+  color: var(--pf-page-text-color);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
@@ -83,7 +102,7 @@
   height: var(--pf-image-size);
   margin: 0 auto 1.5rem;
   border-radius: var(--pf-image-radius);
-  border: var(--pf-image-border);
+  border: var(--pf-image-border-width) var(--pf-image-border-style) var(--pf-image-border-color);
   box-shadow: var(--pf-image-shadow);
 }
 
@@ -93,20 +112,21 @@
 }
 
 .pf-page__title {
-  font-size: var(--pf-title-size);
-  font-weight: var(--pf-title-weight);
+  font-size: var(--pf-title-font-size);
+  font-weight: var(--pf-title-font-weight);
+  line-height: var(--pf-title-line-height);
   margin-top: 0;
-  margin-bottom: .5rem;
+  margin-bottom: var(--pf-title-margin-bottom);
   font-family: var(--pf-font-family-heading);
-  color: var(--pf-text);
+  color: var(--pf-title-color);
 }
 
 .pf-page__description {
-  font-size: var(--pf-description-size);
-  font-weight: var(--pf-description-weight);
-  line-height: 1.6;
+  font-size: var(--pf-description-font-size);
+  font-weight: var(--pf-description-font-weight);
+  line-height: var(--pf-description-line-height);
   margin-top: 0;
-  margin-bottom: 2rem;
+  margin-bottom: var(--pf-description-margin-bottom);
   font-family: var(--pf-font-family-paragraph);
   color: var(--pf-description-color);
 }
@@ -134,9 +154,11 @@
 .pf-link {
   padding-inline: var(--pf-link-padding);
   min-height: var(--pf-link-min-height);
-  border: var(--pf-link-border);
+  border-width: var(--pf-link-border-width);
+  border-style: var(--pf-link-border-style);
+  border-color: var(--pf-link-border-color);
   border-radius: var(--pf-link-radius);
-  background: var(--pf-link-bg);
+  background: var(--pf-link-background);
   font-family: var(--pf-font-family-links);
   color: var(--pf-link-color);
   box-shadow: var(--pf-link-shadow);
@@ -146,7 +168,7 @@
 }
 
 .pf-link:hover {
-  background: var(--pf-link-bg-hover);
+  background: var(--pf-link-background-hover);
   box-shadow: var(--pf-link-shadow-hover);
   transform: var(--pf-link-transform-hover);
 }
@@ -176,8 +198,8 @@
 }
 
 .pf-link__title {
-  font-size: var(--pf-link-title-size);
-  font-weight: var(--pf-link-title-weight);
+  font-size: var(--pf-link-title-font-size);
+  font-weight: var(--pf-link-title-font-weight);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -188,15 +210,15 @@
 
 .pf-link__url {
   display: block;
-  font-size: var(--pf-link-url-size);
-  font-weight: var(--pf-link-url-weight);
+  font-size: var(--pf-link-url-font-size);
+  font-weight: var(--pf-link-url-font-weight);
   color: currentColor;
   text-decoration: none;
   overflow-wrap: break-word;
 }
 
 .pf-link__url:hover {
-  color: var(--pf-link-hover);
+  color: var(--pf-link-color-hover);
 }
 
 .pf-token-image {
@@ -224,38 +246,35 @@
   }
 }
 
+.pf-page__description--has-gradient {
+  background: linear-gradient(45deg, var(--pf-description-color) 40%, var(--pf-description-color-to, #555) 100%);
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.pf-page__title--has-gradient {
+  background: linear-gradient(45deg, var(--pf-title-color) 40%, var(--pf-title-color-to, #555) 100%);
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+
 /* Gradient Border Effect */
 .pf-gradient-border {
-  /* Size */
-  --glow-size: 100px;
-  --glow-offset: 20%;
-
-  /* Colors */
-  --glow-color-1: #dd7bbb;
-  --glow-color-2: #d79f1e;
-  --glow-color-3: #5a922c;
-  --glow-color-4: #4c7894;
-
-  --gradient: 
-    radial-gradient(var(--glow-size) at var(--link-mouse-x) var(--link-mouse-y), 
-      var(--glow-color-1) 0%, color-mix(in srgb, var(--glow-color-1), transparent 100%) 100%),
-    radial-gradient(var(--glow-size) at calc(var(--link-mouse-x) - var(--glow-offset)) calc(var(--link-mouse-y) - var(--glow-offset)), 
-      var(--glow-color-2) 0%, color-mix(in srgb, var(--glow-color-2), transparent 100%) 100%),
-    radial-gradient(var(--glow-size) at calc(var(--link-mouse-x) + var(--glow-offset)) calc(var(--link-mouse-y) + var(--glow-offset)), 
-      var(--glow-color-3) 0%, color-mix(in srgb, var(--glow-color-3), transparent 100%) 100%),
-    radial-gradient(var(--glow-size) at calc(var(--link-mouse-x) - calc(var(--glow-offset) / 2)) calc(var(--link-mouse-y) + calc(var(--glow-offset) / 2)), 
-      var(--glow-color-4) 0%, color-mix(in srgb, var(--glow-color-4), transparent 100%) 100%);
+  --pf-gradient-border: linear-gradient(45deg, var(--pf-link-border-color) 0%, var(--pf-page-text-color) 100%);
+   filter: blur(var(--pf-gradient-blur, 0px));
 }
 
 .pf-gradient-border__inner:after {
   content: "";
   border-radius: inherit;
   position: absolute;
-  inset: -2px;
-  padding: 1px;
-  background: var(--gradient);
+  inset: calc(var(--pf-gradient-border-width, var(--pf-link-border-width)) / -1);
+  padding: var(--pf-gradient-border-width, var(--pf-link-border-width));
+  background: var(--pf-gradient-border);
   opacity: 1;
-  transition: opacity .3s;
   -webkit-mask: 
     linear-gradient(#fff 0 0) content-box, 
     linear-gradient(#fff 0 0);
@@ -266,39 +285,11 @@
   mask-composite: exclude;
 }
 
-/* Add page-level gradient effect if enabled */
-.pf-page[data-page-magnet="true"] {
-  --page-gradient: 
-    radial-gradient(var(--glow-size) at var(--page-mouse-x) var(--page-mouse-y), 
-      rgba(255, 255, 255, 0.1) 0%, 
-      transparent 100%);
-  background: linear-gradient(var(--pf-background), var(--pf-background)) var(--page-gradient);
-  background-blend-mode: overlay;
-}
-
-.pf-gradient-text {
-  background: linear-gradient(
-    45deg,
-    var(--glow-color-1),
-    var(--glow-color-2),
-    var(--glow-color-3),
-    var(--glow-color-4)
-  );
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
-  animation: gradient 10s ease infinite;
-  background-size: 200% 200%;
-}
-
-@keyframes gradient {
-  0% {
-    background-position: 0% 50%;
-  }
-  50% {
-    background-position: 100% 50%;
-  }
-  100% {
-    background-position: 0% 50%;
-  }
+.pf-pixel-border {
+  border-image-slice: 2;
+  border-image-width: var(--pf-pixel-border-width);
+  border-image-outset: var(--pf-pixel-border-width);
+  border-width: var(--pf-pixel-border-width);
+  border-image-repeat: stretch;
+  border-style: solid;
 }

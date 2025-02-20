@@ -15,6 +15,7 @@ export interface ThemeConfig {
     descriptionGradientBackground?: boolean;
     linkMagnet?: boolean;
     pageMagnet?: boolean;
+    linkPixelBorder?: boolean;
   };
 }
 
@@ -34,12 +35,19 @@ export const themes: Themes = {
   dark: {
     title: 'Dark',
     styles: {
-      '--pf-background': '#000',
-      '--pf-text': '#fff',
+      /* Colors */
+      '--pf-page-bg-color': '#000',
+      '--pf-page-text-color': '#fff',
+      '--pf-page-muted-color': '#999',
+      '--pf-title-color': '#fff',
       '--pf-description-color': '#fff',
-      '--pf-link-bg': 'rgba(255, 255, 255, 0.05)',
-      '--pf-link-bg-hover': 'rgba(255, 255, 255, 0.1)',
-      '--pf-link-border': '1px solid rgba(255, 255, 255, 0.1)',
+
+      /* Link styles */
+      '--pf-link-background': 'rgba(255, 255, 255, 0.05)',
+      '--pf-link-background-hover': 'rgba(255, 255, 255, 0.1)',
+      '--pf-link-border-width': '1px',
+      '--pf-link-border-style': 'solid',
+      '--pf-link-border-color': 'rgba(255, 255, 255, 0.1)',
     },
     fonts: {
       global: 'Inter',
@@ -48,8 +56,26 @@ export const themes: Themes = {
       links: 'Inter'
     }
   },
-  
-  /* deprecated but keeping for backwards compatibility */
+  pixel: {
+    title: 'Pixel',
+    effects: {
+      linkPixelBorder: true
+    },
+    styles: {
+      '--pf-link-radius': '0px',
+      '--pf-link-border-width': '1px',
+      '--pf-link-border-style': 'solid',
+      '--pf-link-border-color': 'transparent',
+      '--pf-pixel-border-color': '#000',
+      '--pf-pixel-border-width': '5px',
+    },
+    fonts: {
+      global: 'Silkscreen',
+      heading: 'Silkscreen',
+      paragraph: 'Silkscreen',
+      links: 'Silkscreen'
+    }
+  },
   modern: {
     title: 'Modern Dark',
     effects: {
@@ -60,20 +86,30 @@ export const themes: Themes = {
       pageMagnet: true,
     },
     styles: {
-      '--pf-background': '#000',
-      '--pf-text': '#fff',
-      '--pf-muted': '#999',
-      '--pf-heading-size': '3.5rem',
-      '--pf-heading-weight': '800',
-      '--pf-description-color': 'var(--pf-muted)',
-      '--pf-link-bg': 'var(--pf-background)',
-      '--pf-link-bg-hover': 'var(--pf-background)',
-      '--pf-link-border': '1px solid rgba(255, 255, 255, 0.1)',
+      /* Colors */
+      '--pf-page-bg-color': '#000',
+      '--pf-page-text-color': '#fff',
+      '--pf-page-muted-color': '#999',
+      '--pf-title-color': '#fff',
+      '--pf-description-color': 'var(--pf-page-muted-color)',
+
+      /* Title and description */
+      '--pf-title-font-size': '3.5rem',
+      '--pf-title-font-weight': '800',
+      '--pf-title-line-height': '1.1',
+
+      /* Link styles */
+      '--pf-link-background': 'var(--pf-page-bg-color)',
+      '--pf-link-background-hover': 'var(--pf-page-bg-color)',
+      '--pf-link-border-width': '1px',
+      '--pf-link-border-style': 'solid',
+      '--pf-link-border-color': 'rgba(255, 255, 255, 0.1)',
       '--pf-link-radius': '.5rem',
-      '--pf-link-color': 'var(--pf-text)',
-      '--pf-link-hover': 'var(--pf-primary)',
+      '--pf-link-color': 'var(--pf-page-text-color)',
+      '--pf-link-color-hover': 'var(--pf-primary)',
       '--pf-link-shadow': '0 0 0 1px rgba(255, 255, 255, 0.1)',
       '--pf-link-shadow-hover': '0 8px 24px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.2)',
+      '--pf-gradient-border': 'radial-gradient(100px at var(--link-mouse-x) var(--link-mouse-y), #dd7bbb 0%, color-mix(in srgb, #dd7bbb, transparent 100%) 100%), radial-gradient(100px at calc(var(--link-mouse-x) - 20%) calc(var(--link-mouse-y) - 20%), #d79f1e 0%, color-mix(in srgb, #d79f1e, transparent 100%) 100%), radial-gradient(100px at calc(var(--link-mouse-x) + 20%) calc(var(--link-mouse-y) + 20%), #5a922c 0%, color-mix(in srgb, #5a922c, transparent 100%) 100%), radial-gradient(100px at calc(var(--link-mouse-x) - 10%) calc(var(--link-mouse-y) + 10%), #4c7894 0%, color-mix(in srgb, #4c7894, transparent 100%) 100%)'
     },
     fonts: {
       global: 'Space Grotesk',

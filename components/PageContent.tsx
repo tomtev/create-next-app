@@ -147,11 +147,13 @@ export default function PageContent({
                 }}
               />
             )}
-            <h1 className="pf-page__title">
+            <h1 className={`pf-page__title ${themeStyle?.effects?.titleGradientBackground ? 'pf-page__title--has-gradient' : ''}`}>
               {pageData?.title || "Untitled Page"}
             </h1>
             {pageData?.description && (
-              <p className="pf-page__description">{pageData.description}</p>
+              <p className={`pf-page__description ${themeStyle?.effects?.descriptionGradientBackground ? 'pf-page__description--has-gradient' : ''}`}>
+                {pageData.description}
+              </p>
             )}
           </div>
         </div>

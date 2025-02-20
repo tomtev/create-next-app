@@ -692,14 +692,17 @@ export default async function handler(
 
       // Validate the update data
       const updateData = {
-        ...currentPage,
-        ...(connectedToken !== undefined && { connectedToken }),
-        ...(title !== undefined && { title }),
-        ...(description !== undefined && { description }),
-        ...(image !== undefined && { image }),
-        ...(items !== undefined && { items }),
-        ...(designStyle !== undefined && { designStyle }),
-        ...(fonts !== undefined && { fonts }),
+        walletAddress: currentPage.walletAddress,
+        slug,
+        connectedToken: connectedToken ?? currentPage.connectedToken,
+        tokenSymbol: currentPage.tokenSymbol,
+        title: title ?? currentPage.title,
+        description: description ?? currentPage.description,
+        image: image ?? currentPage.image,
+        items: items ?? currentPage.items,
+        designStyle: designStyle ?? currentPage.designStyle,
+        fonts: fonts ?? currentPage.fonts,
+        createdAt: currentPage.createdAt,
         updatedAt: new Date().toISOString(),
       };
 

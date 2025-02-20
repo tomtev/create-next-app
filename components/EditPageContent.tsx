@@ -83,7 +83,7 @@ export default function EditPageContent({
             <div className="pf-page__header-inner">
               {pageData?.image && (
                 <img
-                  className="pf-page__image cursor-pointer hover:opacity-80"
+                  className="pf-page__image cursor-pointer"
                   src={pageData.image}
                   alt={pageData.title}
                   onClick={onImageClick}
@@ -93,16 +93,16 @@ export default function EditPageContent({
                 />
               )}
               <h1
-                className={`pf-page__title cursor-pointer hover:opacity-80 ${
-                  themeStyle?.effects?.titleGradientBackground ? 'pf-gradient-text' : ''
+                className={`pf-page__title cursor-pointer ${
+                  themeStyle?.effects?.titleGradientBackground ? 'pf-page__title--has-gradient' : ''
                 }`}
                 onClick={onTitleClick}>
                 {pageData?.title || "Untitled Page"}
               </h1>
               {pageData?.description && (
                 <p
-                  className={`pf-page__description cursor-pointer hover:opacity-80 ${
-                    themeStyle?.effects?.descriptionGradientBackground ? 'pf-gradient-text' : ''
+                  className={`pf-page__description cursor-pointer ${
+                    themeStyle?.effects?.descriptionGradientBackground ? 'pf-page__description--has-gradient' : ''
                   }`}
                   onClick={onDescriptionClick}>
                   {pageData.description}
