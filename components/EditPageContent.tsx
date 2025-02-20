@@ -83,7 +83,7 @@ export default function EditPageContent({
             <div className="pf-page__header-inner">
               {pageData?.image && (
                 <img
-                  className="pf-page__image cursor-pointer"
+                  className="pf-page__image cursor-pointer hover:opacity-90"
                   src={pageData.image}
                   alt={pageData.title}
                   onClick={onImageClick}
@@ -94,18 +94,22 @@ export default function EditPageContent({
               )}
               <h1
                 className={`pf-page__title cursor-pointer ${
-                  themeStyle?.effects?.titleGradientBackground ? 'pf-page__title--has-gradient' : ''
+                  themeStyle?.effects?.titleGradientBackground
+                    ? "pf-page__title--has-gradient"
+                    : ""
                 }`}
                 onClick={onTitleClick}>
-                {pageData?.title || "Untitled Page"}
+                <span>{pageData?.title || "Untitled Page"}</span>
               </h1>
               {pageData?.description && (
                 <p
                   className={`pf-page__description cursor-pointer ${
-                    themeStyle?.effects?.descriptionGradientBackground ? 'pf-page__description--has-gradient' : ''
+                    themeStyle?.effects?.descriptionGradientBackground
+                      ? "pf-page__description--has-gradient"
+                      : ""
                   }`}
                   onClick={onDescriptionClick}>
-                  {pageData.description}
+                  <span>{pageData.description}</span>
                 </p>
               )}
             </div>
@@ -117,7 +121,7 @@ export default function EditPageContent({
               <DragDropProvider onDragEnd={handleDragEnd}>
                 <div className="pf-links__grid">
                   {(items as (PageItem | undefined)[])
-                    .filter((item): item is PageItem => 
+                    .filter((item): item is PageItem =>
                       Boolean(item && item.id && item.presetId)
                     )
                     .sort((a, b) => a.order - b.order)

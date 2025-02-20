@@ -107,9 +107,7 @@ export default function PageLink({
   };
 
   const itemContent = (
-    <div
-      className={`pf-link relative`}
-      ref={linkRef}>
+    <div className={`pf-link relative`} ref={linkRef}>
       <div className="pf-link__inner">
         <div className="pf-link__icon-container">
           <div className="pf-link__icon">
@@ -138,18 +136,27 @@ export default function PageLink({
         </div>
       </div>
       {themeStyle?.effects?.linkGradientBorder && (
-        <div className="pf-gradient-border pointer-events-none absolute inset-0 rounded-[inherit]">
+        <div
+          className="pf-gradient-border pointer-events-none absolute inset-0 rounded-[inherit]"
+          style={{
+            ['--pf-gradient-border' as string]: `${
+              themeStyle?.styles?.["--pf-gradient-border"]
+            }`
+          }}>
           <div className="pf-gradient-border__inner absolute inset-0 rounded-[inherit]"></div>
         </div>
       )}
 
       {themeStyle?.effects?.linkPixelBorder && (
-        <div 
+        <div
           className="pf-pixel-border absolute pointer-events-none inset-0"
           style={{
             borderImageSource: `url("data:image/svg+xml;utf8,${encodeURIComponent(
-              `<svg version="1.1" width="5" height="5" xmlns="http://www.w3.org/2000/svg"><path d="M2 1 h1 v1 h-1 z M1 2 h1 v1 h-1 z M3 2 h1 v1 h-1 z M2 3 h1 v1 h-1 z" fill="${themeStyle?.styles?.['--pf-pixel-border-color'] || 'rgb(33,37,41)'}"/></svg>`
-            )}")`
+              `<svg version="1.1" width="5" height="5" xmlns="http://www.w3.org/2000/svg"><path d="M2 1 h1 v1 h-1 z M1 2 h1 v1 h-1 z M3 2 h1 v1 h-1 z M2 3 h1 v1 h-1 z" fill="${
+                themeStyle?.styles?.["--pf-pixel-border-color"] ||
+                "rgb(33,37,41)"
+              }"/></svg>`
+            )}")`,
           }}
         />
       )}

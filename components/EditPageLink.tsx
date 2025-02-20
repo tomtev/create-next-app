@@ -104,10 +104,14 @@ export default function EditPageLink({
           )}
           {itemContent}
           {themeStyle?.effects?.linkGradientBorder && (
-            <div className="pf-gradient-border pointer-events-none absolute inset-0 rounded-[inherit]">
+            <div
+              className="pf-gradient-border pointer-events-none absolute inset-0 rounded-[inherit]"
+              style={{
+                ["--pf-gradient-border" as string]: `${themeStyle?.styles?.["--pf-gradient-border"]}`,
+              }}>
               <div className="pf-gradient-border__inner absolute inset-0 rounded-[inherit]"></div>
             </div>
-          )}
+          )}: 
 
           {themeStyle?.effects?.linkPixelBorder && (
             <div

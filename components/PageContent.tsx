@@ -6,7 +6,6 @@ import Link from "next/link";
 import PageLink from "./PageLink";
 import { Logo } from "./logo";
 import { ThemeConfig } from "@/lib/themes";
-import { createMagnetEffect } from "@/lib/magnetEffect";
 
 interface PageContentProps {
   pageData: PageData;
@@ -19,7 +18,6 @@ export default function PageContent({
   items = pageData?.items || [],
   themeStyle,
 }: PageContentProps) {
-  const pageRef = useRef<HTMLDivElement>(null);
   const [openDrawer, setOpenDrawer] = useState<string | null>(null);
   const [verifying, setVerifying] = useState<string | null>(null);
   const [accessStates, setAccessStates] = useState<Map<string, boolean>>(
@@ -28,11 +26,6 @@ export default function PageContent({
   const [tokenGatedUrls, setTokenGatedUrls] = useState<Map<string, string>>(
     new Map()
   );
-
-  useEffect(() => {
-    const cleanup = createMagnetEffect(pageRef.current, themeStyle?.effects?.pageMagnet);
-    return () => cleanup?.();
-  }, [themeStyle?.effects?.pageMagnet]);
 
   const fetchTokenGatedContent = async (itemId: string) => {
     try {
@@ -114,7 +107,6 @@ export default function PageContent({
 
   return (
     <div
-      ref={pageRef}
       className="pf-page"
       style={
         {
@@ -148,7 +140,7 @@ export default function PageContent({
               />
             )}
             <h1 className={`pf-page__title ${themeStyle?.effects?.titleGradientBackground ? 'pf-page__title--has-gradient' : ''}`}>
-              {pageData?.title || "Untitled Page"}
+              <span>{pageData?.title || "Untitled Page"}</span>
             </h1>
             {pageData?.description && (
               <p className={`pf-page__description ${themeStyle?.effects?.descriptionGradientBackground ? 'pf-page__description--has-gradient' : ''}`}>
