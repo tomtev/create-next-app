@@ -284,7 +284,7 @@ export default function GatedLinkPage(props: GatedLinkPageProps) {
         direction="bottom"
       >
         <DrawerContent>
-          <DrawerFooter className="gap-3 text-center">
+          <DrawerFooter className="gap-3 text-center pf-container mx-auto">
             {props.pageData.image && (
               <div className="flex justify-center mb-4">
                 <img
