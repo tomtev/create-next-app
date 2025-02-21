@@ -14,6 +14,13 @@ interface PageLinkProps {
   onLinkClick?: (itemId: string) => void;
   isPreview?: boolean;
   themeStyle?: ThemeConfig;
+  openDrawer?: string | null;
+  setOpenDrawer?: (id: string | null) => void;
+  verifying?: string | null;
+  accessStates?: Map<string, boolean>;
+  tokenGatedUrls?: Map<string, string>;
+  onTokenGatedClick?: (item: PageItem) => void;
+  onVerifyAccess?: (itemId: string, tokenAddress: string, requiredAmount: string) => void;
 }
 
 // Helper to track link clicks
@@ -42,6 +49,13 @@ export default function PageLink({
   onLinkClick,
   isPreview = false,
   themeStyle,
+  openDrawer,
+  setOpenDrawer,
+  verifying,
+  accessStates,
+  tokenGatedUrls,
+  onTokenGatedClick,
+  onVerifyAccess,
 }: PageLinkProps) {
   const router = useRouter();
   const linkRef = useRef<HTMLDivElement>(null);

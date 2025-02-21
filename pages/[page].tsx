@@ -252,6 +252,24 @@ export default function Page({ pageData, slug, error, isOwner }: PageProps) {
   // Get the current child route
   const childRoute = router.asPath.split("/").slice(2)[0];
 
+  // Generate CSS variables string
+  const generateCssVariables = (data: PageData) => {
+    const currentTheme = data.designStyle || 'default';
+    const themeStyles = themes[currentTheme]?.styles || {};
+    
+    return `
+      :root {
+        --pf-font-family-default: ${data.fonts?.global ? `'${data.fonts.global}', sans-serif` : 'var(--pf-font-family-default)'};
+        --pf-font-family-heading: ${data.fonts?.heading ? `'${data.fonts.heading}', sans-serif` : 'var(--pf-font-family-default)'};
+        --pf-font-family-paragraph: ${data.fonts?.paragraph ? `'${data.fonts.paragraph}', sans-serif` : 'var(--pf-font-family-default)'};
+        --pf-font-family-links: ${data.fonts?.links ? `'${data.fonts.links}', sans-serif` : 'var(--pf-font-family-default)'};
+        ${Object.entries(themeStyles)
+          .map(([key, value]) => `${key}: ${value};`)
+          .join('\n        ')}
+      }
+    `;
+  };
+
   if (error) {
     return (
       <div className="min-h-screen bg-background p-6">
@@ -312,13 +330,16 @@ export default function Page({ pageData, slug, error, isOwner }: PageProps) {
             )}
           </>
         )}
+        <style>{processedPageData ? generateCssVariables(processedPageData) : ''}</style>
       </Head>
 
-      <PageContent
-        pageData={processedPageData}
-        items={processedPageData.items}
-        themeStyle={themes[pageDetails.designStyle || "default"]}
-      />
+      <div className="pf-page">
+        <PageContent
+          pageData={processedPageData}
+          items={processedPageData.items}
+          themeStyle={themes[pageDetails.designStyle || "default"]}
+        />
+      </div>
 
       {/*isOwner && (
         <Button

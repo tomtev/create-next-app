@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState } from "react";
 import { PageData, PageItem } from "@/types";
 import Link from "next/link";
 import PageLink from "./PageLink";
@@ -106,82 +106,62 @@ export default function PageContent({
   };
 
   return (
-    <div
-      className="pf-page"
-      style={
-        {
-          "--pf-font-family-global": pageData.fonts?.global
-            ? `'${pageData.fonts.global}', sans-serif`
-            : "var(--pf-font-family-default)",
-          "--pf-font-family-heading": pageData.fonts?.heading
-            ? `'${pageData.fonts.heading}', sans-serif`
-            : "var(--pf-font-family-global)",
-          "--pf-font-family-paragraph": pageData.fonts?.paragraph
-            ? `'${pageData.fonts.paragraph}', sans-serif`
-            : "var(--pf-font-family-global)",
-          "--pf-font-family-links": pageData.fonts?.links
-            ? `'${pageData.fonts.links}', sans-serif`
-            : "var(--pf-font-family-global)",
-          ...(themeStyle?.styles || {}),
-        } as React.CSSProperties
-      }>
-      <div className="pf-page__container">
-        {/* Page Header */}
-        <div className="pf-page__header">
-          <div className="pf-page__header-inner">
-            {pageData?.image && (
-              <img
-                className="pf-page__image"
-                src={pageData.image}
-                alt={pageData.title}
-                onError={(e) => {
-                  (e.target as HTMLImageElement).style.display = "none";
-                }}
-              />
-            )}
-            <h1 className={`pf-page__title ${themeStyle?.effects?.titleGradientBackground ? 'pf-page__title--has-gradient' : ''}`}>
-              <span>{pageData?.title || "Untitled Page"}</span>
-            </h1>
-            {pageData?.description && (
-              <p className={`pf-page__description ${themeStyle?.effects?.descriptionGradientBackground ? 'pf-page__description--has-gradient' : ''}`}>
-                {pageData.description}
-              </p>
-            )}
-          </div>
+    <div className="pf-page__container">
+      {/* Page Header */}
+      <div className="pf-page__header">
+        <div className="pf-page__header-inner">
+          {pageData?.image && (
+            <img
+              className="pf-page__image"
+              src={pageData.image}
+              alt={pageData.title}
+              onError={(e) => {
+                (e.target as HTMLImageElement).style.display = "none";
+              }}
+            />
+          )}
+          <h1 className={`pf-page__title ${themeStyle?.effects?.titleGradientBackground ? 'pf-page__title--has-gradient' : ''}`}>
+            <span>{pageData?.title || "Untitled Page"}</span>
+          </h1>
+          {pageData?.description && (
+            <p className={`pf-page__description ${themeStyle?.effects?.descriptionGradientBackground ? 'pf-page__description--has-gradient' : ''}`}>
+              {pageData.description}
+            </p>
+          )}
         </div>
+      </div>
 
-        {/* Social Links & Plugins */}
-        {items && items.length > 0 && (
-          <div className="pf-links">
-            <div className="pf-links__grid">
-              {items
-                .filter((item) => item && item.id && item.presetId)
-                .sort((a, b) => a.order - b.order)
-                .map((item) => (
-                  <PageLink
-                    key={item.id}
-                    item={item}
-                    pageData={pageData}
-                    openDrawer={openDrawer}
-                    setOpenDrawer={setOpenDrawer}
-                    verifying={verifying}
-                    accessStates={accessStates}
-                    tokenGatedUrls={tokenGatedUrls}
-                    onTokenGatedClick={handleTokenGatedClick}
-                    onVerifyAccess={verifyAccess}
-                    themeStyle={themeStyle}
-                  />
-                ))}
-            </div>
+      {/* Social Links & Plugins */}
+      {items && items.length > 0 && (
+        <div className="pf-links">
+          <div className="pf-links__grid">
+            {items
+              .filter((item) => item && item.id && item.presetId)
+              .sort((a, b) => a.order - b.order)
+              .map((item) => (
+                <PageLink
+                  key={item.id}
+                  item={item}
+                  pageData={pageData}
+                  openDrawer={openDrawer}
+                  setOpenDrawer={setOpenDrawer}
+                  verifying={verifying}
+                  accessStates={accessStates}
+                  tokenGatedUrls={tokenGatedUrls}
+                  onTokenGatedClick={handleTokenGatedClick}
+                  onVerifyAccess={verifyAccess}
+                  themeStyle={themeStyle}
+                />
+              ))}
           </div>
-        )}
-        <div className="flex mt-10 items-center justify-center gap-1 text-sm opacity-50 hover:opacity-100 transition-opacity">
-          <Link href="/" className="flex items-center gap-1">
-            <span> Built with</span>
-            <Logo />
-            <span>page.fun</span>
-          </Link>
         </div>
+      )}
+      <div className="flex mt-10 items-center justify-center gap-1 text-sm opacity-50 hover:opacity-100 transition-opacity">
+        <Link href="/" className="flex items-center gap-1">
+          <span> Built with</span>
+          <Logo />
+          <span>page.fun</span>
+        </Link>
       </div>
     </div>
   );

@@ -150,6 +150,24 @@ export default function EditPage({ slug, pageData, error }: PageProps) {
   const [linksDrawerOpen, setLinksDrawerOpen] = useState(false);
   const [focusField, setFocusField] = useState<'title' | 'description' | 'image'>();
 
+  // Generate CSS variables string
+  const generateCssVariables = (data: PageData) => {
+    const currentTheme = data.designStyle || 'default';
+    const themeStyles = themes[currentTheme]?.styles || {};
+    
+    return `
+      :root {
+        --pf-font-family-default: ${data.fonts?.global ? `'${data.fonts.global}', sans-serif` : 'var(--pf-font-family-default)'};
+        --pf-font-family-heading: ${data.fonts?.heading ? `'${data.fonts.heading}', sans-serif` : 'var(--pf-font-family-default)'};
+        --pf-font-family-paragraph: ${data.fonts?.paragraph ? `'${data.fonts.paragraph}', sans-serif` : 'var(--pf-font-family-default)'};
+        --pf-font-family-links: ${data.fonts?.links ? `'${data.fonts.links}', sans-serif` : 'var(--pf-font-family-default)'};
+        ${Object.entries(themeStyles)
+          .map(([key, value]) => `${key}: ${value};`)
+          .join('\n        ')}
+      }
+    `;
+  };
+
   // Handle ESC key to close drawer
   useEffect(() => {
     const handleEsc = (event: KeyboardEvent) => {
@@ -186,10 +204,10 @@ export default function EditPage({ slug, pageData, error }: PageProps) {
       const themePreset = themes[currentTheme];
       
       const fonts = {
-        global: pageData.fonts?.global || themePreset.fonts.global || undefined,
-        heading: pageData.fonts?.heading || themePreset.fonts.heading || undefined,
-        paragraph: pageData.fonts?.paragraph || themePreset.fonts.paragraph || undefined,
-        links: pageData.fonts?.links || themePreset.fonts.links || undefined,
+        global: pageData.fonts?.global || themePreset?.fonts?.global || 'Inter',
+        heading: pageData.fonts?.heading || themePreset?.fonts?.heading || 'Inter',
+        paragraph: pageData.fonts?.paragraph || themePreset?.fonts?.paragraph || 'Inter',
+        links: pageData.fonts?.links || themePreset?.fonts?.links || 'Inter',
       };
 
       const initialPageData: PageData = {
@@ -211,7 +229,10 @@ export default function EditPage({ slug, pageData, error }: PageProps) {
         ...pageDetails,
         designStyle: currentTheme,
         fonts: {
-          ...pageDetails.fonts,
+          global: pageDetails.fonts?.global || themes[currentTheme]?.fonts?.global || 'Inter',
+          heading: pageDetails.fonts?.heading || themes[currentTheme]?.fonts?.heading || 'Inter',
+          paragraph: pageDetails.fonts?.paragraph || themes[currentTheme]?.fonts?.paragraph || 'Inter',
+          links: pageDetails.fonts?.links || themes[currentTheme]?.fonts?.links || 'Inter',
         },
       });
     }
@@ -477,6 +498,7 @@ export default function EditPage({ slug, pageData, error }: PageProps) {
             rel="stylesheet"
           />
         )}
+        <style>{previewData ? generateCssVariables(previewData) : ''}</style>
       </Head>
 
       <main className="min-h-screen">
@@ -489,26 +511,29 @@ export default function EditPage({ slug, pageData, error }: PageProps) {
 
         {/* Main content */}
         {previewData && (
-          <EditPageContent
-            pageData={previewData}
-            themeStyle={themes[previewData.designStyle || 'default']}
-            onLinkClick={handleLinkClick}
-            onTitleClick={() => {
-              setFocusField('title');
-              setSettingsDrawerOpen(true);
-            }}
-            onDescriptionClick={() => {
-              setFocusField('description');
-              setSettingsDrawerOpen(true);
-            }}
-            onImageClick={() => {
-              setFocusField('image');
-              setSettingsDrawerOpen(true);
-            }}
-            onItemsReorder={handleItemsReorder}
-            validationErrors={validationErrors}
-            onAddLinkClick={handleAddLink}
-          />
+          <div className="pf-page">
+            <EditPageContent
+              pageData={previewData}
+              items={previewData.items?.filter((item): item is PageItem => Boolean(item && item.id && item.presetId)) || []}
+              themeStyle={themes[previewData.designStyle || 'default']}
+              onLinkClick={handleLinkClick}
+              onTitleClick={() => {
+                setFocusField('title');
+                setSettingsDrawerOpen(true);
+              }}
+              onDescriptionClick={() => {
+                setFocusField('description');
+                setSettingsDrawerOpen(true);
+              }}
+              onImageClick={() => {
+                setFocusField('image');
+                setSettingsDrawerOpen(true);
+              }}
+              onItemsReorder={handleItemsReorder}
+              validationErrors={validationErrors}
+              onAddLinkClick={handleAddLink}
+            />
+          </div>
         )}
 
         {/* Settings Drawer */}

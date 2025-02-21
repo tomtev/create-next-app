@@ -8,7 +8,7 @@ import { ThemeConfig } from "@/lib/themes";
 
 interface EditPageContentProps {
   pageData: PageData;
-  items?: PageItem[];
+  items: PageItem[];
   themeStyle?: ThemeConfig;
   onLinkClick?: (itemId: string) => void;
   onTitleClick?: () => void;
@@ -21,7 +21,7 @@ interface EditPageContentProps {
 
 export default function EditPageContent({
   pageData,
-  items = pageData.items || [],
+  items,
   themeStyle,
   onLinkClick,
   onTitleClick,
@@ -57,90 +57,67 @@ export default function EditPageContent({
   };
 
   return (
-    <div>
-      <div
-        className="pf-page"
-        style={
-          {
-            "--pf-font-family-global": pageData.fonts?.global
-              ? `'${pageData.fonts.global}', sans-serif`
-              : "var(--pf-font-family-default)",
-            "--pf-font-family-heading": pageData.fonts?.heading
-              ? `'${pageData.fonts.heading}', sans-serif`
-              : "var(--pf-font-family-global)",
-            "--pf-font-family-paragraph": pageData.fonts?.paragraph
-              ? `'${pageData.fonts.paragraph}', sans-serif`
-              : "var(--pf-font-family-global)",
-            "--pf-font-family-links": pageData.fonts?.links
-              ? `'${pageData.fonts.links}', sans-serif`
-              : "var(--pf-font-family-global)",
-            ...(themeStyle?.styles || {}),
-          } as React.CSSProperties
-        }>
-        <div className="pf-page__container">
-          {/* Page Header */}
-          <div className="pf-page__header">
-            <div className="pf-page__header-inner">
-              {pageData?.image && (
-                <img
-                  className="pf-page__image cursor-pointer hover:opacity-90"
-                  src={pageData.image}
-                  alt={pageData.title}
-                  onClick={onImageClick}
-                  onError={(e) => {
-                    (e.target as HTMLImageElement).style.display = "none";
-                  }}
-                />
-              )}
-              <h1
-                className={`pf-page__title cursor-pointer ${
-                  themeStyle?.effects?.titleGradientBackground
-                    ? "pf-page__title--has-gradient"
+    <>
+      <div className="pf-page__container">
+        {/* Page Header */}
+        <div className="pf-page__header">
+          <div className="pf-page__header-inner">
+            {pageData?.image && (
+              <img
+                className="pf-page__image cursor-pointer hover:opacity-90"
+                src={pageData.image}
+                alt={pageData.title}
+                onClick={onImageClick}
+                onError={(e) => {
+                  (e.target as HTMLImageElement).style.display = "none";
+                }}
+              />
+            )}
+            <h1
+              className={`pf-page__title cursor-pointer ${
+                themeStyle?.effects?.titleGradientBackground
+                  ? "pf-page__title--has-gradient"
+                  : ""
+              }`}
+              onClick={onTitleClick}>
+              <span>{pageData?.title || "Untitled Page"}</span>
+            </h1>
+            {pageData?.description && (
+              <p
+                className={`pf-page__description cursor-pointer ${
+                  themeStyle?.effects?.descriptionGradientBackground
+                    ? "pf-page__description--has-gradient"
                     : ""
                 }`}
-                onClick={onTitleClick}>
-                <span>{pageData?.title || "Untitled Page"}</span>
-              </h1>
-              {pageData?.description && (
-                <p
-                  className={`pf-page__description cursor-pointer ${
-                    themeStyle?.effects?.descriptionGradientBackground
-                      ? "pf-page__description--has-gradient"
-                      : ""
-                  }`}
-                  onClick={onDescriptionClick}>
-                  <span>{pageData.description}</span>
-                </p>
-              )}
-            </div>
+                onClick={onDescriptionClick}>
+                <span>{pageData.description}</span>
+              </p>
+            )}
           </div>
-
-          {/* Social Links & Plugins */}
-          {items && items.length > 0 && (
-            <div className="pf-links">
-              <DragDropProvider onDragEnd={handleDragEnd}>
-                <div className="pf-links__grid">
-                  {(items as (PageItem | undefined)[])
-                    .filter((item): item is PageItem =>
-                      Boolean(item && item.id && item.presetId)
-                    )
-                    .sort((a, b) => a.order - b.order)
-                    .map((item, index) => (
-                      <EditPageLink
-                        key={item.id}
-                        item={item}
-                        index={index}
-                        pageData={pageData}
-                        onLinkClick={onLinkClick}
-                        error={validationErrors[item.id]}
-                        themeStyle={themeStyle}
-                      />
-                    ))}
-                </div>
-              </DragDropProvider>
-            </div>
-          )}
         </div>
+
+        {/* Social Links & Plugins */}
+        {items && items.length > 0 && (
+          <div className="pf-links">
+            <DragDropProvider onDragEnd={handleDragEnd}>
+              <div className="pf-links__grid">
+                {items
+                  .sort((a, b) => a.order - b.order)
+                  .map((item, index) => (
+                    <EditPageLink
+                      key={item.id}
+                      item={item}
+                      index={index}
+                      pageData={pageData}
+                      onLinkClick={onLinkClick}
+                      error={validationErrors[item.id]}
+                      themeStyle={themeStyle}
+                    />
+                  ))}
+              </div>
+            </DragDropProvider>
+          </div>
+        )}
       </div>
       {/* Add Link Button */}
       <div className="fixed bottom-4 left-1/2 -translate-x-1/2">
@@ -151,6 +128,6 @@ export default function EditPageContent({
           </Button>
         </div>
       </div>
-    </div>
+    </>
   );
 }
