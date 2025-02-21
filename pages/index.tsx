@@ -31,7 +31,7 @@ export default function HomePage() {
         <title>Page.fun - Linktree alternative for tokens and memes.</title>
       </Head>
 
-      <main className="flex min-h-screen bg-muted min-w-full grid sm:grid-cols-2">
+      <main className="flex min-h-screen bg-background min-w-full grid sm:grid-cols-2">
         <div className="flex flex-1 min-h-[40vh] py-5 items-center text-center sm:text-left max-w-[450px] px-4 w-full mx-auto">
           <div>
             <h1 className="text-xl mb-4 flex items-center gap-2 justify-center sm:justify-start">
@@ -39,18 +39,24 @@ export default function HomePage() {
               page.fun
               <span className="text-xs opacity-75 text-green-600">beta</span>
             </h1>
-            <h1 className="text-3xl sm:text-4xl font-semibold mb-6">
-              The fun page that connects all your socials.
+            <h1 className="text-4xl sm:text-5xl font-semibold mb-6">
+              The fun between your socials.
             </h1>
-            <p className="text-xl opacity-75 mb-6">
-              A Linktree alternative powered by Solana.
+            <p className="text-lg opacity-75 mb-6">
+              A Linktree alternative for you, memes and AI agents. The easiest way to add utility to Solana coins.
             </p>
             {typeof isAuthenticated === "undefined" ? (
-              <Button variant="skeleton" disabled className="w-[180px]">
+              <Button
+                size="lg"
+                variant="skeleton"
+                disabled
+                className="w-[180px]">
                 Loading...
               </Button>
             ) : isAuthenticated ? (
               <Button
+                variant="secondary"
+                size="lg"
                 onClick={
                   isLoadingPages
                     ? undefined
@@ -66,11 +72,8 @@ export default function HomePage() {
                   : "Create Page"}
               </Button>
             ) : (
-              <Button onClick={login}>
-                <span>Get your </span>
-                <span className="-ml-1">page.fun</span>
-                <span className="opacity-75 -mx-1 opacity-50">/</span>
-                <span className="text-green-300">token</span>
+              <Button variant="secondary" size="lg" onClick={login}>
+                <span>Get your page.fun/name</span>
               </Button>
             )}
           </div>

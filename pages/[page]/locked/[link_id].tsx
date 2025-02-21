@@ -281,7 +281,6 @@ export default function GatedLinkPage(props: GatedLinkPageProps) {
         onOpenChange={(open) => {
           if (!open) router.push(`/${page}`);
         }}
-        direction="bottom"
       >
         <DrawerContent>
           <DrawerFooter className="gap-3 text-center pf-container mx-auto">
