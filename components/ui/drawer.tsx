@@ -79,8 +79,8 @@ const DrawerContent = React.forwardRef<
     bottom:
       "fixed inset-x-2 bottom-0 flex h-auto max-h-[70vh] md:h-auto outline-none !rounded-b-0 flex-col z-50 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:slide-out-to-bottom data-[state=open]:slide-in-from-bottom duration-600",
     right:
-      "fixed inset-x-2 md:left-auto md:top-2 md:right-2 bottom-0 md:bottom-auto md:w-[340px] max-h-[100vh] outline-none flex z-50 data-[state=open]:animate-in data-[state=closed]:animate-out md:data-[state=closed]:slide-out-to-right md:data-[state=open]:slide-in-from-right data-[state=closed]:slide-out-to-bottom data-[state=open]:slide-in-from-bottom duration-600",
-    left: "fixed inset-x-2 md:right-auto md:top-2 md:left-2 md:w-[340px] bottom-0 md:bottom-auto max-h-[100vh] outline-none flex z-50 data-[state=open]:animate-in data-[state=closed]:animate-out md:data-[state=closed]:slide-out-to-left md:data-[state=open]:slide-in-from-left data-[state=closed]:slide-out-to-bottom data-[state=open]:slide-in-from-bottom duration-600",
+      "fixed inset-x-2 md:left-auto md:top-2 md:right-2 bottom-0 md:bottom-auto md:w-[380px] max-h-[100vh] outline-none flex z-50 data-[state=open]:animate-in data-[state=closed]:animate-out md:data-[state=closed]:slide-out-to-right md:data-[state=open]:slide-in-from-right data-[state=closed]:slide-out-to-bottom data-[state=open]:slide-in-from-bottom duration-600",
+    left: "fixed inset-x-2 md:right-auto md:top-2 md:left-2 md:w-[380px] bottom-0 md:bottom-auto max-h-[100vh] outline-none flex z-50 data-[state=open]:animate-in data-[state=closed]:animate-out md:data-[state=closed]:slide-out-to-left md:data-[state=open]:slide-in-from-left data-[state=closed]:slide-out-to-bottom data-[state=open]:slide-in-from-bottom duration-600",
   };
 
   return (

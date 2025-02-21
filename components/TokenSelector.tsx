@@ -47,7 +47,7 @@ export default function TokenSelector({
     setIsLoading(true);
     setError(null);
     try {
-      const response = await fetch(`/api/tokens/metadata?address=${address}`);
+      const response = await fetch(`/api/token-metadata?address=${address}`);
       const data = await response.json();
       
       if (!response.ok) {

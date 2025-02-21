@@ -8,7 +8,6 @@ import { Redis } from "@upstash/redis";
 import { Button } from "@/components/ui/button";
 import { Drawer, DrawerContent } from "@/components/ui/drawer";
 import { useToast } from "@/hooks/use-toast";
-import { Toaster } from "@/components/ui/toaster";
 import { ToastAction } from "@/components/ui/toast";
 import { isSolanaWallet } from "@/utils/wallet";
 import { GOOGLE_FONTS } from "@/lib/fonts";
@@ -587,8 +586,6 @@ export default function EditPage({ slug, pageData, error }: PageProps) {
           </DrawerContent>
         </Drawer>
       </main>
-
-      <Toaster />
     </>
   );
 }

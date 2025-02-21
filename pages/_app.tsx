@@ -2,6 +2,7 @@ import type { AppProps } from "next/app";
 import Head from "next/head";
 import { PrivyProvider } from "@privy-io/react-auth";
 import { toSolanaWalletConnectors } from "@privy-io/react-auth/solana";
+import { Toaster } from "@/components/ui/toaster";
 import { GlobalProvider } from "@/lib/context";
 import AppMenu from "@/components/AppMenu";
 import "../styles/globals.css";
@@ -14,6 +15,7 @@ function AppContent({ Component, pageProps }: AppProps) {
         <AppMenu />
       </div>
       <Component {...pageProps} />
+      <Toaster />
     </GlobalProvider>
   );
 }

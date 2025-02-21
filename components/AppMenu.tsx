@@ -1,5 +1,5 @@
 import { useRouter } from "next/router";
-import { usePrivy, useLogin } from "@privy-io/react-auth";
+import { usePrivy, useLogin, useSolanaWallets } from "@privy-io/react-auth";
 import { Button } from "@/components/ui/button";
 import { Plus, Menu, ArrowLeft } from "lucide-react";
 import Link from "next/link";
@@ -19,6 +19,7 @@ import CreatePageModal from "./CreatePageModal";
 import { useGlobalContext } from "@/lib/context";
 import Spinner from "./Spinner";
 import { Skeleton } from "./ui/skeleton";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 type AppMenuProps = {
   className?: string;
@@ -67,10 +68,12 @@ export default function AppMenu({
   const [isLoading, setIsLoading] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
 
-  const { userPages, isLoadingPages, hasPageTokenAccess } = useGlobalContext();
+  const { userPages, isLoadingPages, hasPageTokenAccess, tokenHoldings } = useGlobalContext();
   const solanaWallet = user?.linkedAccounts?.find(isSolanaWallet);
   const numAccounts = user?.linkedAccounts?.length || 0;
   const canRemoveAccount = numAccounts > 1;
+
+  const { exportWallet } = useSolanaWallets();
 
   // Close sheet on route change
   useEffect(() => {
@@ -131,8 +134,8 @@ export default function AppMenu({
                   <div className="text-xs text-green-500">beta</div>
                 </Link>
                 <div>
-                  <Button 
-                    variant="outline" 
+                  <Button
+                    variant="outline"
                     size="sm"
                     onClick={() => {
                       setOpen(false);
@@ -144,15 +147,6 @@ export default function AppMenu({
               </div>
               <div className="flex items-center gap-2">
                 <div className="text-sm mr-auto">Your pages</div>
-                <Button
-                  size="sm"
-                  onClick={() => {
-                    setShowCreateModal(true);
-                    setOpen(false);
-                  }}>
-                  <Plus className="h-4 w-4" />
-                  New Page
-                </Button>
               </div>
 
               {ready && authenticated ? (
@@ -231,11 +225,26 @@ export default function AppMenu({
                 </>
               )}
             </div>
+            <div className="py-5">
+              <Button
+                size="sm"
+                className="w-full"
+                onClick={() => {
+                  setShowCreateModal(true);
+                  setOpen(false);
+                }}>
+                <Plus className="h-4 w-4" />
+                New Page
+              </Button>
+            </div>
           </div>
         </DrawerContent>
       </Drawer>
 
-      <Drawer open={walletDrawerOpen} onOpenChange={setWalletDrawerOpen} direction="left">
+      <Drawer
+        open={walletDrawerOpen}
+        onOpenChange={setWalletDrawerOpen}
+        direction="left">
         <DrawerContent direction="left">
           <div className="flex-1 overflow-y-auto">
             <div className="space-y-4">
@@ -252,14 +261,62 @@ export default function AppMenu({
                 </Button>
                 <div className="font-bold">Wallet Settings</div>
               </div>
-              
+
               <div className="space-y-3">
                 {solanaWallet && (
                   <>
-                    <div className="p-4 border rounded-lg">
-                      <div className="text-sm font-medium mb-1">Connected Wallet</div>
-                      <div className="text-sm text-muted-foreground">{solanaWallet.address}</div>
+                    <div className="p-4 border rounded-lg space-y-3">
+                      <Tabs defaultValue="wallet" className="w-full">
+                        <TabsList className="grid w-full grid-cols-2">
+                          <TabsTrigger value="wallet">Wallet</TabsTrigger>
+                          <TabsTrigger value="tokens">Tokens</TabsTrigger>
+                        </TabsList>
+                        
+                        <TabsContent value="wallet" className="space-y-3">
+                          <div>
+                            <div className="text-sm font-medium mb-1">
+                              Connected Wallet
+                            </div>
+                            <div className="text-sm text-muted-foreground">
+                              {solanaWallet.address}
+                            </div>
+                          </div>
+                          
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => exportWallet({ address: solanaWallet.address })}
+                            className="w-full">
+                            Export Wallet
+                          </Button>
+                        </TabsContent>
+                        
+                        <TabsContent value="tokens" className="space-y-3">
+                          {tokenHoldings.length > 0 ? (
+                            <div className="space-y-1.5">
+                              {tokenHoldings.map((token) => (
+                                <div key={token.tokenAddress} className="flex justify-between items-center text-sm py-1">
+                                  <div className="text-muted-foreground truncate pr-4 flex-1">
+                                    {token.tokenAddress}
+                                  </div>
+                                  <div className="font-medium">{token.balance}</div>
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <div className="text-sm text-muted-foreground text-center py-2">
+                              No tokens found
+                            </div>
+                          )}
+                        </TabsContent>
+                      </Tabs>
                     </div>
+                    
+                    <div className="text-sm text-muted-foreground p-3 bg-muted/50 rounded-lg">
+                      <p>Pages are owned by the wallet that created them. You need access to the creator wallet to edit a page.</p>
+                      <p className="mt-1">In the future, wallets will be used to pay and get paid for page services.</p>
+                    </div>
+
                     <div className="space-y-2">
                       <Button
                         variant="outline"
@@ -277,6 +334,13 @@ export default function AppMenu({
                           Disconnect Wallet
                         </Button>
                       )}
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={linkWallet}
+                        className="w-full">
+                        Connect External Wallet
+                      </Button>
                     </div>
                   </>
                 )}

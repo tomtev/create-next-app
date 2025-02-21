@@ -43,6 +43,8 @@ export default async function handler(
 
     const data = await response.json();
 
+    console.log('Token holdings data:', data);
+
     if (!data.result?.items) {
       console.error('Unexpected API response format:', data);
       return res.status(500).json({ error: "Invalid API response" });

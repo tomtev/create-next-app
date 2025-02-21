@@ -343,7 +343,7 @@ export default function Page({ pageData, slug, error, isOwner }: PageProps) {
           onOpenChange={(open) => {
             if (!open) handleDrawerClose();
           }}
-          direction="right">
+          direction="bottom">
           <DrawerContent className="h-full">
             <Suspense
               fallback={

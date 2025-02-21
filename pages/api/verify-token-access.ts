@@ -1,135 +1,58 @@
-import type { NextApiRequest, NextApiResponse } from "next";
-import { PrivyClient } from "@privy-io/server-auth";
+import { NextApiRequest, NextApiResponse } from 'next';
+import { Redis } from "@upstash/redis";
 
-const PRIVY_APP_ID = process.env.NEXT_PUBLIC_PRIVY_APP_ID;
-const PRIVY_APP_SECRET = process.env.PRIVY_APP_SECRET;
-const HELIUS_API_KEY = process.env.NEXT_PUBLIC_HELIUS_API_KEY;
-const client = new PrivyClient(PRIVY_APP_ID!, PRIVY_APP_SECRET!);
+const redis = new Redis({
+  url: process.env.KV_REST_API_URL!,
+  token: process.env.KV_REST_API_TOKEN!,
+});
 
-async function verifyTokenOwnership(walletAddress: string, tokenAddress: string, requiredAmount: string) {
-  console.log('Checking token ownership for:', {
-    walletAddress,
-    tokenAddress,
-    requiredAmount
-  });
-
-  if (!HELIUS_API_KEY) {
-    console.error('Missing Helius API key');
-    return false;
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Method not allowed' });
   }
 
   try {
-    // Use Helius RPC endpoint
-    const response = await fetch(`https://mainnet.helius-rpc.com/?api-key=${HELIUS_API_KEY}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        jsonrpc: '2.0',
-        id: 'token-verification',
-        method: 'getAssetsByOwner',
-        params: {
-          ownerAddress: walletAddress,
-          page: 1,
-          limit: 1000,
-          displayOptions: {
-            showFungible: true
-          }
-        }
-      })
-    });
+    const { walletAddress, tokenAddress, requiredAmount } = req.body;
 
-    const data = await response.json();
-    console.log('Helius API response:', data);
-
-    if (!data.result?.items) {
-      console.error('Unexpected API response format:', data);
-      return false;
+    if (!walletAddress || !tokenAddress || !requiredAmount) {
+      return res.status(400).json({ error: 'Missing required parameters' });
     }
 
-    // Find the matching token in the results
-    const tokenAsset = data.result.items.find((asset: any) => 
-      asset.id === tokenAddress || 
-      asset.mint === tokenAddress ||
-      (asset.content?.metadata?.mint === tokenAddress)
-    );
+    try {
+      // Get token holdings from Redis
+      const tokenHoldings = await redis.get<{ tokens: Array<{ tokenAddress: string, balance: string }> }>(`token-holdings:${walletAddress.toLowerCase()}`);
+      
+      if (!tokenHoldings || !Array.isArray(tokenHoldings.tokens)) {
+        console.log('No token holdings found for wallet:', walletAddress);
+        return res.status(200).json({ 
+          hasAccess: false,
+          balance: '0'
+        });
+      }
 
-    console.log('Found token asset:', tokenAsset);
+      const tokenHolding = tokenHoldings.tokens.find(t => 
+        t.tokenAddress.toLowerCase() === tokenAddress.toLowerCase()
+      );
 
-    if (!tokenAsset) {
-      console.log('No matching token found');
-      return false;
+      console.log('Token holding check:', {
+        walletAddress,
+        tokenAddress,
+        requiredAmount,
+        foundToken: tokenHolding
+      });
+
+      const hasAccess = tokenHolding && parseFloat(tokenHolding.balance) >= parseFloat(requiredAmount);
+
+      return res.status(200).json({ 
+        hasAccess,
+        balance: tokenHolding?.balance || '0'
+      });
+    } catch (redisError) {
+      console.error('Redis error:', redisError);
+      throw new Error('Failed to fetch token holdings from Redis');
     }
-
-    // Get the balance from the token data
-    const balance = parseInt(tokenAsset.token_info?.balance || '0');
-    
-    console.log('Balance check:', {
-      balance,
-      requiredAmount: parseInt(requiredAmount),
-      hasEnough: balance >= parseInt(requiredAmount)
-    });
-
-    return balance >= parseInt(requiredAmount);
   } catch (error) {
-    console.error("Error verifying token ownership:", error);
-    return false;
-  }
-}
-
-export default async function handler(
-  req: NextApiRequest,
-  res: NextApiResponse
-) {
-  if (req.method !== "POST") {
-    return res.status(405).json({ error: "Method not allowed" });
-  }
-
-  try {
-    const { tokenAddress, requiredAmount } = req.body;
-    const idToken = req.cookies["privy-id-token"];
-
-    console.log('Received verification request:', {
-      tokenAddress,
-      requiredAmount,
-      hasIdToken: !!idToken
-    });
-
-    if (!idToken) {
-      return res.status(401).json({ error: "Not authenticated" });
-    }
-
-    // Get user's wallet from Privy
-    const user = await client.getUser({ idToken });
-    console.log('Privy user data:', {
-      userId: user.id,
-      linkedAccounts: user.linkedAccounts.map(acc => ({
-        type: acc.type,
-        chainType: acc.type === 'wallet' ? (acc as any).chainType : undefined,
-        address: acc.type === 'wallet' ? (acc as any).address : undefined
-      }))
-    });
-
-    const solanaWallet = user.linkedAccounts.find(
-      (account) => account.type === "wallet" && account.chainType === "solana"
-    );
-
-    if (!solanaWallet) {
-      console.log('No Solana wallet found for user');
-      return res.status(401).json({ error: "No Solana wallet connected" });
-    }
-
-    const walletAddress = (solanaWallet as any).address;
-    console.log('Found Solana wallet:', walletAddress);
-
-    const hasAccess = await verifyTokenOwnership(walletAddress, tokenAddress, requiredAmount);
-    console.log('Access verification result:', {
-      walletAddress,
-      hasAccess
-    });
-
-    return res.status(200).json({ hasAccess });
-  } catch (error) {
-    console.error("Error in verify-token-access:", error);
-    return res.status(500).json({ error: "Internal server error" });
+    console.error('Error verifying token access:', error);
+    return res.status(500).json({ error: 'Failed to verify token access' });
   }
 } 
