@@ -47,9 +47,7 @@ export const themes: Themes = {
       /* Link styles */
       "--pf-link-background": "rgba(255, 255, 255, 0.05)",
       "--pf-link-background-hover": "rgba(255, 255, 255, 0.1)",
-      "--pf-link-border-width": "1px",
-      "--pf-link-border-style": "solid",
-      "--pf-link-border-color": "rgba(255, 255, 255, 0.1)",
+      "--pf-link-border-color": "rgba(255, 255, 255, 0.4)",
     },
     fonts: {
       global: "Inter",
