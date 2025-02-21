@@ -31,29 +31,47 @@ interface GatedLinkPageProps {
   gatedUrl: string | null;
 }
 
-// Helper function to check token holdings
+// Update the checkTokenHoldings function
 async function checkTokenHoldings(walletAddress: string, tokenAddress: string, requiredAmount: string): Promise<boolean> {
+  const HELIUS_API_KEY = process.env.NEXT_PUBLIC_HELIUS_API_KEY;
+  
+  if (!HELIUS_API_KEY) {
+    console.error('Missing Helius API key');
+    return false;
+  }
+
   try {
-    const response = await fetch(`${process.env.KV_REST_API_URL}/api/token-holdings?walletAddress=${walletAddress}`, {
-      headers: {
-        Authorization: `Bearer ${process.env.KV_REST_API_TOKEN}`
-      }
+    const response = await fetch(`https://mainnet.helius-rpc.com/?api-key=${HELIUS_API_KEY}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        jsonrpc: '2.0',
+        id: 'token-holdings',
+        method: 'getAssetsByOwner',
+        params: {
+          ownerAddress: walletAddress,
+          page: 1,
+          limit: 1000,
+          displayOptions: {
+            showFungible: true
+          }
+        }
+      })
     });
 
-    if (!response.ok) {
-      throw new Error('Failed to fetch token holdings');
-    }
+    const data = await response.json();
 
-    const { tokens } = await response.json();
-    const tokenHolding = tokens?.find((t: { tokenAddress: string }) => 
-      t.tokenAddress.toLowerCase() === tokenAddress.toLowerCase()
-    );
-
-    if (!tokenHolding) {
+    if (!data.result?.items) {
       return false;
     }
 
-    return parseFloat(tokenHolding.balance) >= parseFloat(requiredAmount);
+    const tokenHolding = data.result.items
+      .find((asset: any) => 
+        (asset.id || asset.mint || asset.content?.metadata?.mint)?.toLowerCase() === tokenAddress.toLowerCase()
+      );
+
+    const balance = tokenHolding?.token_info?.balance || '0';
+    return parseFloat(balance) >= parseFloat(requiredAmount);
   } catch (error) {
     console.error('Error checking token holdings:', error);
     return false;
