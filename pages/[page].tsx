@@ -12,6 +12,7 @@ import { PrivyClient } from "@privy-io/server-auth";
 import { Redis } from "@upstash/redis";
 import Loader from "@/components/ui/loader";
 import { Drawer, DrawerContent } from "@/components/ui/drawer";
+import { useThemeStyles } from '@/hooks/use-theme-styles';
 
 // Dynamically import child routes
 const ProfilePage = dynamic(() => import("./[page]/profile"), {
@@ -252,23 +253,7 @@ export default function Page({ pageData, slug, error, isOwner }: PageProps) {
   // Get the current child route
   const childRoute = router.asPath.split("/").slice(2)[0];
 
-  // Generate CSS variables string
-  const generateCssVariables = (data: PageData) => {
-    const currentTheme = data.designStyle || 'default';
-    const themeStyles = themes[currentTheme]?.styles || {};
-    
-    return `
-      :root {
-        --pf-font-family-default: ${data.fonts?.global ? `'${data.fonts.global}', sans-serif` : 'var(--pf-font-family-default)'};
-        --pf-font-family-heading: ${data.fonts?.heading ? `'${data.fonts.heading}', sans-serif` : 'var(--pf-font-family-default)'};
-        --pf-font-family-paragraph: ${data.fonts?.paragraph ? `'${data.fonts.paragraph}', sans-serif` : 'var(--pf-font-family-default)'};
-        --pf-font-family-links: ${data.fonts?.links ? `'${data.fonts.links}', sans-serif` : 'var(--pf-font-family-default)'};
-        ${Object.entries(themeStyles)
-          .map(([key, value]) => `${key}: ${value};`)
-          .join('\n        ')}
-      }
-    `;
-  };
+  const { cssVariables, googleFontsUrl, themeConfig } = useThemeStyles(processedPageData);
 
   if (error) {
     return (
@@ -294,10 +279,7 @@ export default function Page({ pageData, slug, error, isOwner }: PageProps) {
           <meta name="description" content={processedPageData.description} />
         )}
 
-        {(processedPageData.fonts?.global ||
-          processedPageData.fonts?.heading ||
-          processedPageData.fonts?.paragraph ||
-          processedPageData.fonts?.links) && (
+        {googleFontsUrl && (
           <>
             <link rel="preconnect" href="https://fonts.googleapis.com" />
             <link
@@ -305,46 +287,25 @@ export default function Page({ pageData, slug, error, isOwner }: PageProps) {
               href="https://fonts.gstatic.com"
               crossOrigin="anonymous"
             />
-            {/* Create a single link element for all fonts */}
-            {[
-              processedPageData.fonts.global,
-              processedPageData.fonts.heading,
-              processedPageData.fonts.paragraph,
-              processedPageData.fonts.links,
-            ]
-              .filter(Boolean)
-              .map((font) => font?.replace(" ", "+"))
-              .join("&family=") && (
-              <link
-                href={`https://fonts.googleapis.com/css2?family=${[
-                  processedPageData.fonts.global,
-                  processedPageData.fonts.heading,
-                  processedPageData.fonts.paragraph,
-                  processedPageData.fonts.links,
-                ]
-                  .filter(Boolean)
-                  .map((font) => font?.replace(" ", "+"))
-                  .join("&family=")}&display=swap`}
-                rel="stylesheet"
-              />
-            )}
+            <link href={googleFontsUrl} rel="stylesheet" />
           </>
         )}
-        <style>{processedPageData ? generateCssVariables(processedPageData) : ''}</style>
+        <style>{cssVariables}</style>
       </Head>
 
       <div className="pf-page">
         <PageContent
           pageData={processedPageData}
           items={processedPageData.items}
-          themeStyle={themes[pageDetails.designStyle || "default"]}
+          themeStyle={themeConfig}
         />
       </div>
 
-      {/*isOwner && (
+      {isOwner && (
         <Button
           size="icon"
-          variant="outline"
+          variant="theme"
+          className="fixed top-2 right-2"
           onClick={async () => {
             setIsLoading(true);
             await router.push(`/edit/${slug}`);
@@ -356,7 +317,7 @@ export default function Page({ pageData, slug, error, isOwner }: PageProps) {
             <Pencil className="h-4 w-4" />
           )}
         </Button>
-      ) */}
+      )}
 
       {!isChildRoute && (
         <Drawer

@@ -120,7 +120,7 @@ export default function AppMenu({
     <div className={className}>
       <Drawer open={open} onOpenChange={setOpen} direction="left">
         <DrawerTrigger asChild>
-          <Button variant="outline" className={cn("px-2 bg-[var(--pf-link-background)] text-[var(--pf-link-color)] border-width-[var(--pf-link-border-width)] border-[var(--pf-link-border-color)]")}>
+          <Button variant="theme" className={cn("px-2")}>
             {isLoading ? <Spinner /> : <Menu className="h-5 w-5" />}
           </Button>
         </DrawerTrigger>

@@ -20,6 +20,7 @@ import { ActionBar } from "@/components/ActionBar";
 import { LinkSettingsDrawer } from "@/components/LinkSettingsDrawer";
 import { LinksDrawer } from "@/components/drawers/LinksDrawer";
 import { SettingsDrawer } from "@/components/drawers/SettingsDrawer";
+import { useThemeStyles } from '@/hooks/use-theme-styles';
 
 interface PageProps {
   slug: string;
@@ -149,6 +150,8 @@ export default function EditPage({ slug, pageData, error }: PageProps) {
   const [selectedLinkId, setSelectedLinkId] = useState<string | null>(null);
   const [linksDrawerOpen, setLinksDrawerOpen] = useState(false);
   const [focusField, setFocusField] = useState<'title' | 'description' | 'image'>();
+
+  const { cssVariables, googleFontsUrl, themeConfig } = useThemeStyles(previewData);
 
   // Generate CSS variables string
   const generateCssVariables = (data: PageData) => {
@@ -475,19 +478,8 @@ export default function EditPage({ slug, pageData, error }: PageProps) {
           crossOrigin="anonymous"
         />
         {/* Load theme fonts */}
-        {pageDetails?.fonts && (
-          <link
-            href={`https://fonts.googleapis.com/css2?family=${[
-              pageDetails.fonts.global,
-              pageDetails.fonts.heading,
-              pageDetails.fonts.paragraph,
-              pageDetails.fonts.links,
-            ]
-              .filter(Boolean)
-              .map((font) => font?.replace(" ", "+"))
-              .join("&family=")}&display=swap`}
-            rel="stylesheet"
-          />
+        {googleFontsUrl && (
+          <link href={googleFontsUrl} rel="stylesheet" />
         )}
         {/* Load all available fonts for the font selector */}
         {GOOGLE_FONTS.length > 0 && (
@@ -498,7 +490,7 @@ export default function EditPage({ slug, pageData, error }: PageProps) {
             rel="stylesheet"
           />
         )}
-        <style>{previewData ? generateCssVariables(previewData) : ''}</style>
+        <style>{cssVariables}</style>
       </Head>
 
       <main className="min-h-screen">
@@ -515,7 +507,7 @@ export default function EditPage({ slug, pageData, error }: PageProps) {
             <EditPageContent
               pageData={previewData}
               items={previewData.items?.filter((item): item is PageItem => Boolean(item && item.id && item.presetId)) || []}
-              themeStyle={themes[previewData.designStyle || 'default']}
+              themeStyle={themeConfig}
               onLinkClick={handleLinkClick}
               onTitleClick={() => {
                 setFocusField('title');

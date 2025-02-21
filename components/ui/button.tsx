@@ -15,11 +15,14 @@ const buttonVariants = cva(
           "bg-destructive text-destructive-foreground shadow-brutalist-sm hover:bg-destructive/90",
         outline:
           "border border-primary bg-background shadow-brutalist-sm hover:bg-accent hover:text-accent-foreground",
+        theme:
+          "border border-primary bg-background shadow-brutalist-sm hover:bg-accent hover:text-accent-foreground bg-[var(--pf-link-background)] text-[var(--pf-link-color)] border-width-[var(--pf-link-border-width)] border-[var(--pf-link-border-color)]",
         secondary:
           "bg-green-300 border border-primary text-black shadow-brutalist-sm hover:bg-green-400",
         ghost: "hover:bg-accent hover:text-accent-foreground",
         link: "text-primary underline-offset-4 hover:underline",
-        skeleton: "bg-muted relative overflow-hidden before:absolute before:inset-0 before:-translate-x-full before:animate-[shimmer_2s_infinite] before:bg-gradient-to-r before:from-transparent before:via-white/20 before:to-transparent cursor-wait",
+        skeleton:
+          "bg-muted relative overflow-hidden before:absolute before:inset-0 before:-translate-x-full before:animate-[shimmer_2s_infinite] before:bg-gradient-to-r before:from-transparent before:via-white/20 before:to-transparent cursor-wait",
       },
       size: {
         default: "h-9 px-4 py-2",
@@ -33,7 +36,7 @@ const buttonVariants = cva(
       variant: "default",
       size: "default",
     },
-  },
+  }
 );
 
 export interface ButtonProps
@@ -52,7 +55,7 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
         {...props}
       />
     );
-  },
+  }
 );
 Button.displayName = "Button";
 
