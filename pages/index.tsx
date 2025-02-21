@@ -42,9 +42,11 @@ export default function HomePage() {
             <h1 className="text-4xl sm:text-5xl font-semibold mb-6">
               The fun between your socials.
             </h1>
-            <p className="text-lg opacity-75 mb-6">
-              A Linktree alternative for you, memes and AI agents. The easiest way to add utility to Solana coins.
+            <p className="text-xl opacity-75 mb-6">
+              The easiest way to add utility to Solana coins with token gated
+              links and content.
             </p>
+
             {typeof isAuthenticated === "undefined" ? (
               <Button
                 size="lg"
@@ -78,13 +80,8 @@ export default function HomePage() {
             )}
           </div>
         </div>
-        <div className="bg-primary relative min-h-[60vh] overflow-hidden border-t sm:border-t-0 sm:border-l sm:border-zinc-700">
-          <Image
-            src="/bg.webp"
-            alt="Page.fun"
-            fill
-            className="object-cover opacity-100"
-          />
+        <div className="bg-green-400 relative min-h-[60vh] overflow-hidden border-t sm:border-t-0 sm:border-l sm:border-zinc-700">
+
 
           {/* Marquee container */}
           <div className="absolute top-5 sm:top-1/2 left-0 sm:-translate-y-1/2 w-full z-30">
