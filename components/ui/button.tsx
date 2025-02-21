@@ -16,7 +16,7 @@ const buttonVariants = cva(
         outline:
           "border border-primary bg-background shadow-brutalist-sm hover:bg-accent hover:text-accent-foreground",
         theme:
-          "border border-primary bg-background shadow-brutalist-sm hover:bg-accent hover:text-accent-foreground bg-[var(--pf-link-background)] text-[var(--pf-link-color)] border-width-[var(--pf-link-border-width)] border-[var(--pf-link-border-color)]",
+          "border border-primary bg-green-300 shadow-brutalist-sm hover:bg-accent hover:text-accent-foreground bg-[var(--pf-link-background)] text-[var(--pf-link-color)] border-width-[var(--pf-link-border-width)] border-[var(--pf-link-border-color)]",
         secondary:
           "bg-green-300 border border-primary text-black shadow-brutalist-sm hover:bg-green-400",
         ghost: "hover:bg-accent hover:text-accent-foreground",
