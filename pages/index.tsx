@@ -39,7 +39,7 @@ export default function HomePage() {
               page.fun
               <span className="text-xs opacity-75 text-green-600">beta</span>
             </h1>
-            <h1 className="text-4xl sm:text-5xl font-semibold mb-6">
+            <h1 className="text-5xl sm:text-5xl font-semibold mb-6">
               The fun between your socials.
             </h1>
             <p className="text-xl opacity-75 mb-6">
