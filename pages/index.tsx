@@ -32,14 +32,14 @@ export default function HomePage() {
       </Head>
 
       <main className="flex min-h-screen min-h-[100dvh] bg-background min-w-full grid sm:grid-cols-2">
-        <div className="flex flex-1 min-h-[50vh] min-h-[50dvh] py-5 items-center text-center sm:text-left max-w-[450px] px-4 w-full mx-auto">
+        <div className="flex flex-1 min-h-[40vh] min-h-[40dvh] py-5 items-center text-center sm:text-left max-w-[450px] px-4 w-full mx-auto">
           <div>
             <h1 className="text-xl mb-4 flex items-center gap-2 justify-center sm:justify-start">
               <Logo className="w-7 h-7 text-primary" />
               page.fun
               <span className="text-xs opacity-75 text-green-600">beta</span>
             </h1>
-            <h1 className="text-5xl sm:text-5xl font-semibold mb-6">
+            <h1 className="text-5xl font-semibold mb-6">
               The fun between your socials.
             </h1>
             <p className="text-base opacity-75 mb-6">
@@ -79,7 +79,7 @@ export default function HomePage() {
             )}
           </div>
         </div>
-        <div className="bg-green-400 relative min-h-[50vh] min-h-[50dvh] overflow-hidden border-t sm:border-t-0 sm:border-l sm:border-zinc-700">
+        <div className="bg-green-400 relative min-h-[60vh] min-h-[60dvh] overflow-hidden border-t sm:border-t-0 sm:border-l sm:border-zinc-700">
 
 
           {/* Marquee container */}

@@ -92,7 +92,7 @@ const DrawerContent = React.forwardRef<
         {...props}>
         <div
           className={cn(
-            "border border-primary max-h-[80vh] md:max-h-[98vh] shadow-brutalist h-full w-full grow px-5 pt-5 pb-0 md:pb-5 flex flex-col rounded-t-md md:rounded-md bg-background",
+            "border border-primary max-h-[80vh] md:max-h-[98vh] shadow-brutalist h-full w-full grow p-5 flex flex-col rounded-t-md md:rounded-md bg-background",
             "overflow-y-auto overscroll-contain touch-pan-y"
           )}>
           {children}
