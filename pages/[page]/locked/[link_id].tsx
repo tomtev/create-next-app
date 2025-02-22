@@ -14,6 +14,10 @@ const LockedPage: React.FC<{
   const [tokenBalance, setTokenBalance] = useState<string | null>(null);
   const { toast } = useToast();
 
+  if (!linkItem || !pageData) {
+    return <div>Loading...</div>;
+  }
+
   // Track link clicks
   const trackClick = async (isGated: boolean) => {
     // ... existing code ...
@@ -21,7 +25,7 @@ const LockedPage: React.FC<{
     
     console.log('Token verification result:', {
       tokenAddress: pageData.connectedToken,
-      requiredAmount: linkItem.requiredTokens[0],
+      requiredAmount: linkItem?.requiredTokens?.[0],
       balance,
       hasAccess: newHasAccess
     });
@@ -48,7 +52,7 @@ const LockedPage: React.FC<{
             clipRule="evenodd"
           />
         </svg>
-        Access Verified. You own {tokenBalance || linkItem.requiredTokens[0]} ${pageData.tokenSymbol}
+        Access Verified. You own {tokenBalance || linkItem?.requiredTokens?.[0] || "0"} ${pageData.tokenSymbol || ""}
       </div>
       {!currentHasAccess && (
         <>
@@ -64,7 +68,7 @@ const LockedPage: React.FC<{
                 clipRule="evenodd"
               />
             </svg>
-            You need {linkItem.requiredTokens?.[0] || "0"} ${pageData.tokenSymbol} to access
+            You need {linkItem?.requiredTokens?.[0] || "0"} ${pageData.tokenSymbol || ""}
           </div>
           <Button onClick={() => {}} className="w-full">
             Connect Wallet
