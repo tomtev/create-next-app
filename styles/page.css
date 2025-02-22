@@ -74,6 +74,7 @@
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
   min-height: 100vh;
+  min-height: 100dvh;
   transition: box-shadow 0.2s ease;
   padding: 4rem 2rem;
   display: flex;

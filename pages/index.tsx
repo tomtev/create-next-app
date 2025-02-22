@@ -31,8 +31,8 @@ export default function HomePage() {
         <title>Page.fun - Linktree alternative for tokens and memes.</title>
       </Head>
 
-      <main className="flex min-h-screen bg-background min-w-full grid sm:grid-cols-2">
-        <div className="flex flex-1 min-h-[50vh] py-5 items-center text-center sm:text-left max-w-[450px] px-4 w-full mx-auto">
+      <main className="flex min-h-screen min-h-[100dvh] bg-background min-w-full grid sm:grid-cols-2">
+        <div className="flex flex-1 min-h-[50vh] min-h-[50dvh] py-5 items-center text-center sm:text-left max-w-[450px] px-4 w-full mx-auto">
           <div>
             <h1 className="text-xl mb-4 flex items-center gap-2 justify-center sm:justify-start">
               <Logo className="w-7 h-7 text-primary" />
@@ -80,7 +80,7 @@ export default function HomePage() {
             )}
           </div>
         </div>
-        <div className="bg-green-400 relative min-h-[50vh] overflow-hidden border-t sm:border-t-0 sm:border-l sm:border-zinc-700">
+        <div className="bg-green-400 relative min-h-[50vh] min-h-[50dvh] overflow-hidden border-t sm:border-t-0 sm:border-l sm:border-zinc-700">
 
 
           {/* Marquee container */}

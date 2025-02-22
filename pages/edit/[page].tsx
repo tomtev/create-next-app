@@ -493,7 +493,7 @@ export default function EditPage({ slug, pageData, error }: PageProps) {
         <style>{cssVariables}</style>
       </Head>
 
-      <main className="min-h-screen">
+      <main className="min-h-screen min-h-[100dvh]">
         <ActionBar
           isSaving={isSaving}
           onSave={handleSavePageDetails}
