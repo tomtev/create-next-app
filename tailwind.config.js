@@ -72,7 +72,7 @@ module.exports = {
       },
       boxShadow: {
         brutalist: "3px 3px 0px 0 rgba(0,0,0,1)",
-        "brutalist-sm": "1px 1px 0px 0 rgba(0, 0, 0, .1)",
+        "brutalist-sm": "1.5px 1.5px 0px 0 rgba(0, 0, 0, .2)",
       },
       colors: {
         "privy-navy": "#160B45",

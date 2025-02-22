@@ -147,7 +147,7 @@ export default function PageLink({
   if (item.tokenGated) {
     // Use Next.js Link for gated content with the current page slug
     return (
-      <Link href={`/${page}/locked/${item.id}`} onClick={handleClick} className="w-full">
+      <Link href={`/${page}/url/${item.id}`} onClick={handleClick} className="w-full">
         {itemContent}
       </Link>
     );
