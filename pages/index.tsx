@@ -42,9 +42,8 @@ export default function HomePage() {
             <h1 className="text-5xl sm:text-5xl font-semibold mb-6">
               The fun between your socials.
             </h1>
-            <p className="text-xl opacity-75 mb-6">
-              The easiest way to add utility to Solana coins with token gated
-              links and content.
+            <p className="text-base opacity-75 mb-6">
+              A link-in-bio page for you, memes and AI agents.
             </p>
 
             {typeof isAuthenticated === "undefined" ? (

@@ -153,24 +153,6 @@ export default function EditPage({ slug, pageData, error }: PageProps) {
 
   const { cssVariables, googleFontsUrl, themeConfig } = useThemeStyles(previewData);
 
-  // Generate CSS variables string
-  const generateCssVariables = (data: PageData) => {
-    const currentTheme = data.designStyle || 'default';
-    const themeStyles = themes[currentTheme]?.styles || {};
-    
-    return `
-      :root {
-        --pf-font-family-default: ${data.fonts?.global ? `'${data.fonts.global}', sans-serif` : 'var(--pf-font-family-default)'};
-        --pf-font-family-heading: ${data.fonts?.heading ? `'${data.fonts.heading}', sans-serif` : 'var(--pf-font-family-default)'};
-        --pf-font-family-paragraph: ${data.fonts?.paragraph ? `'${data.fonts.paragraph}', sans-serif` : 'var(--pf-font-family-default)'};
-        --pf-font-family-links: ${data.fonts?.links ? `'${data.fonts.links}', sans-serif` : 'var(--pf-font-family-default)'};
-        ${Object.entries(themeStyles)
-          .map(([key, value]) => `${key}: ${value};`)
-          .join('\n        ')}
-      }
-    `;
-  };
-
   // Handle ESC key to close drawer
   useEffect(() => {
     const handleEsc = (event: KeyboardEvent) => {
