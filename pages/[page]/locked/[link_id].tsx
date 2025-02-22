@@ -7,10 +7,10 @@ const LockedPage: React.FC<{
   gatedUrl: string;
   pageData: any;
   linkItem: any;
-}> = ({ hasAccess, gatedUrl, pageData, linkItem }) => {
+}> = ({ hasAccess: initialHasAccess, gatedUrl: initialGatedUrl, pageData, linkItem }) => {
   const [isChecking, setIsChecking] = useState(false);
-  const [hasAccess, setHasAccess] = useState(hasAccess);
-  const [gatedUrl, setGatedUrl] = useState(gatedUrl);
+  const [currentHasAccess, setCurrentHasAccess] = useState(initialHasAccess);
+  const [currentGatedUrl, setCurrentGatedUrl] = useState(initialGatedUrl);
   const [tokenBalance, setTokenBalance] = useState<string | null>(null);
   const { toast } = useToast();
 
@@ -26,10 +26,10 @@ const LockedPage: React.FC<{
       hasAccess: newHasAccess
     });
 
-    setHasAccess(newHasAccess);
+    setCurrentHasAccess(newHasAccess);
     setTokenBalance(balance);
     if (newHasAccess && linkItem.url) {
-      setGatedUrl(linkItem.url);
+      setCurrentGatedUrl(linkItem.url);
     }
   };
 
@@ -50,7 +50,7 @@ const LockedPage: React.FC<{
         </svg>
         Access Verified. You own {tokenBalance || linkItem.requiredTokens[0]} ${pageData.tokenSymbol}
       </div>
-      {!hasAccess && (
+      {!currentHasAccess && (
         <>
           <div className="inline-flex items-center justify-center gap-2 text-sm text-orange-700 bg-orange-50 px-3 py-1.5 rounded-full mx-auto mb-3">
             <svg
