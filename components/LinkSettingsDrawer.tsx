@@ -10,7 +10,7 @@ import {
 import { PageData, PageItem } from "@/types";
 import { validateLinkUrl } from "@/lib/links";
 import { LINK_PRESETS } from "@/lib/linkPresets";
-import { HelpCircle, AlertCircle } from "lucide-react";
+import { HelpCircle, AlertCircle, Lock } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -210,20 +210,36 @@ export function LinkSettingsDrawer({
             <div className="space-y-2">
               <label className="block text-sm text-gray-600">URL</label>
               <div className="flex gap-2">
-                <Input
-                  type="text"
-                  placeholder={
-                    item.presetId === "email"
-                      ? "Enter email address"
-                      : `Enter ${preset.title} URL`
-                  }
-                  value={item.url || ""}
-                  onChange={(e) => handleUrlChange(e.target.value)}
-                  onKeyDown={handleKeyDown}
-                  className={`${
-                    error ? "border-red-500 focus:ring-red-500" : ""
-                  } flex-1`}
-                />
+                <div className="relative flex-1">
+                  <Input
+                    type="text"
+                    placeholder={
+                      item.presetId === "email"
+                        ? "Enter email address"
+                        : `Enter ${preset.title} URL`
+                    }
+                    value={item.url || ""}
+                    onChange={(e) => handleUrlChange(e.target.value)}
+                    onKeyDown={handleKeyDown}
+                    className={`${
+                      error ? "border-red-500 focus:ring-red-500" : ""
+                    } ${item.tokenGated ? "pr-8" : ""}`}
+                  />
+                  {item.tokenGated && (
+                    <div className="absolute right-2 top-1/2 -translate-y-1/2">
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger>
+                            <Lock className="h-4 w-4 text-gray-500" />
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>This URL is encrypted.</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </div>
+                  )}
+                </div>
                 {item.url && (
                   <Button
                     variant="outline"
