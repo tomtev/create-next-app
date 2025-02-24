@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Pencil } from "lucide-react";
 import { PrivyClient } from "@privy-io/server-auth";
 import Loader from "@/components/ui/loader";
-import { Drawer, DrawerContent } from "@/components/ui/drawer";
+import { Drawer } from "@/components/ui/drawer";
 import { useThemeStyles } from '@/hooks/use-theme-styles';
 import { PrismaClient } from '@prisma/client';
 import { PrismaNeonHTTP } from '@prisma/adapter-neon';
@@ -383,7 +383,6 @@ export default function Page({ pageData, slug, error, isOwner }: PageProps) {
             if (!open) handleDrawerClose();
           }}
           direction="bottom">
-          <DrawerContent className="h-full">
             <Suspense
               fallback={
                 <div className="p-4">
@@ -399,7 +398,6 @@ export default function Page({ pageData, slug, error, isOwner }: PageProps) {
                 />
               )}
             </Suspense>
-          </DrawerContent>
         </Drawer>
       )}
     </>
