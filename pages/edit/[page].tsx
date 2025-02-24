@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { usePrivy } from "@privy-io/react-auth";
 import { PrivyClient } from "@privy-io/server-auth";
 import { Button } from "@/components/ui/button";
-import { Drawer, DrawerContent } from "@/components/ui/drawer";
+import { Drawer } from "@/components/ui/drawer";
 import { useToast } from "@/hooks/use-toast";
 import { ToastAction } from "@/components/ui/toast";
 import { isSolanaWallet } from "@/utils/wallet";
@@ -24,8 +24,8 @@ import { PrismaClient } from '@prisma/client';
 import { PrismaNeonHTTP } from '@prisma/adapter-neon';
 import { neon, neonConfig } from '@neondatabase/serverless';
 import { decryptUrl, isEncryptedUrl } from '@/lib/encryption';
-import { PublishBar } from "@/components/PublishBar";
 import { Navbar } from "@/components/Navbar";
+import { PublishBar } from "@/components/PublishBar";
 
 // Configure neon to use fetch
 neonConfig.fetchConnectionCache = true;
@@ -647,57 +647,55 @@ export default function EditPage({ slug, pageData, error }: PageProps) {
         />
 
         {/* Link Settings Drawer */}
-        <Drawer open={linkSettingsDrawerOpen} onOpenChange={setLinkSettingsDrawerOpen}>
-          <DrawerContent>
-            <LinkSettingsDrawer
-              item={selectedLink}
-              error={selectedLinkId ? validationErrors[selectedLinkId] : undefined}
-              tokenSymbol={pageDetails?.tokenSymbol || undefined}
-              pageDetails={pageDetails}
-              setPageDetails={setPageDetails}
-              onDelete={() => {
-                if (!selectedLinkId) return;
-                
-                const newErrors = { ...validationErrors };
-                delete newErrors[selectedLinkId];
-                setValidationErrors(newErrors);
+        <LinkSettingsDrawer
+          item={selectedLink}
+          error={selectedLinkId ? validationErrors[selectedLinkId] : undefined}
+          tokenSymbol={pageDetails?.tokenSymbol || undefined}
+          pageDetails={pageDetails}
+          setPageDetails={setPageDetails}
+          open={linkSettingsDrawerOpen}
+          onOpenChange={setLinkSettingsDrawerOpen}
+          onDelete={() => {
+            if (!selectedLinkId) return;
+            
+            const newErrors = { ...validationErrors };
+            delete newErrors[selectedLinkId];
+            setValidationErrors(newErrors);
 
-                setPageDetails((prev) => ({
-                  ...prev!,
-                  items: prev!.items!.filter((i) => i.id !== selectedLinkId),
-                }));
-                setLinkSettingsDrawerOpen(false);
-              }}
-              onUrlChange={(url) => {
-                if (!selectedLinkId) return;
+            setPageDetails((prev) => ({
+              ...prev!,
+              items: prev!.items!.filter((i) => i.id !== selectedLinkId),
+            }));
+            setLinkSettingsDrawerOpen(false);
+          }}
+          onUrlChange={(url) => {
+            if (!selectedLinkId) return;
 
-                setPageDetails((prev) => {
-                  if (!prev?.items) return prev;
+            setPageDetails((prev) => {
+              if (!prev?.items) return prev;
 
-                  const updatedItems = prev.items.map((i) =>
-                    i.id === selectedLinkId ? { ...i, url } : i
-                  );
+              const updatedItems = prev.items.map((i) =>
+                i.id === selectedLinkId ? { ...i, url } : i
+              );
 
-                  return {
-                    ...prev,
-                    items: updatedItems,
-                  };
-                });
-              }}
-              onValidationChange={(itemId, error) => {
-                setValidationErrors((prev) => {
-                  const newErrors = { ...prev };
-                  if (error) {
-                    newErrors[itemId] = error;
-                  } else {
-                    delete newErrors[itemId];
-                  }
-                  return newErrors;
-                });
-              }}
-            />
-          </DrawerContent>
-        </Drawer>
+              return {
+                ...prev,
+                items: updatedItems,
+              };
+            });
+          }}
+          onValidationChange={(itemId, error) => {
+            setValidationErrors((prev) => {
+              const newErrors = { ...prev };
+              if (error) {
+                newErrors[itemId] = error;
+              } else {
+                delete newErrors[itemId];
+              }
+              return newErrors;
+            });
+          }}
+        />
       </main>
     </>
   );

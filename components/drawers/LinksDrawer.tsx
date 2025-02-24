@@ -3,7 +3,8 @@ import { PageData, PageItem } from "@/types";
 import React, { useState, useEffect } from "react";
 import { LINK_PRESETS } from "@/lib/linkPresets";
 import { validateLinkUrl } from "@/lib/links";
-import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
+import { Drawer } from "@/components/ui/drawer";
+import { Link } from "lucide-react";
 
 interface LinksDrawerProps {
   pageDetails: PageData | null;
@@ -60,12 +61,14 @@ export function LinksDrawer({
     if (!preset) return;
 
     const newItem: PageItem = {
+      id: `${presetId}-${Math.random().toString(36).substr(2, 9)}`,
+      pageId: pageDetails?.id || "",
       presetId,
       title: preset.title,
       url: preset.defaultUrl?.replace('[connectedToken]', pageDetails?.connectedToken || '') || "",
-      id: `${presetId}-${Math.random().toString(36).substr(2, 9)}`,
       order: pageDetails?.items?.length || 0,
-      isNew: true,
+      tokenGated: false,
+      requiredTokens: [],
     };
 
     setPageDetails((prev) => {
@@ -89,32 +92,32 @@ export function LinksDrawer({
   };
 
   return (
-    <Drawer open={open} onOpenChange={onOpenChange}>
-      <DrawerContent>
-        <DrawerHeader>
-          <DrawerTitle>Add Link or App</DrawerTitle>
-        </DrawerHeader>
-        <div className="py-3">
-          <div className="grid gap-4 grid-cols-2 sm:grid-cols-3">
-            {Object.entries(LINK_PRESETS).map(([id, preset]) => {
-              const Icon = preset.icon;
-              return (
-                <Button
-                  key={id}
-                  variant="outline"
-                  className="justify-start gap-2 h-auto py-3"
-                  onClick={() => handleAddLink(id)}
-                >
-                  <Icon className="h-5 w-5" />
-                  <div className="text-left">
-                    <div className="font-medium">{preset.title}</div>
-                  </div>
-                </Button>
-              );
-            })}
-          </div>
+    <Drawer 
+      open={open} 
+      onOpenChange={onOpenChange}
+      hasContainer
+      title="Add Link"
+      icon={<Link className="h-5 w-5" />}
+      closeButton>
+      <div className="py-3">
+        <div className="grid gap-4 grid-cols-2 sm:grid-cols-3">
+          {Object.entries(LINK_PRESETS).map(([id, preset]) => {
+            const Icon = preset.icon;
+            return (
+              <Button
+                key={id}
+                variant="outline"
+                className="justify-start gap-2 h-auto py-3"
+                onClick={() => handleAddLink(id)}>
+                <Icon className="h-5 w-5" />
+                <div className="text-left">
+                  <div className="font-medium">{preset.title}</div>
+                </div>
+              </Button>
+            );
+          })}
         </div>
-      </DrawerContent>
+      </div>
     </Drawer>
   );
 } 

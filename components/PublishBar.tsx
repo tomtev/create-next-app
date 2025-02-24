@@ -9,10 +9,7 @@ interface PublishBarProps {
   onSave: () => void;
 }
 
-export function PublishBar({
-  isSaving,
-  onSave,
-}: PublishBarProps) {
+export function PublishBar({ isSaving, onSave }: PublishBarProps) {
   const router = useRouter();
 
   return (

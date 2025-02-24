@@ -5,7 +5,7 @@ import Loader from "./ui/loader";
 import { useRouter } from "next/router";
 import Link from "next/link";
 import TokenSelector from "./TokenSelector";
-import { Drawer, DrawerContent } from "./ui/drawer";
+import { Drawer } from "./ui/drawer";
 import { Card } from "./ui/card";
 import debounce from "lodash/debounce";
 import { useGlobalContext } from "@/lib/context";
@@ -47,8 +47,7 @@ export default function CreatePageModal({
     if (!canCreatePage) {
       toast({
         title: "Page limit reached",
-        description:
-          `You need to hold at least ${process.env.NEXT_PUBLIC_PAGE_DOT_FUN_TOKEN_REQUIRED_HOLDING} PAGE.FUN tokens to create more than one page`,
+        description: `You need to hold at least ${process.env.NEXT_PUBLIC_PAGE_DOT_FUN_TOKEN_REQUIRED_HOLDING} PAGE.FUN tokens to create more than one page`,
         variant: "destructive",
       });
       onClose();
@@ -128,45 +127,8 @@ export default function CreatePageModal({
     setSelectedDrawer(type);
   };
 
-  const fadeVariants = {
-    enter: {
-      x: step === "type" ? 0 : 300,
-      opacity: 0,
-    },
-    center: {
-      x: 0,
-      opacity: 1,
-    },
-    exit: {
-      x: step === "type" ? 0 : -300,
-      opacity: 0,
-    },
-  };
-
-  // Add this new variant for the container
-  const containerVariants = {
-    initial: {
-      opacity: 1,
-    },
-    animate: {
-      opacity: 1,
-      transition: {
-        duration: 0.3,
-        ease: "easeOut",
-      },
-    },
-    exit: {
-      opacity: 1,
-      transition: {
-        duration: 0.3,
-        ease: "easeIn",
-      },
-    },
-  };
-
   const renderPageTypeSelection = () => (
     <div>
-      <h2 className="text-lg font-semibold mb-6">Create New Page</h2>
       <div className="grid gap-4">
         <Card
           hasHover
@@ -190,7 +152,8 @@ export default function CreatePageModal({
             <div>
               <h4 className="font-medium">Personal</h4>
               <p className="text-sm text-gray-500">
-                All your social media links in one place. Gate links & content to token holders and more.
+                All your social media links in one place. Gate links & content
+                to token holders and more.
               </p>
             </div>
           </div>
@@ -247,7 +210,8 @@ export default function CreatePageModal({
             <div>
               <h4 className="font-medium">AI Agent</h4>
               <p className="text-sm text-gray-500">
-                Create a page for tokenized AI Agents. Give access to gated content to token holders. Create content using APIs
+                Create a page for tokenized AI Agents. Give access to gated
+                content to token holders. Create content using APIs
               </p>
             </div>
           </div>
@@ -258,7 +222,6 @@ export default function CreatePageModal({
 
   const renderPersonalDrawer = () => (
     <div>
-      <h2 className="text-lg font-semibold mb-6 pl-12">Create Personal Page</h2>
       <div className="space-y-4">
         <div className="space-y-2">
           <div className="flex items-center space-x-2">
@@ -288,14 +251,10 @@ export default function CreatePageModal({
             </div>
           )}
           {isCheckingSlug && (
-            <p className="text-sm text-gray-500">
-              Checking availability...
-            </p>
+            <p className="text-sm text-gray-500">Checking availability...</p>
           )}
           {isSlugValid && (
-            <p className="text-sm text-green-500">
-              URL is available!
-            </p>
+            <p className="text-sm text-green-500">URL is available!</p>
           )}
         </div>
       </div>
@@ -305,9 +264,6 @@ export default function CreatePageModal({
 
   const renderTokenBasedDrawer = () => (
     <div>
-      <h2 className="text-lg font-semibold mb-6 pl-12">
-        {pageType === "meme" ? "Create Meme Page" : "Create AI Bot Page"}
-      </h2>
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-3">
           Enter Token Address
@@ -331,20 +287,15 @@ export default function CreatePageModal({
         <div className="flex gap-5 items-start">
           <div className="space-y-2 flex-1 order-2">
             <div>
-              <label className="block text-xs text-gray-500">
-                Title
-              </label>
+              <label className="block text-xs text-gray-500">Title</label>
               <p className="text-sm font-medium">
                 {tokenMetadata.name || "My Page"}
               </p>
             </div>
             <div>
-              <label className="block text-xs text-gray-500">
-                Description
-              </label>
+              <label className="block text-xs text-gray-500">Description</label>
               <p className="text-sm text-gray-700 line-clamp-3">
-                {tokenMetadata.description ||
-                  "A page for my community"}
+                {tokenMetadata.description || "A page for my community"}
               </p>
             </div>
             {tokenMetadata.symbol && (
@@ -352,9 +303,7 @@ export default function CreatePageModal({
                 <label className="block text-xs text-gray-500">
                   Token Symbol
                 </label>
-                <p className="text-sm font-medium">
-                  {tokenMetadata.symbol}
-                </p>
+                <p className="text-sm font-medium">{tokenMetadata.symbol}</p>
               </div>
             )}
           </div>
@@ -364,8 +313,7 @@ export default function CreatePageModal({
               alt={tokenMetadata.name}
               className="object-cover w-24 h-24 shadow"
               onError={(e) => {
-                (e.target as HTMLImageElement).style.display =
-                  "none";
+                (e.target as HTMLImageElement).style.display = "none";
               }}
             />
           )}
@@ -405,14 +353,10 @@ export default function CreatePageModal({
             </div>
           )}
           {isCheckingSlug && (
-            <p className="text-sm text-gray-500">
-              Checking availability...
-            </p>
+            <p className="text-sm text-gray-500">Checking availability...</p>
           )}
           {isSlugValid && (
-            <p className="text-sm text-green-500">
-              URL is available!
-            </p>
+            <p className="text-sm text-green-500">URL is available!</p>
           )}
         </div>
       </div>
@@ -424,8 +368,7 @@ export default function CreatePageModal({
     if (!canCreatePage) {
       toast({
         title: "Page limit reached",
-        description:
-          `You need to hold at least ${process.env.NEXT_PUBLIC_PAGE_DOT_FUN_TOKEN_REQUIRED_HOLDING} PAGE.FUN tokens to create more than one page`,
+        description: `You need to hold at least ${process.env.NEXT_PUBLIC_PAGE_DOT_FUN_TOKEN_REQUIRED_HOLDING} PAGE.FUN tokens to create more than one page`,
         variant: "destructive",
       });
       return;
@@ -465,7 +408,7 @@ export default function CreatePageModal({
       const data = await response.json();
 
       if (!response.ok) {
-        console.error('Error response:', data);
+        console.error("Error response:", data);
         toast({
           title: "Error creating page",
           description: data.error || data.message || "Failed to create page",
@@ -495,7 +438,11 @@ export default function CreatePageModal({
     <div className="flex justify-end pt-4">
       <Button
         onClick={handleSubmit}
-        disabled={!isSlugValid || isSubmitting || (pageType !== "personal" && !selectedToken)}>
+        disabled={
+          !isSlugValid ||
+          isSubmitting ||
+          (pageType !== "personal" && !selectedToken)
+        }>
         {isSubmitting ? (
           <>
             <Loader className="h-4 w-4 mr-2" />
@@ -514,48 +461,41 @@ export default function CreatePageModal({
 
   return (
     <>
-      <Drawer 
-        open={open && !selectedDrawer} 
+      <Drawer
+        open={open && !selectedDrawer}
         onOpenChange={(isOpen: boolean) => !isOpen && onClose()}
         direction="left"
-      >
-        <DrawerContent direction="left">
-          {userPages.length > 0 && !hasPageTokenAccess && (
-            <p className="text-sm text-amber-600 mb-4">
-              Note: You need to hold at least {process.env.NEXT_PUBLIC_PAGE_DOT_FUN_TOKEN_REQUIRED_HOLDING} PAGE.FUN tokens to create
-              more than one page
-            </p>
-          )}
-          {renderPageTypeSelection()}
-        </DrawerContent>
+        title="Create New Page">
+        {userPages.length > 0 && !hasPageTokenAccess && (
+          <p className="text-sm text-amber-600 mb-4">
+            Note: You need to hold at least{" "}
+            {process.env.NEXT_PUBLIC_PAGE_DOT_FUN_TOKEN_REQUIRED_HOLDING}{" "}
+            PAGE.FUN tokens to create more than one page
+          </p>
+        )}
+        {renderPageTypeSelection()}
       </Drawer>
 
       <Drawer
         open={selectedDrawer === "personal"}
         onOpenChange={(isOpen: boolean) => !isOpen && setSelectedDrawer(null)}
         direction="left"
-      >
-        <DrawerContent 
-          direction="left"
-          showBackButton
-          onBack={() => setSelectedDrawer(null)}
-        >
-          {renderPersonalDrawer()}
-        </DrawerContent>
+        title="Create Personal Page"
+        backButton
+        onBack={() => setSelectedDrawer(null)}>
+        {renderPersonalDrawer()}
       </Drawer>
 
       <Drawer
         open={selectedDrawer === "meme" || selectedDrawer === "ai-bot"}
         onOpenChange={(isOpen: boolean) => !isOpen && setSelectedDrawer(null)}
         direction="left"
-      >
-        <DrawerContent 
-          direction="left"
-          showBackButton
-          onBack={() => setSelectedDrawer(null)}
-        >
-          {renderTokenBasedDrawer()}
-        </DrawerContent>
+        title={
+          selectedDrawer === "meme" ? "Create Meme Page" : "Create AI Bot Page"
+        }
+        backButton
+        onBack={() => setSelectedDrawer(null)}>
+        {renderTokenBasedDrawer()}
       </Drawer>
     </>
   );

@@ -1,11 +1,7 @@
-import {
-  Drawer,
-  DrawerContent,
-  DrawerHeader,
-  DrawerTitle,
-} from "@/components/ui/drawer";
+import { Drawer } from "@/components/ui/drawer";
 import { DesignTab } from "@/components/tabs/DesignTab";
 import { PageData } from "@/types";
+import { Palette } from "lucide-react";
 
 interface DesignDrawerProps {
   open: boolean;
@@ -23,16 +19,16 @@ export function DesignDrawer({
   setPageDetails,
 }: DesignDrawerProps) {
   return (
-    <Drawer open={open} onOpenChange={onOpenChange}>
-      <DrawerContent>
-        <DrawerHeader>
-          <DrawerTitle>Design</DrawerTitle>
-        </DrawerHeader>
-        <DesignTab
-          pageDetails={pageDetails}
-          setPageDetails={setPageDetails}
-        />
-      </DrawerContent>
+    <Drawer 
+      open={open} 
+      onOpenChange={onOpenChange}
+      title="Design"
+      icon={<Palette className="h-5 w-5" />}
+      closeButton>
+      <DesignTab
+        pageDetails={pageDetails}
+        setPageDetails={setPageDetails}
+      />
     </Drawer>
   );
 } 

@@ -10,7 +10,7 @@ import {
 import { PageData, PageItem } from "@/types";
 import { validateLinkUrl } from "@/lib/links";
 import { LINK_PRESETS } from "@/lib/linkPresets";
-import { HelpCircle, AlertCircle, ArrowLeft } from "lucide-react";
+import { HelpCircle, AlertCircle } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -22,13 +22,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import {
-  Drawer,
-  DrawerClose,
-  DrawerContent,
-  DrawerHeader,
-  DrawerTitle,
-} from "@/components/ui/drawer";
+import { Drawer } from "@/components/ui/drawer";
 import { useEffect, useRef } from "react";
 
 interface LinkSettingsDrawerProps {
@@ -43,6 +37,8 @@ interface LinkSettingsDrawerProps {
   onUrlChange?: (url: string) => void;
   onValidationChange?: (itemId: string, error: string | undefined) => void;
   onBack?: () => void;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
 export function LinkSettingsDrawer({
@@ -55,6 +51,8 @@ export function LinkSettingsDrawer({
   onUrlChange,
   onValidationChange,
   onBack,
+  open,
+  onOpenChange,
 }: LinkSettingsDrawerProps) {
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const titleInputRef = useRef<HTMLInputElement>(null);
@@ -185,13 +183,15 @@ export function LinkSettingsDrawer({
   });
 
   return (
-    <div className="max-w-lg mx-auto w-full">
-      <DrawerHeader>
-        <DrawerTitle className="flex items-center gap-2">
-          <Icon className="h-5 w-5" />
-          <span>{preset.title} Settings</span>
-        </DrawerTitle>
-      </DrawerHeader>
+    <Drawer 
+      open={open} 
+      onOpenChange={onOpenChange}
+      title={`${preset.title} Settings`}
+      icon={<Icon className="h-5 w-5" />}
+      backButton={!!onBack}
+      hasContainer
+      onBack={onBack}
+      closeButton>
       <div className="space-y-6">
         <div className="space-y-4">
           <div className="space-y-2">
@@ -335,12 +335,12 @@ export function LinkSettingsDrawer({
               Fix Error to Continue
             </Button>
           ) : (
-            <DrawerClose asChild>
-              <Button ref={closeButtonRef}>Done</Button>
-            </DrawerClose>
+            <Button ref={closeButtonRef} onClick={() => onOpenChange?.(false)}>
+              Done
+            </Button>
           )}
         </div>
       </div>
-    </div>
+    </Drawer>
   );
 }

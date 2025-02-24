@@ -4,7 +4,7 @@ import dynamic from "next/dynamic";
 import { GetServerSideProps } from "next";
 import { PageData, PageItem } from "@/types";
 import Loader from "@/components/ui/loader";
-import { Drawer, DrawerContent, DrawerFooter } from "@/components/ui/drawer";
+import { Drawer } from "@/components/ui/drawer";
 import { usePrivy } from "@privy-io/react-auth";
 import { JupiterLogo } from "@/components/icons/JupiterLogo";
 import { useState } from "react";
@@ -365,84 +365,82 @@ export default function GatedLinkPage(props: GatedLinkPageProps) {
             });
           }
         }}>
-        <DrawerContent>
-          <DrawerFooter className="gap-3 text-center pf-container mx-auto">
-            {props.pageData.image && (
-              <div className="flex justify-center mb-4">
-                <img
-                  src={props.pageData.image}
-                  alt={`${props.pageData.tokenSymbol} token`}
-                  className="w-12 h-12 rounded-full animate-rotate3d"
-                />
+        <div className="space-y-6 p-6">
+          {props.pageData.image && (
+            <div className="flex justify-center">
+              <img
+                src={props.pageData.image}
+                alt={`${props.pageData.tokenSymbol} token`}
+                className="w-12 h-12 rounded-full animate-rotate3d"
+              />
+            </div>
+          )}
+          {!authenticated ? (
+            <>
+              <div className="inline-flex items-center justify-center gap-2 text-sm text-orange-700 px-3 py-1.5 rounded-full mx-auto">
+                You need {props.linkItem.requiredTokens?.[0] || "0"} $
+                {props.pageData.tokenSymbol} to access this link.
               </div>
-            )}
-            {!authenticated ? (
-              <>
-                <div className="inline-flex items-center justify-center gap-2 text-sm text-orange-700 px-3 py-1.5 rounded-full mx-auto mb-3">
-                  You need {props.linkItem.requiredTokens?.[0] || "0"} $
-                  {props.pageData.tokenSymbol} to access this link.
-                </div>
-                <Button onClick={login} className="w-full">
-                  Connect Wallet
-                </Button>
-              </>
-            ) : hasAccess ? (
-              <>
-                <div className="inline-flex items-center justify-center gap-2 text-sm text-green-700 px-3 py-1.5 rounded-full mx-auto mb-3">
-                  You have enough ${props.pageData.tokenSymbol} to access this link.
-                </div>
-                {gatedUrl ? (
-                  <Button
-                    asChild
-                    className="w-full"
-                    onClick={() => trackClick(true)}>
-                    <a
-                      href={gatedUrl}
-                      target="_blank"
-                      rel="noopener noreferrer">
-                      Open Link
-                    </a>
-                  </Button>
-                ) : (
-                  <Button disabled className="w-full">
-                    <Loader className="h-4 w-4 mr-2" />
-                    Fetching Link...
-                  </Button>
-                )}
-              </>
-            ) : (
-              <>
-                <div className="inline-flex items-center justify-center gap-2 text-sm text-orange-700 px-3 py-1.5 rounded-full mx-auto mb-3">
-                  You need {props.linkItem.requiredTokens?.[0] || "0"} $
-                  {props.pageData.tokenSymbol} to access this link.
-                </div>
-                <Button variant="outline" asChild className="w-full">
+              <Button onClick={login} className="w-full">
+                Connect Wallet
+              </Button>
+            </>
+          ) : hasAccess ? (
+            <>
+              <div className="inline-flex items-center justify-center gap-2 text-sm text-green-700 px-3 py-1.5 rounded-full mx-auto">
+                You have enough ${props.pageData.tokenSymbol} to access this link.
+              </div>
+              {gatedUrl ? (
+                <Button
+                  asChild
+                  className="w-full"
+                  onClick={() => trackClick(true)}>
                   <a
-                    href={`https://jup.ag/swap/SOL-${props.pageData.connectedToken}`}
+                    href={gatedUrl}
                     target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center justify-center gap-2">
-                    <JupiterLogo className="w-4 h-4" />
-                    Get ${props.pageData.tokenSymbol} on Jupiter
+                    rel="noopener noreferrer">
+                    Open Link
                   </a>
                 </Button>
-                <Button
-                  onClick={handleCheckAgain}
-                  disabled={isChecking}
-                  className="w-full">
-                  {isChecking ? (
-                    <>
-                      <Loader className="h-4 w-4 mr-2" />
-                      Checking...
-                    </>
-                  ) : (
-                    "Check again"
-                  )}
+              ) : (
+                <Button disabled className="w-full">
+                  <Loader className="h-4 w-4 mr-2" />
+                  Fetching Link...
                 </Button>
-              </>
-            )}
-          </DrawerFooter>
-        </DrawerContent>
+              )}
+            </>
+          ) : (
+            <>
+              <div className="inline-flex items-center justify-center gap-2 text-sm text-orange-700 px-3 py-1.5 rounded-full mx-auto">
+                You need {props.linkItem.requiredTokens?.[0] || "0"} $
+                {props.pageData.tokenSymbol} to access this link.
+              </div>
+              <Button variant="outline" asChild className="w-full">
+                <a
+                  href={`https://jup.ag/swap/SOL-${props.pageData.connectedToken}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-center gap-2">
+                  <JupiterLogo className="w-4 h-4" />
+                  Get ${props.pageData.tokenSymbol} on Jupiter
+                </a>
+              </Button>
+              <Button
+                onClick={handleCheckAgain}
+                disabled={isChecking}
+                className="w-full">
+                {isChecking ? (
+                  <>
+                    <Loader className="h-4 w-4 mr-2" />
+                    Checking...
+                  </>
+                ) : (
+                  "Check again"
+                )}
+              </Button>
+            </>
+          )}
+        </div>
       </Drawer>
     </>
   );

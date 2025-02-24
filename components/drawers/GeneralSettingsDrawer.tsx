@@ -1,11 +1,7 @@
-import {
-  Drawer,
-  DrawerContent,
-  DrawerHeader,
-  DrawerTitle,
-} from "@/components/ui/drawer";
+import { Drawer } from "@/components/ui/drawer";
 import { GeneralSettingsTab } from "@/components/tabs/GeneralSettingsTab";
 import { PageData } from "@/types";
+import { Settings } from "lucide-react";
 
 interface GeneralSettingsDrawerProps {
   open: boolean;
@@ -25,19 +21,20 @@ export function GeneralSettingsDrawer({
   focusField,
 }: GeneralSettingsDrawerProps) {
   return (
-    <Drawer open={open} onOpenChange={onOpenChange}>
-      <DrawerContent>
-        <DrawerHeader>
-          <DrawerTitle>General Settings</DrawerTitle>
-        </DrawerHeader>
-        <div className="space-y-4">
-          <GeneralSettingsTab
-            pageDetails={pageDetails}
-            setPageDetails={setPageDetails}
-            focusField={focusField}
-          />
-        </div>
-      </DrawerContent>
+    <Drawer 
+      open={open} 
+      onOpenChange={onOpenChange}
+      hasContainer
+      title="General Settings"
+      icon={<Settings className="h-5 w-5" />}
+      closeButton>
+      <div className="space-y-4">
+        <GeneralSettingsTab
+          pageDetails={pageDetails}
+          setPageDetails={setPageDetails}
+          focusField={focusField}
+        />
+      </div>
     </Drawer>
   );
 } 
