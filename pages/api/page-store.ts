@@ -1,10 +1,4 @@
-// Add edge runtime configuration at the top
-export const config = {
-  runtime: 'edge',
-  regions: ['fra1'], // Specify your Vercel region
-};
-
-import { NextRequest } from 'next/server';
+import type { NextApiRequest, NextApiResponse } from 'next';
 import { PrivyClient } from "@privy-io/server-auth";
 import { z } from "zod";
 import { validateLinkUrl } from "../../lib/links";
@@ -203,14 +197,14 @@ const PRIVY_APP_ID = process.env.NEXT_PUBLIC_PRIVY_APP_ID;
 const PRIVY_APP_SECRET = process.env.PRIVY_APP_SECRET;
 const client = new PrivyClient(PRIVY_APP_ID!, PRIVY_APP_SECRET!);
 
-// Helper function to get cookies from edge request
-function getCookie(request: NextRequest, name: string) {
-  return request.cookies.get(name)?.value;
+// Helper function to get cookies
+function getCookie(req: NextApiRequest, name: string): string | undefined {
+  return req.cookies[name];
 }
 
-// Update verifyWalletOwnership to use NextRequest
+// Update verifyWalletOwnership to use NextApiRequest
 async function verifyWalletOwnership(
-  req: NextRequest,
+  req: NextApiRequest,
   walletAddress: string,
 ) {
   const idToken = getCookie(req, "privy-id-token");
@@ -242,7 +236,7 @@ async function verifyWalletOwnership(
 }
 
 // Update getPagesForWallet to use NextRequest
-async function getPagesForWallet(walletAddress: string, req: NextRequest) {
+async function getPagesForWallet(walletAddress: string, req: NextApiRequest) {
   try {
     const idToken = getCookie(req, "privy-id-token");
     if (!idToken) {
@@ -364,32 +358,23 @@ async function checkTokenHoldings(walletAddress: string): Promise<boolean> {
   }
 }
 
-// Helper function to create JSON response
-function jsonResponse(data: any, status = 200) {
-  return new Response(JSON.stringify(data), {
-    status,
-    headers: {
-      'content-type': 'application/json',
-    },
-  });
-}
-
-// Update the main handler to use Edge format
-export default async function handler(req: NextRequest) {
+// Update the main handler to use Next.js API format
+export default async function handler(
+  req: NextApiRequest,
+  res: NextApiResponse
+) {
   if (req.method === "GET") {
-    const url = new URL(req.url);
-    const slug = url.searchParams.get('slug');
-    const walletAddress = url.searchParams.get('walletAddress');
+    const { slug, walletAddress } = req.query;
 
     try {
       if (walletAddress) {
-        const result = await getPagesForWallet(walletAddress, req);
-        return jsonResponse({ pages: result.pages });
+        const result = await getPagesForWallet(walletAddress as string, req as any);
+        return res.status(200).json({ pages: result.pages });
       }
 
       if (slug) {
         const pageData = await prisma.page.findUnique({
-          where: { slug },
+          where: { slug: slug as string },
           include: {
             items: true,
           },
@@ -398,9 +383,9 @@ export default async function handler(req: NextRequest) {
         let isOwner = false;
         if (pageData) {
           try {
-            const idToken = getCookie(req, "privy-id-token");
+            const idToken = req.cookies["privy-id-token"];
             if (idToken) {
-              await verifyWalletOwnership(req, pageData.walletAddress);
+              await verifyWalletOwnership(req as any, pageData.walletAddress);
               isOwner = true;
             }
           } catch (error) {
@@ -409,25 +394,26 @@ export default async function handler(req: NextRequest) {
         }
 
         const sanitizedData = sanitizePageData(pageData, isOwner);
-        return jsonResponse({ mapping: sanitizedData, isOwner });
+        return res.status(200).json({ mapping: sanitizedData, isOwner });
       }
 
-      return jsonResponse({ error: "Slug or wallet address is required" }, 400);
+      return res.status(400).json({ error: "Slug or wallet address is required" });
     } catch (error) {
-      return jsonResponse({ error: "Failed to fetch page data" }, 500);
+      console.error('GET handler error:', error);
+      return res.status(500).json({ error: "Failed to fetch page data" });
     }
   }
 
   if (req.method === "POST") {
     try {
-      const body = await req.json();
+      const body = req.body;
       const validationResult = CreatePageSchema.safeParse(body);
 
       if (!validationResult.success) {
-        return jsonResponse({
+        return res.status(400).json({
           error: "Invalid request data",
           details: validationResult.error.issues,
-        }, 400);
+        });
       }
 
       const {
@@ -456,7 +442,7 @@ export default async function handler(req: NextRequest) {
 
       if (existingPage) {
         if (existingPage.walletAddress !== walletAddress) {
-          return jsonResponse({ error: "This URL is already taken" }, 400);
+          return res.status(400).json({ error: "This URL is already taken" });
         }
       }
 
@@ -465,9 +451,9 @@ export default async function handler(req: NextRequest) {
       try {
         user = await verifyWalletOwnership(req, walletAddress);
       } catch (error) {
-        return jsonResponse({
+        return res.status(401).json({
           error: error instanceof Error ? error.message : "Authentication failed",
-        }, 401);
+        });
       }
 
       // Check token holdings and rate limit for new pages
@@ -477,20 +463,20 @@ export default async function handler(req: NextRequest) {
         if (pages.length > 0) {
           const hasRequiredTokens = await checkTokenHoldings(walletAddress);
           if (!hasRequiredTokens) {
-            return jsonResponse({ 
+            return res.status(403).json({ 
               error: "Token requirement not met",
               message: `You need to hold at least ${process.env.NEXT_PUBLIC_PAGE_DOT_FUN_TOKEN_REQUIRED_HOLDING} PAGE.FUN tokens to create more than one page`
-            }, 403);
+            });
           }
         } */
 
         const rateLimit = await checkRateLimit(user.id);
         if (!rateLimit.allowed) {
-          return jsonResponse({
+          return res.status(429).json({
             error: "Rate limit exceeded",
             timeLeft: rateLimit.timeLeft,
             message: `You can create more pages in ${Math.ceil(rateLimit.timeLeft! / 3600)} hours`,
-          }, 429);
+          });
         }
       }
 
@@ -502,7 +488,7 @@ export default async function handler(req: NextRequest) {
             walletAddress,
           },
         });
-        return jsonResponse({ success: true });
+        return res.status(200).json({ success: true });
       }
 
       // Create or update page with full data
@@ -572,28 +558,28 @@ export default async function handler(req: NextRequest) {
           }
         }
 
-        return jsonResponse({ success: true });
+        return res.status(200).json({ success: true });
       } catch (error) {
         console.error('Error saving page data:', error);
-        return jsonResponse({ 
+        return res.status(500).json({ 
           error: "Failed to store page data",
           message: error instanceof Error ? error.message : "An unexpected error occurred",
           details: process.env.NODE_ENV === 'development' ? String(error) : undefined
-        }, 500);
+        });
       }
     } catch (error) {
       console.error('POST handler error:', error);
       if (error instanceof z.ZodError) {
-        return jsonResponse({
+        return res.status(400).json({
           error: "Invalid data format",
           details: error.issues,
-        }, 400);
+        });
       }
-      return jsonResponse({ 
+      return res.status(500).json({ 
         error: "Failed to store page data",
         message: error instanceof Error ? error.message : "An unexpected error occurred",
         details: process.env.NODE_ENV === 'development' ? String(error) : undefined
-      }, 500);
+      });
     }
   }
 
@@ -603,7 +589,7 @@ export default async function handler(req: NextRequest) {
       const { slug } = body;
 
       if (!slug) {
-        return jsonResponse({ error: "Slug is required" }, 400);
+        return res.status(400).json({ error: "Slug is required" });
       }
 
       const currentPage = await prisma.page.findUnique({
@@ -614,16 +600,16 @@ export default async function handler(req: NextRequest) {
       });
 
       if (!currentPage) {
-        return jsonResponse({ error: "Page not found" }, 404);
+        return res.status(404).json({ error: "Page not found" });
       }
 
       // Verify wallet ownership
       try {
         await verifyWalletOwnership(req, currentPage.walletAddress);
       } catch (error) {
-        return jsonResponse({
+        return res.status(401).json({
           error: error instanceof Error ? error.message : "Authentication failed",
-        }, 401);
+        });
       }
 
       // Delete the page and all related data
@@ -631,25 +617,25 @@ export default async function handler(req: NextRequest) {
         where: { slug },
       });
 
-      return jsonResponse({ success: true });
+      return res.status(200).json({ success: true });
     } catch (error) {
-      return jsonResponse({ error: "Failed to delete page" }, 500);
+      return res.status(500).json({ error: "Failed to delete page" });
     }
   }
 
   if (req.method === "PATCH") {
     try {
-      const body = await req.json();
+      const body = req.body;
       const { slug, connectedToken, tokenSymbol, title, description, image, items, theme, themeFonts, themeColors } = body;
 
       if (!slug) {
-        return jsonResponse({ error: "Slug is required" }, 400);
+        return res.status(400).json({ error: "Slug is required" });
       }
 
       // Verify authentication
-      const idToken = req.cookies.get("privy-id-token")?.value;
+      const idToken = req.cookies["privy-id-token"];
       if (!idToken) {
-        return jsonResponse({ error: "Authentication required" }, 401);
+        return res.status(401).json({ error: "Authentication required" });
       }
 
       // Get the current page
@@ -661,7 +647,7 @@ export default async function handler(req: NextRequest) {
       });
 
       if (!currentPage) {
-        return jsonResponse({ error: "Page not found" }, 404);
+        return res.status(404).json({ error: "Page not found" });
       }
 
       // Verify wallet ownership
@@ -681,14 +667,14 @@ export default async function handler(req: NextRequest) {
         }
 
         if (!isOwner) {
-          return jsonResponse({ error: "You don't have permission to edit this page" }, 401);
+          return res.status(401).json({ error: "You don't have permission to edit this page" });
         }
       } catch (error) {
         console.error("Auth verification error:", error);
-        return jsonResponse({ 
+        return res.status(401).json({ 
           error: "Authentication failed",
           details: error instanceof Error ? error.message : "Failed to verify ownership"
-        }, 401);
+        });
       }
 
       try {
@@ -737,23 +723,28 @@ export default async function handler(req: NextRequest) {
           }
         }
 
-        return jsonResponse({ success: true });
+        return res.status(200).json({ success: true });
       } catch (error) {
         console.error("Database update error:", error);
-        return jsonResponse({ 
+        return res.status(500).json({ 
           error: "Failed to update page",
           details: error instanceof Error ? error.message : "Database update failed"
-        }, 500);
+        });
       }
     } catch (error) {
       console.error("PATCH handler error:", error);
-      return jsonResponse({ 
+      return res.status(500).json({ 
         error: "Failed to update page",
         details: error instanceof Error ? error.message : "Unexpected error occurred",
         stack: process.env.NODE_ENV === 'development' ? error instanceof Error ? error.stack : undefined : undefined
-      }, 500);
+      });
     }
   }
 
-  return jsonResponse({ error: "Method not allowed" }, 405);
+  return res.status(405).json({ error: "Method not allowed" });
+}
+
+// Update helper function to use NextApiResponse
+function jsonResponse(res: NextApiResponse, data: any, status = 200) {
+  return res.status(status).json(data);
 }

@@ -32,7 +32,7 @@ const DrawerOverlay = React.forwardRef<
 ));
 DrawerOverlay.displayName = DrawerPrimitive.Overlay.displayName;
 
-const DrawerContent = React.forwardRef<
+const DrawerContentComponent = React.forwardRef<
   React.ElementRef<typeof DrawerPrimitive.Content>,
   React.ComponentPropsWithoutRef<typeof DrawerPrimitive.Content> & {
     direction?: "bottom" | "right" | "left";
@@ -80,7 +80,7 @@ const DrawerContent = React.forwardRef<
     </DrawerPrimitive.Portal>
   );
 });
-DrawerContent.displayName = "DrawerContent";
+DrawerContentComponent.displayName = "DrawerContent";
 
 export function Drawer({
   children,
@@ -112,7 +112,7 @@ export function Drawer({
       direction={isMobile ? "bottom" : direction}
       onOpenChange={onOpenChange}
       {...props}>
-      <DrawerContent direction={direction}>
+      <DrawerContentComponent direction={direction}>
         {(title || icon || backButton || closeButton) && (
           <div className="grid gap-1.5 pb-4 pt-2 text-center sm:text-left relative mb-4">
             <div className={cn(hasContainer && "mx-auto w-full max-w-[var(--pf-container-width)]", "flex items-center gap-2")}>
@@ -159,10 +159,11 @@ export function Drawer({
         <div className={cn(hasContainer && "mx-auto w-full max-w-[var(--pf-container-width)]")}>
           {children}
         </div>
-      </DrawerContent>
+      </DrawerContentComponent>
     </DrawerPrimitive.Root>
   );
 }
 
 export const DrawerTrigger = DrawerPrimitive.Trigger;
 export const DrawerClose = DrawerPrimitive.Close;
+export const DrawerContent = DrawerContentComponent;
