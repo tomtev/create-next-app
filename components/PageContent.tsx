@@ -120,12 +120,22 @@ export default function PageContent({
               }}
             />
           )}
-          <h1 className={`pf-page__title ${themeStyle?.effects?.titleGradientBackground ? 'pf-page__title--has-gradient' : ''}`}>
+          <h1
+            className={`pf-page__title ${
+              themeStyle?.effects?.titleGradientBackground
+                ? "pf-page__title--has-gradient"
+                : ""
+            }`}>
             <span>{pageData?.title || "Untitled Page"}</span>
           </h1>
           {pageData?.description && (
-            <p className={`pf-page__description ${themeStyle?.effects?.descriptionGradientBackground ? 'pf-page__description--has-gradient' : ''}`}>
-              {pageData.description}
+            <p
+              className={`pf-page__description ${
+                themeStyle?.effects?.descriptionGradientBackground
+                  ? "pf-page__description--has-gradient"
+                  : ""
+              }`}>
+              <span>{pageData.description}</span>
             </p>
           )}
         </div>
