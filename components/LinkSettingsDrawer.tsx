@@ -57,19 +57,6 @@ export function LinkSettingsDrawer({
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const titleInputRef = useRef<HTMLInputElement>(null);
 
-  // Debug logging for all props and state
-  useEffect(() => {
-    console.log("LinkSettingsDrawer props and state:", {
-      item,
-      tokenSymbol,
-      pageDetails: {
-        connectedToken: pageDetails?.connectedToken,
-        tokenSymbol: pageDetails?.tokenSymbol,
-        fullDetails: pageDetails,
-      },
-    });
-  }, [item, tokenSymbol, pageDetails]);
-
   const isMobileDevice = () => {
     return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
       navigator.userAgent
@@ -92,6 +79,9 @@ export function LinkSettingsDrawer({
 
   // Validate URL whenever it changes
   useEffect(() => {
+    // Only run validation when drawer is open
+    if (!open) return;
+    
     if (!item || !onValidationChange) return;
 
     const preset = LINK_PRESETS[item.presetId];
@@ -104,7 +94,12 @@ export function LinkSettingsDrawer({
     } else {
       onValidationChange(item.id, undefined);
     }
-  }, [item, onValidationChange]);
+
+    return () => {
+      // Clear validation when drawer closes or unmounts
+      onValidationChange?.(item.id, undefined);
+    };
+  }, [item?.url, item?.id, item?.presetId, onValidationChange, open]);
 
   if (!item) return null;
 
@@ -173,14 +168,6 @@ export function LinkSettingsDrawer({
       };
     });
   };
-
-  // Debug logging for token gating conditions
-  console.log("Token gating conditions:", {
-    presetCanBeTokenGated: preset.options?.canBeTokenGated,
-    connectedToken: pageDetails?.connectedToken,
-    shouldShowTokenGating:
-      preset.options?.canBeTokenGated && Boolean(pageDetails?.connectedToken),
-  });
 
   return (
     <Drawer 
