@@ -90,11 +90,13 @@ export default function AppMenu({
 
   const { exportWallet } = useSolanaWallets();
 
-  // Close sheet on route change
+  // Close sheet only when not loading and route changes
   useEffect(() => {
     const handleRouteChange = () => {
-      setOpen(false);
-      setWalletDrawerOpen(false);
+      if (!isLoadingPages && !isLoading) {
+        setOpen(false);
+        setWalletDrawerOpen(false);
+      }
     };
 
     router.events.on("routeChangeStart", handleRouteChange);
@@ -102,7 +104,7 @@ export default function AppMenu({
     return () => {
       router.events.off("routeChangeStart", handleRouteChange);
     };
-  }, [router]);
+  }, [router, isLoadingPages, isLoading]);
 
   useEffect(() => {
     const handleOpenMenu = () => {
