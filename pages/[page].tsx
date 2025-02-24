@@ -1,16 +1,13 @@
 import { GetServerSideProps } from "next";
 import Head from "next/head";
-import { useEffect, useState, Suspense } from "react";
-import dynamic from "next/dynamic";
+import { useEffect, useState } from "react";
 import PageContent from "../components/PageContent";
-import { PageData, PageItem } from "@/types";
-import { themes } from "@/lib/themes";
+import { PageData } from "@/types";
 import { useRouter } from "next/router";
 import { Button } from "@/components/ui/button";
 import { Pencil } from "lucide-react";
 import { PrivyClient } from "@privy-io/server-auth";
 import Loader from "@/components/ui/loader";
-import { Drawer } from "@/components/ui/drawer";
 import { useThemeStyles } from '@/hooks/use-theme-styles';
 import { PrismaClient } from '@prisma/client';
 import { PrismaNeonHTTP } from '@prisma/adapter-neon';
@@ -31,15 +28,7 @@ const prisma = new PrismaClient({ adapter }).$extends({
   },
 });
 
-// Dynamically import child routes
-const ProfilePage = dynamic(() => import("./[page]/profile"), {
-  loading: () => (
-    <div className="p-4">
-      <Loader />
-    </div>
-  ),
-  ssr: false,
-});
+
 
 interface PageProps {
   pageData: PageData;
@@ -228,48 +217,6 @@ export const getServerSideProps: GetServerSideProps<PageProps> = async ({
 export default function Page({ pageData, slug, error, isOwner }: PageProps) {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
-  const [pageDetails, setPageDetails] = useState<PageData>(pageData);
-  const [previewData, setPreviewData] = useState<PageData>(pageData);
-  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
-
-  // Check if this is being rendered from a child route
-  const isChildRoute = router.pathname.includes("[page]/");
-
-  // Handle drawer routes
-  useEffect(() => {
-    if (isChildRoute) return;
-    const childRoute = router.asPath.split("/").slice(2)[0];
-    setIsDrawerOpen(!!childRoute);
-  }, [router.asPath, isChildRoute]);
-
-  // Handle drawer close
-  const handleDrawerClose = () => {
-    setIsDrawerOpen(false);
-    router.back();
-  };
-
-  useEffect(() => {
-    if (pageData) {
-      const currentTheme = pageData.theme || "default";
-      const themePreset = themes[currentTheme];
-
-      const fonts = pageData.themeFonts || {
-        global: themePreset?.fonts?.global || "Inter",
-        heading: themePreset?.fonts?.heading || "Inter",
-        paragraph: themePreset?.fonts?.paragraph || "Inter",
-        links: themePreset?.fonts?.links || "Inter",
-      };
-
-      const initialPageData: PageData = {
-        ...pageData,
-        theme: currentTheme,
-        themeFonts: fonts,
-      };
-
-      setPageDetails(initialPageData);
-      setPreviewData(initialPageData);
-    }
-  }, [pageData]);
 
   // Track page visit
   useEffect(() => {
@@ -308,9 +255,6 @@ export default function Page({ pageData, slug, error, isOwner }: PageProps) {
   };
 
   const { cssVariables, googleFontsUrl, themeConfig } = useThemeStyles(processedPageData);
-
-  // Get the current child route for drawer content
-  const childRoute = router.asPath.split("/").slice(2)[0];
 
   if (error) {
     return (
@@ -374,31 +318,6 @@ export default function Page({ pageData, slug, error, isOwner }: PageProps) {
             <Pencil className="h-4 w-4" />
           )}
         </Button>
-      )}
-
-      {!isChildRoute && (
-        <Drawer
-          open={isDrawerOpen}
-          onOpenChange={(open) => {
-            if (!open) handleDrawerClose();
-          }}
-          direction="bottom">
-            <Suspense
-              fallback={
-                <div className="p-4">
-                  <Loader />
-                </div>
-              }>
-              {childRoute === "profile" && (
-                <ProfilePage
-                  pageData={pageData}
-                  slug={slug}
-                  isOwner={isOwner}
-                  error={error}
-                />
-              )}
-            </Suspense>
-        </Drawer>
       )}
     </>
   );
