@@ -28,7 +28,6 @@ function MyApp(props: AppProps) {
       <Head>
         <link rel="icon" href="/favicons/icon.svg" type="image/svg+xml" />
         <link rel="manifest" href="/favicons/manifest.json" />
-        <title>Page.fun</title>
         <meta name="description" content="Tokenize yourself" />
       </Head>
       <PrivyProvider
