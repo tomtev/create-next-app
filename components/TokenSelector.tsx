@@ -8,6 +8,7 @@ type TokenMetadata = {
   description?: string;
   symbol?: string;
   image?: string;
+  attributes?: any[];
 };
 
 interface TokenSelectorProps {
@@ -27,7 +28,7 @@ export default function TokenSelector({
 
   const validateAddress = (address: string) => {
     if (!address.trim()) {
-      return "Token address is required";
+      return "Asset address is required";
     }
     if (address.length !== 44) {
       return "Invalid Solana address format (must be 44 characters)";
@@ -51,17 +52,17 @@ export default function TokenSelector({
       const data = await response.json();
       
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to fetch token data');
+        throw new Error(data.error || 'Failed to fetch asset data');
       }
 
       if (data.metadata) {
         onMetadataLoad?.(data.metadata);
         onTokenSelect(address);
       } else {
-        throw new Error('No token metadata found');
+        throw new Error('No asset metadata found');
       }
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Failed to fetch token metadata';
+      const message = error instanceof Error ? error.message : 'Failed to fetch asset metadata';
       setError(message);
       onMetadataLoad?.(null);
       onTokenSelect(null);
@@ -86,7 +87,7 @@ export default function TokenSelector({
             setInputValue(e.target.value);
             setError(null); // Clear error when input changes
           }}
-          placeholder="Enter token address (44 characters)"
+          placeholder="Enter asset address (44 characters)"
           className="flex-1 font-mono text-sm"
           maxLength={44}
         />
@@ -100,7 +101,7 @@ export default function TokenSelector({
       )}
       
       <p className="text-xs text-gray-500">
-        Enter a valid Solana token address to load its metadata
+        Enter a valid Solana asset address to load its metadata
       </p>
     </div>
   );

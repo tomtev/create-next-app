@@ -35,6 +35,7 @@ interface LinkSettingsDrawerProps {
   item?: PageItem;
   error?: string;
   tokenSymbol?: string;
+  pageDetails?: PageData | null;
   setPageDetails: (data: PageData | ((prev: PageData | null) => PageData | null)) => void;
   onDelete?: () => void;
   onUrlChange?: (url: string) => void;
@@ -46,6 +47,7 @@ export function LinkSettingsDrawer({
   item,
   error,
   tokenSymbol,
+  pageDetails,
   setPageDetails,
   onDelete,
   onUrlChange,
@@ -55,6 +57,19 @@ export function LinkSettingsDrawer({
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const titleInputRef = useRef<HTMLInputElement>(null);
   
+  // Debug logging for all props and state
+  useEffect(() => {
+    console.log('LinkSettingsDrawer props and state:', {
+      item,
+      tokenSymbol,
+      pageDetails: {
+        connectedToken: pageDetails?.connectedToken,
+        tokenSymbol: pageDetails?.tokenSymbol,
+        fullDetails: pageDetails
+      },
+    });
+  }, [item, tokenSymbol, pageDetails]);
+
   const isMobileDevice = () => {
     return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
       navigator.userAgent
@@ -123,17 +138,18 @@ export function LinkSettingsDrawer({
   const handleTokenGateChange = (checked: boolean) => {
     setPageDetails((prev) => {
       if (!prev) return prev;
+      const updatedItems = prev.items?.map((i) =>
+        i.id === item.id
+          ? {
+              ...i,
+              tokenGated: checked,
+              requiredTokens: checked ? ["1"] : [],
+            }
+          : i
+      );
       return {
         ...prev,
-        items: prev.items?.map((i) =>
-          i.id === item.id
-            ? {
-                ...i,
-                tokenGated: checked,
-                requiredTokens: checked ? ["1"] : undefined,
-              }
-            : i
-        ),
+        items: updatedItems,
       };
     });
   };
@@ -143,19 +159,27 @@ export function LinkSettingsDrawer({
 
     setPageDetails((prev) => {
       if (!prev) return prev;
+      const updatedItems = prev.items?.map((i) =>
+        i.id === item.id
+          ? {
+              ...i,
+              requiredTokens: value ? [value] : [],
+            }
+          : i
+      );
       return {
         ...prev,
-        items: prev.items?.map((i) =>
-          i.id === item.id
-            ? {
-                ...i,
-                requiredTokens: value ? [value] : undefined,
-              }
-            : i
-        ),
+        items: updatedItems,
       };
     });
   };
+
+  // Debug logging for token gating conditions
+  console.log('Token gating conditions:', {
+    presetCanBeTokenGated: preset.options?.canBeTokenGated,
+    connectedToken: pageDetails?.connectedToken,
+    shouldShowTokenGating: preset.options?.canBeTokenGated && Boolean(pageDetails?.connectedToken)
+  });
 
   return (
     <div className="max-w-lg mx-auto w-full">
@@ -194,7 +218,7 @@ export function LinkSettingsDrawer({
                 {item.url && (
                   <Button
                     variant="outline"
-                    onClick={() => window.open(item.url, '_blank')}
+                    onClick={() => item.url && window.open(item.url, '_blank')}
                     className="whitespace-nowrap"
                   >
                     Test Link
@@ -213,46 +237,57 @@ export function LinkSettingsDrawer({
 
         {preset.options?.canBeTokenGated && (
           <div className="space-y-3">
-            <div className="flex items-center gap-2">
-              <label className="flex items-center space-x-2">
-                <Checkbox
-                  checked={item.tokenGated}
-                  onCheckedChange={handleTokenGateChange}
-                />
-                <span className="text-sm text-gray-600">Token gate</span>
-              </label>
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger>
-                    <HelpCircle className="h-4 w-4 text-gray-400" />
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>This requires your visitor to own {tokenSymbol || "tokens"} to get access to this link.</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            </div>
-            {item.tokenGated && (
-              <div className="pl-6 border-l-2 border-violet-200">
-                <label className="block text-sm text-gray-600 mb-1">
-                  Required tokens
-                </label>
-                <div className="flex items-center gap-2">
-                  <Input
-                    type="number"
-                    min="1"
-                    value={item.requiredTokens?.[0] || "1"}
-                    onChange={(e) => handleRequiredTokensChange(e.target.value)}
-                    onKeyDown={handleKeyDown}
-                    className="w-24"
-                  />
-                  {tokenSymbol && (
-                    <span className="text-sm text-gray-500">
-                      ${tokenSymbol}
-                    </span>
-                  )}
-                </div>
+            {!pageDetails?.connectedToken ? (
+              <div className="text-sm text-amber-600 bg-amber-50 p-3 rounded-md">
+                Connect a token in the page settings to enable token gating.
+                <pre className="mt-2 text-xs bg-white p-2 rounded">
+                  Debug: {JSON.stringify({ connectedToken: pageDetails?.connectedToken, tokenSymbol: pageDetails?.tokenSymbol }, null, 2)}
+                </pre>
               </div>
+            ) : (
+              <>
+                <div className="flex items-center gap-2">
+                  <label className="flex items-center space-x-2">
+                    <Checkbox
+                      checked={item.tokenGated}
+                      onCheckedChange={handleTokenGateChange}
+                    />
+                    <span className="text-sm text-gray-600">Token gate</span>
+                  </label>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger>
+                        <HelpCircle className="h-4 w-4 text-gray-400" />
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>This requires your visitor to own {tokenSymbol || "tokens"} to get access to this link.</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </div>
+                {item.tokenGated && (
+                  <div className="pl-6 border-l-2 border-violet-200">
+                    <label className="block text-sm text-gray-600 mb-1">
+                      Required tokens
+                    </label>
+                    <div className="flex items-center gap-2">
+                      <Input
+                        type="number"
+                        min="1"
+                        value={item.requiredTokens?.[0] || "1"}
+                        onChange={(e) => handleRequiredTokensChange(e.target.value)}
+                        onKeyDown={handleKeyDown}
+                        className="w-24"
+                      />
+                      {tokenSymbol && (
+                        <span className="text-sm text-gray-500">
+                          ${tokenSymbol}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </>
             )}
           </div>
         )}

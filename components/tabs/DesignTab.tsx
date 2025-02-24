@@ -25,12 +25,27 @@ export function DesignTab({ pageDetails, setPageDetails }: DesignTabProps) {
       if (!prev) return prev;
       return {
         ...prev,
-        designStyle: value,
-        fonts: {
-          global: themePreset.fonts.global || prev.fonts?.global || 'system',
-          heading: themePreset.fonts.heading || prev.fonts?.heading || 'inherit',
-          paragraph: themePreset.fonts.paragraph || prev.fonts?.paragraph || 'inherit',
-          links: themePreset.fonts.links || prev.fonts?.links || 'inherit'
+        theme: value,
+        themeFonts: {
+          global: themePreset.fonts.global || null,
+          heading: themePreset.fonts.heading || null,
+          paragraph: themePreset.fonts.paragraph || null,
+          links: themePreset.fonts.links || null
+        }
+      };
+    });
+  };
+
+  const updateFont = (type: 'global' | 'heading' | 'paragraph' | 'links', value: string) => {
+    setPageDetails((prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        themeFonts: {
+          global: type === 'global' ? (value === "system" ? null : value) : (prev.themeFonts?.global ?? null),
+          heading: type === 'heading' ? (value === "inherit" ? null : value) : (prev.themeFonts?.heading ?? null),
+          paragraph: type === 'paragraph' ? (value === "inherit" ? null : value) : (prev.themeFonts?.paragraph ?? null),
+          links: type === 'links' ? (value === "inherit" ? null : value) : (prev.themeFonts?.links ?? null)
         }
       };
     });
@@ -43,7 +58,7 @@ export function DesignTab({ pageDetails, setPageDetails }: DesignTabProps) {
           Style
         </label>
         <Select
-          value={pageDetails?.designStyle || "default"}
+          value={pageDetails?.theme || "default"}
           onValueChange={handleThemeChange}
         >
           <SelectTrigger>
@@ -67,16 +82,8 @@ export function DesignTab({ pageDetails, setPageDetails }: DesignTabProps) {
             Global Font
           </label>
           <FontSelect
-            value={pageDetails?.fonts?.global || "system"}
-            onValueChange={(value: string) => {
-              setPageDetails((prev) => ({
-                ...prev!,
-                fonts: {
-                  ...prev!.fonts,
-                  global: value === "system" ? undefined : value,
-                },
-              }));
-            }}
+            value={pageDetails?.themeFonts?.global || "system"}
+            onValueChange={(value: string) => updateFont('global', value)}
             defaultValue="system"
           />
         </div>
@@ -86,16 +93,8 @@ export function DesignTab({ pageDetails, setPageDetails }: DesignTabProps) {
             Heading Font
           </label>
           <FontSelect
-            value={pageDetails?.fonts?.heading || "inherit"}
-            onValueChange={(value: string) => {
-              setPageDetails((prev) => ({
-                ...prev!,
-                fonts: {
-                  ...prev!.fonts,
-                  heading: value === "inherit" ? undefined : value,
-                },
-              }));
-            }}
+            value={pageDetails?.themeFonts?.heading || "inherit"}
+            onValueChange={(value: string) => updateFont('heading', value)}
             defaultValue="inherit"
           />
         </div>
@@ -105,16 +104,8 @@ export function DesignTab({ pageDetails, setPageDetails }: DesignTabProps) {
             Paragraph Font
           </label>
           <FontSelect
-            value={pageDetails?.fonts?.paragraph || "inherit"}
-            onValueChange={(value: string) => {
-              setPageDetails((prev) => ({
-                ...prev!,
-                fonts: {
-                  ...prev!.fonts,
-                  paragraph: value === "inherit" ? undefined : value,
-                },
-              }));
-            }}
+            value={pageDetails?.themeFonts?.paragraph || "inherit"}
+            onValueChange={(value: string) => updateFont('paragraph', value)}
             defaultValue="inherit"
           />
         </div>
@@ -122,16 +113,8 @@ export function DesignTab({ pageDetails, setPageDetails }: DesignTabProps) {
         <div>
           <label className="block text-sm text-gray-600 mb-1">Links Font</label>
           <FontSelect
-            value={pageDetails?.fonts?.links || "inherit"}
-            onValueChange={(value: string) => {
-              setPageDetails((prev) => ({
-                ...prev!,
-                fonts: {
-                  ...prev!.fonts,
-                  links: value === "inherit" ? undefined : value,
-                },
-              }));
-            }}
+            value={pageDetails?.themeFonts?.links || "inherit"}
+            onValueChange={(value: string) => updateFont('links', value)}
             defaultValue="inherit"
           />
         </div>

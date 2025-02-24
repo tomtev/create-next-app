@@ -83,6 +83,9 @@ export default function PageLink({
     await trackClick(page as string, item.id, item.tokenGated || false);
   };
 
+  // Check if token gating should be shown
+  const showTokenGating = item.tokenGated && pageData.connectedToken;
+
   const itemContent = (
     <div className={`pf-link relative ${themeStyle?.effects?.linkPixelBorder ? 'pf-link--has-pixel-border' : ''}`} ref={linkRef}>
       <div className="pf-link__inner">
@@ -101,7 +104,7 @@ export default function PageLink({
           </span>
         </div>
         <div className="pf-link__icon-container">
-          {item.tokenGated && !isLoading && (
+          {showTokenGating && !isLoading && (
             <svg
               xmlns="http://www.w3.org/2000/svg"
               viewBox="0 0 16 16"
@@ -144,7 +147,7 @@ export default function PageLink({
     </div>
   );
 
-  if (item.tokenGated) {
+  if (showTokenGating) {
     // Use Next.js Link for gated content with the current page slug
     return (
       <Link href={`/${page}/url/${item.id}`} onClick={handleClick} className="w-full">

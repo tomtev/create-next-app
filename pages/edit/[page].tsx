@@ -4,7 +4,6 @@ import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
 import { usePrivy } from "@privy-io/react-auth";
 import { PrivyClient } from "@privy-io/server-auth";
-import { Redis } from "@upstash/redis";
 import { Button } from "@/components/ui/button";
 import { Drawer, DrawerContent } from "@/components/ui/drawer";
 import { useToast } from "@/hooks/use-toast";
@@ -21,6 +20,24 @@ import { LinkSettingsDrawer } from "@/components/LinkSettingsDrawer";
 import { LinksDrawer } from "@/components/drawers/LinksDrawer";
 import { SettingsDrawer } from "@/components/drawers/SettingsDrawer";
 import { useThemeStyles } from '@/hooks/use-theme-styles';
+import { PrismaClient } from '@prisma/client';
+import { PrismaNeonHTTP } from '@prisma/adapter-neon';
+import { neon, neonConfig } from '@neondatabase/serverless';
+
+// Configure neon to use fetch
+neonConfig.fetchConnectionCache = true;
+
+// Initialize Prisma client with Neon adapter
+const sql = neon(process.env.DATABASE_URL!);
+const adapter = new PrismaNeonHTTP(sql);
+// @ts-ignore - Prisma doesn't have proper edge types yet
+const prisma = new PrismaClient({ adapter }).$extends({
+  query: {
+    $allOperations({ operation, args, query }) {
+      return query(args);
+    },
+  },
+});
 
 interface PageProps {
   slug: string;
@@ -32,15 +49,6 @@ const PRIVY_APP_ID = process.env.NEXT_PUBLIC_PRIVY_APP_ID;
 const PRIVY_APP_SECRET = process.env.PRIVY_APP_SECRET;
 const privyClient = new PrivyClient(PRIVY_APP_ID!, PRIVY_APP_SECRET!);
 
-// Initialize Redis client
-const redis = new Redis({
-  url: process.env.KV_REST_API_URL!,
-  token: process.env.KV_REST_API_TOKEN!,
-});
-
-const getRedisKey = (slug: string) => `page:${slug}`;
-const getWalletPagesKey = (walletAddress: string) => `wallet:${walletAddress.toLowerCase()}:pages`;
-
 export const getServerSideProps: GetServerSideProps<PageProps> = async ({
   params,
   req,
@@ -48,8 +56,13 @@ export const getServerSideProps: GetServerSideProps<PageProps> = async ({
   const slug = params?.page as string;
 
   try {
-    // Get page data from Redis
-    const pageData = await redis.get<PageData>(getRedisKey(slug));
+    // Get page data from Prisma
+    const pageData = await prisma.page.findUnique({
+      where: { slug },
+      include: {
+        items: true,
+      },
+    });
 
     if (!pageData) {
       return {
@@ -75,18 +88,18 @@ export const getServerSideProps: GetServerSideProps<PageProps> = async ({
       const user = await privyClient.getUser({ idToken });
       
       // Check if the wallet is in user's linked accounts
-      let userWallet = null;
+      let isOwner = false;
       for (const account of user.linkedAccounts) {
         if (account.type === "wallet" && account.chainType === "solana") {
           const walletAccount = account as { address?: string };
           if (walletAccount.address?.toLowerCase() === pageData.walletAddress.toLowerCase()) {
-            userWallet = walletAccount;
+            isOwner = true;
             break;
           }
         }
       }
 
-      if (!userWallet) {
+      if (!isOwner) {
         return {
           redirect: {
             destination: `/${slug}`,
@@ -95,23 +108,55 @@ export const getServerSideProps: GetServerSideProps<PageProps> = async ({
         };
       }
 
-      // Check if the page exists in the user's wallet:id set
-      const pagesKey = getWalletPagesKey(userWallet.address!);
-      const hasPage = await redis.zscore(pagesKey, slug);
-      
-      if (hasPage === null) {
-        return {
-          redirect: {
-            destination: `/${slug}`,
-            permanent: false,
-          },
-        };
-      }
+      // Process the page data to match our PageData interface
+      const processedData: PageData = {
+        id: pageData.id,
+        walletAddress: pageData.walletAddress,
+        slug: pageData.slug,
+        connectedToken: pageData.connectedToken || null,
+        tokenSymbol: pageData.tokenSymbol || null,
+        title: pageData.title || null,
+        description: pageData.description || null,
+        image: pageData.image || null,
+        pageType: pageData.pageType || "personal",
+        theme: pageData.theme || "default",
+        themeFonts: pageData.themeFonts ? JSON.parse(pageData.themeFonts as string) : {
+          global: null,
+          heading: null,
+          paragraph: null,
+          links: null,
+        },
+        themeColors: pageData.themeColors ? JSON.parse(pageData.themeColors as string) : {
+          primary: null,
+          secondary: null,
+          background: null,
+          text: null,
+        },
+        items: pageData.items.map(item => ({
+          id: item.id,
+          pageId: item.pageId,
+          presetId: item.presetId,
+          title: item.title,
+          url: item.url || null,
+          order: item.order,
+          isPlugin: item.isPlugin,
+          tokenGated: item.tokenGated,
+          requiredTokens: item.requiredTokens,
+        })),
+        createdAt: pageData.createdAt.toISOString(),
+        updatedAt: pageData.updatedAt.toISOString(),
+      };
+
+      // Log the processed data to verify token fields
+      console.log('Server-side processed data:', {
+        connectedToken: processedData.connectedToken,
+        tokenSymbol: processedData.tokenSymbol,
+      });
 
       return {
         props: {
           slug,
-          pageData,
+          pageData: processedData,
         },
       };
 
@@ -153,6 +198,24 @@ export default function EditPage({ slug, pageData, error }: PageProps) {
 
   const { cssVariables, googleFontsUrl, themeConfig } = useThemeStyles(previewData);
 
+  // Debug logging for initial pageData
+  useEffect(() => {
+    console.log('Initial pageData:', {
+      connectedToken: pageData?.connectedToken,
+      tokenSymbol: pageData?.tokenSymbol,
+      fullPageData: pageData
+    });
+  }, [pageData]);
+
+  // Debug logging for pageDetails state
+  useEffect(() => {
+    console.log('Current pageDetails state:', {
+      connectedToken: pageDetails?.connectedToken,
+      tokenSymbol: pageDetails?.tokenSymbol,
+      fullPageDetails: pageDetails
+    });
+  }, [pageDetails]);
+
   // Handle ESC key to close drawer
   useEffect(() => {
     const handleEsc = (event: KeyboardEvent) => {
@@ -182,25 +245,28 @@ export default function EditPage({ slug, pageData, error }: PageProps) {
     }
   }, [pageData, authenticated, user, slug, router]);
 
-  // Initialize state after component mounts to prevent hydration mismatch
+  // Initialize state after component mounts
   useEffect(() => {
     if (pageData) {
-      const currentTheme = pageData.designStyle || 'default';
+      const currentTheme = pageData.theme || 'default';
       const themePreset = themes[currentTheme];
       
       const fonts = {
-        global: pageData.fonts?.global || themePreset?.fonts?.global || 'Inter',
-        heading: pageData.fonts?.heading || themePreset?.fonts?.heading || 'Inter',
-        paragraph: pageData.fonts?.paragraph || themePreset?.fonts?.paragraph || 'Inter',
-        links: pageData.fonts?.links || themePreset?.fonts?.links || 'Inter',
+        global: pageData.themeFonts?.global || themePreset?.fonts?.global || 'Inter',
+        heading: pageData.themeFonts?.heading || themePreset?.fonts?.heading || 'Inter',
+        paragraph: pageData.themeFonts?.paragraph || themePreset?.fonts?.paragraph || 'Inter',
+        links: pageData.themeFonts?.links || themePreset?.fonts?.links || 'Inter',
       };
 
       const initialPageData: PageData = {
         ...pageData,
-        designStyle: currentTheme,
-        fonts: fonts,
+        theme: currentTheme,
+        themeFonts: fonts,
+        connectedToken: pageData.connectedToken || null,  // Ensure these are explicitly set
+        tokenSymbol: pageData.tokenSymbol || null,
       };
 
+      console.log('Setting initial page data:', initialPageData);
       setPageDetails(initialPageData);
       setPreviewData(initialPageData);
     }
@@ -209,15 +275,23 @@ export default function EditPage({ slug, pageData, error }: PageProps) {
   // Update preview data whenever pageDetails changes
   useEffect(() => {
     if (pageDetails) {
-      const currentTheme = pageDetails.designStyle || 'default';
+      const currentTheme = pageDetails.theme || 'default';
+      const themePreset = themes[currentTheme];
+      const defaultFonts = {
+        global: themePreset?.fonts?.global || 'Inter',
+        heading: themePreset?.fonts?.heading || 'Inter',
+        paragraph: themePreset?.fonts?.paragraph || 'Inter',
+        links: themePreset?.fonts?.links || 'Inter',
+      };
+
       setPreviewData({
         ...pageDetails,
-        designStyle: currentTheme,
-        fonts: {
-          global: pageDetails.fonts?.global || themes[currentTheme]?.fonts?.global || 'Inter',
-          heading: pageDetails.fonts?.heading || themes[currentTheme]?.fonts?.heading || 'Inter',
-          paragraph: pageDetails.fonts?.paragraph || themes[currentTheme]?.fonts?.paragraph || 'Inter',
-          links: pageDetails.fonts?.links || themes[currentTheme]?.fonts?.links || 'Inter',
+        theme: currentTheme,
+        themeFonts: {
+          global: pageDetails.themeFonts?.global ?? defaultFonts.global,
+          heading: pageDetails.themeFonts?.heading ?? defaultFonts.heading,
+          paragraph: pageDetails.themeFonts?.paragraph ?? defaultFonts.paragraph,
+          links: pageDetails.themeFonts?.links ?? defaultFonts.links,
         },
       });
     }
@@ -272,7 +346,7 @@ export default function EditPage({ slug, pageData, error }: PageProps) {
     }
 
     const solanaWallet = user?.linkedAccounts?.find(isSolanaWallet);
-    if (!solanaWallet || solanaWallet.address !== pageDetails.walletAddress) {
+    if (!solanaWallet || solanaWallet.address?.toLowerCase() !== pageDetails.walletAddress.toLowerCase()) {
       toast({
         title: "Unauthorized",
         description: "You don't have permission to edit this page.",
@@ -321,20 +395,20 @@ export default function EditPage({ slug, pageData, error }: PageProps) {
       // Log the original items
       console.log("Original items:", pageDetails.items);
 
-      const items = pageDetails.items?.map((item, index) => {
+      const items = pageDetails.items?.map((item) => {
         const mappedItem = {
-          id: item.id || `item-${index}`,
+          id: item.id,
           presetId: item.presetId,
           title: item.title || "",
           url: item.url || "",
-          order: index,
+          order: item.order,
           isPlugin: !!item.isPlugin,
           tokenGated: !!item.tokenGated,
           requiredTokens: item.requiredTokens || [],
         };
 
         // Log each mapped item
-        console.log(`Mapped item ${index}:`, {
+        console.log(`Mapped item:`, {
           original: item,
           mapped: mappedItem,
         });
@@ -351,12 +425,18 @@ export default function EditPage({ slug, pageData, error }: PageProps) {
         title: pageDetails.title,
         description: pageDetails.description,
         image: pageDetails.image,
-        designStyle: pageDetails.designStyle || 'default',
-        fonts: {
-          global: pageDetails.fonts?.global || themes[pageDetails.designStyle || 'default'].fonts.global,
-          heading: pageDetails.fonts?.heading || themes[pageDetails.designStyle || 'default'].fonts.heading,
-          paragraph: pageDetails.fonts?.paragraph || themes[pageDetails.designStyle || 'default'].fonts.paragraph,
-          links: pageDetails.fonts?.links || themes[pageDetails.designStyle || 'default'].fonts.links,
+        theme: pageDetails.theme || 'default',
+        themeFonts: pageDetails.themeFonts || {
+          global: null,
+          heading: null,
+          paragraph: null,
+          links: null,
+        },
+        themeColors: pageDetails.themeColors || {
+          primary: null,
+          secondary: null,
+          background: null,
+          text: null,
         },
         items: items?.filter((item) => item.presetId),
       };
@@ -427,6 +507,19 @@ export default function EditPage({ slug, pageData, error }: PageProps) {
   const selectedLink = selectedLinkId
     ? pageDetails?.items?.find((item) => item.id === selectedLinkId)
     : undefined;
+
+  // Debug logging for selected link and drawer state
+  useEffect(() => {
+    if (linkSettingsDrawerOpen) {
+      console.log('Link settings drawer opened with:', {
+        selectedLink,
+        pageDetails: {
+          connectedToken: pageDetails?.connectedToken,
+          tokenSymbol: pageDetails?.tokenSymbol
+        }
+      });
+    }
+  }, [linkSettingsDrawerOpen, selectedLink, pageDetails]);
 
   if (error) {
     return (
@@ -540,6 +633,7 @@ export default function EditPage({ slug, pageData, error }: PageProps) {
               item={selectedLink}
               error={selectedLinkId ? validationErrors[selectedLinkId] : undefined}
               tokenSymbol={pageDetails?.tokenSymbol || undefined}
+              pageDetails={pageDetails}
               setPageDetails={setPageDetails}
               onDelete={() => {
                 if (!selectedLinkId) return;

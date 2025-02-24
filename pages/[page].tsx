@@ -9,10 +9,27 @@ import { useRouter } from "next/router";
 import { Button } from "@/components/ui/button";
 import { Pencil } from "lucide-react";
 import { PrivyClient } from "@privy-io/server-auth";
-import { Redis } from "@upstash/redis";
 import Loader from "@/components/ui/loader";
 import { Drawer, DrawerContent } from "@/components/ui/drawer";
 import { useThemeStyles } from '@/hooks/use-theme-styles';
+import { PrismaClient } from '@prisma/client';
+import { PrismaNeonHTTP } from '@prisma/adapter-neon';
+import { neon, neonConfig } from '@neondatabase/serverless';
+
+// Configure neon to use fetch
+neonConfig.fetchConnectionCache = true;
+
+// Initialize Prisma client with Neon adapter
+const sql = neon(process.env.DATABASE_URL!);
+const adapter = new PrismaNeonHTTP(sql);
+// @ts-ignore - Prisma doesn't have proper edge types yet
+const prisma = new PrismaClient({ adapter }).$extends({
+  query: {
+    $allOperations({ operation, args, query }) {
+      return query(args);
+    },
+  },
+});
 
 // Dynamically import child routes
 const ProfilePage = dynamic(() => import("./[page]/profile"), {
@@ -34,16 +51,6 @@ interface PageProps {
 const PRIVY_APP_ID = process.env.NEXT_PUBLIC_PRIVY_APP_ID;
 const PRIVY_APP_SECRET = process.env.PRIVY_APP_SECRET;
 const privyClient = new PrivyClient(PRIVY_APP_ID!, PRIVY_APP_SECRET!);
-
-// Initialize Redis client
-const redis = new Redis({
-  url: process.env.KV_REST_API_URL!,
-  token: process.env.KV_REST_API_TOKEN!,
-});
-
-const getRedisKey = (slug: string) => `page:${slug}`;
-const getWalletPagesKey = (walletAddress: string) =>
-  `wallet:${walletAddress.toLowerCase()}:pages`;
 
 // Helper to generate a visitor ID
 function generateVisitorId() {
@@ -73,18 +80,40 @@ export const getServerSideProps: GetServerSideProps<PageProps> = async ({
   const slug = params?.page as string;
 
   try {
-    // Get page data from Redis
-    const pageData = await redis.get<PageData>(getRedisKey(slug));
+    // Get page data from Prisma
+    const pageData = await prisma.page.findUnique({
+      where: { slug },
+      include: {
+        items: true,
+      },
+    });
 
     if (!pageData) {
+      const defaultPageData: PageData = {
+        walletAddress: "",
+        slug,
+        createdAt: new Date().toISOString(),
+        pageType: "personal",
+        theme: "default",
+        themeFonts: {
+          global: null,
+          heading: null,
+          paragraph: null,
+          links: null,
+        },
+        themeColors: {
+          primary: null,
+          secondary: null,
+          background: null,
+          text: null,
+        },
+        items: [],
+      };
+
       return {
         props: {
           slug,
-          pageData: {
-            walletAddress: "",
-            createdAt: new Date().toISOString(),
-            slug,
-          },
+          pageData: defaultPageData,
           isOwner: false,
           error: "Page not found",
         },
@@ -100,7 +129,6 @@ export const getServerSideProps: GetServerSideProps<PageProps> = async ({
         const user = await privyClient.getUser({ idToken });
 
         // Check if the wallet is in user's linked accounts
-        let userWallet = null;
         for (const account of user.linkedAccounts) {
           if (account.type === "wallet" && account.chainType === "solana") {
             const walletAccount = account as { address?: string };
@@ -108,40 +136,54 @@ export const getServerSideProps: GetServerSideProps<PageProps> = async ({
               walletAccount.address?.toLowerCase() ===
               pageData.walletAddress.toLowerCase()
             ) {
-              userWallet = walletAccount;
+              isOwner = true;
               break;
             }
           }
         }
-
-        if (userWallet) {
-          // Check if the page exists in the user's wallet:id set
-          const pagesKey = getWalletPagesKey(userWallet.address!);
-          const hasPage = await redis.zscore(pagesKey, slug);
-
-          if (hasPage !== null) {
-            isOwner = true;
-          }
-        }
       } catch (error) {
-        // Ignore verification errors - just means user doesn't own the page
         console.log("User does not own page:", error);
       }
     }
 
-    // If not owner, remove URLs from token-gated items
-    const processedData = { ...pageData };
-    if (!isOwner && processedData.items) {
-      processedData.items = processedData.items.map((item: PageItem) => {
-        if (item.tokenGated) {
-          return {
-            ...item,
-            url: null, // Use null for token-gated content
-          };
-        }
-        return item;
-      });
-    }
+    // Process the page data to match our PageData interface
+    const processedData: PageData = {
+      id: pageData.id,
+      walletAddress: pageData.walletAddress,
+      slug: pageData.slug,
+      connectedToken: pageData.connectedToken || null,
+      tokenSymbol: pageData.tokenSymbol || null,
+      title: pageData.title || null,
+      description: pageData.description || null,
+      image: pageData.image || null,
+      pageType: pageData.pageType || "personal",
+      theme: pageData.theme || "default",
+      themeFonts: pageData.themeFonts ? JSON.parse(pageData.themeFonts as string) : {
+        global: null,
+        heading: null,
+        paragraph: null,
+        links: null,
+      },
+      themeColors: pageData.themeColors ? JSON.parse(pageData.themeColors as string) : {
+        primary: null,
+        secondary: null,
+        background: null,
+        text: null,
+      },
+      items: pageData.items.map(item => ({
+        id: item.id,
+        pageId: item.pageId,
+        presetId: item.presetId,
+        title: item.title,
+        url: item.tokenGated && !isOwner ? null : (item.url || null),
+        order: item.order,
+        isPlugin: item.isPlugin,
+        tokenGated: item.tokenGated,
+        requiredTokens: item.requiredTokens,
+      })),
+      createdAt: pageData.createdAt.toISOString(),
+      updatedAt: pageData.updatedAt.toISOString(),
+    };
 
     return {
       props: {
@@ -152,14 +194,31 @@ export const getServerSideProps: GetServerSideProps<PageProps> = async ({
     };
   } catch (error) {
     console.error("Error fetching page data:", error);
+    const defaultPageData: PageData = {
+      walletAddress: "",
+      slug,
+      createdAt: new Date().toISOString(),
+      pageType: "personal",
+      theme: "default",
+      themeFonts: {
+        global: null,
+        heading: null,
+        paragraph: null,
+        links: null,
+      },
+      themeColors: {
+        primary: null,
+        secondary: null,
+        background: null,
+        text: null,
+      },
+      items: [],
+    };
+
     return {
       props: {
         slug,
-        pageData: {
-          walletAddress: "",
-          createdAt: new Date().toISOString(),
-          slug,
-        },
+        pageData: defaultPageData,
         isOwner: false,
         error: "Failed to fetch page data",
       },
@@ -179,8 +238,7 @@ export default function Page({ pageData, slug, error, isOwner }: PageProps) {
 
   // Handle drawer routes
   useEffect(() => {
-    if (isChildRoute) return; // Don't handle drawer state if rendered from child route
-
+    if (isChildRoute) return;
     const childRoute = router.asPath.split("/").slice(2)[0];
     setIsDrawerOpen(!!childRoute);
   }, [router.asPath, isChildRoute]);
@@ -193,22 +251,20 @@ export default function Page({ pageData, slug, error, isOwner }: PageProps) {
 
   useEffect(() => {
     if (pageData) {
-      const currentTheme = pageData.designStyle || "default";
+      const currentTheme = pageData.theme || "default";
       const themePreset = themes[currentTheme];
 
-      const fonts = {
-        global: pageData.fonts?.global || themePreset?.fonts?.global || "Inter",
-        heading:
-          pageData.fonts?.heading || themePreset?.fonts?.heading || "Inter",
-        paragraph:
-          pageData.fonts?.paragraph || themePreset?.fonts?.paragraph || "Inter",
-        links: pageData.fonts?.links || themePreset?.fonts?.links || "Inter",
+      const fonts = pageData.themeFonts || {
+        global: themePreset?.fonts?.global || "Inter",
+        heading: themePreset?.fonts?.heading || "Inter",
+        paragraph: themePreset?.fonts?.paragraph || "Inter",
+        links: themePreset?.fonts?.links || "Inter",
       };
 
       const initialPageData: PageData = {
         ...pageData,
-        designStyle: currentTheme,
-        fonts: fonts,
+        theme: currentTheme,
+        themeFonts: fonts,
       };
 
       setPageDetails(initialPageData);
@@ -239,21 +295,23 @@ export default function Page({ pageData, slug, error, isOwner }: PageProps) {
     };
 
     trackVisit();
-  }, [slug]); // Only run when slug changes
+  }, [slug]);
 
-  // Replace placeholders in URLs
+  // Process page data with token replacements
   const processedPageData: PageData = {
     ...pageData,
     items: pageData.items?.map((item) => ({
       ...item,
-      url: item.url?.replace("[token]", pageData.connectedToken || ""),
+      url: item.url 
+        ? item.url.replace("[token]", pageData.connectedToken || "") 
+        : null,
     })),
   };
 
-  // Get the current child route
-  const childRoute = router.asPath.split("/").slice(2)[0];
-
   const { cssVariables, googleFontsUrl, themeConfig } = useThemeStyles(processedPageData);
+
+  // Get the current child route for drawer content
+  const childRoute = router.asPath.split("/").slice(2)[0];
 
   if (error) {
     return (

@@ -1,0 +1,47 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+  previewFeatures = ["driverAdapters", "jsonProtocol"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Page {
+  id            String    @id @default(cuid())
+  slug          String    @unique
+  walletAddress String
+  connectedToken String?
+  tokenSymbol   String?
+  title         String?   @db.VarChar(100)
+  description   String?   @db.VarChar(500)
+  image         String?
+  pageType      String?   @default("personal")
+  theme         String?
+  themeFonts    Json?
+  themeColors   Json?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  items         PageItem[]
+
+  @@index([walletAddress])
+}
+
+model PageItem {
+  id            String   @id @default(cuid())
+  pageId        String
+  presetId      String
+  title         String?
+  url           String?
+  order         Int
+  isPlugin      Boolean  @default(false)
+  tokenGated    Boolean  @default(false)
+  requiredTokens String[] @default([])
+  page          Page     @relation(fields: [pageId], references: [id])
+
+  @@index([pageId])
+} 

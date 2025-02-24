@@ -1,6 +1,23 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { PrivyClient } from "@privy-io/server-auth";
-import { PageItem } from "@/types";
+import { PrismaClient } from '@prisma/client';
+import { PrismaNeonHTTP } from '@prisma/adapter-neon';
+import { neon, neonConfig } from '@neondatabase/serverless';
+
+// Configure neon to use fetch
+neonConfig.fetchConnectionCache = true;
+
+// Initialize Prisma client with Neon adapter
+const sql = neon(process.env.DATABASE_URL!);
+const adapter = new PrismaNeonHTTP(sql);
+// @ts-ignore - Prisma doesn't have proper edge types yet
+const prisma = new PrismaClient({ adapter }).$extends({
+  query: {
+    $allOperations({ operation, args, query }) {
+      return query(args);
+    },
+  },
+});
 
 const PRIVY_APP_ID = process.env.NEXT_PUBLIC_PRIVY_APP_ID;
 const PRIVY_APP_SECRET = process.env.PRIVY_APP_SECRET;
@@ -8,7 +25,7 @@ const client = new PrivyClient(PRIVY_APP_ID!, PRIVY_APP_SECRET!);
 
 export default async function handler(
   req: NextApiRequest,
-  res: NextApiResponse,
+  res: NextApiResponse
 ) {
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed" });
@@ -34,9 +51,7 @@ export default async function handler(
     const hasWallet = user.linkedAccounts.some((account) => {
       if (account.type === "wallet" && account.chainType === "solana") {
         const walletAccount = account as { address?: string };
-        return (
-          walletAccount.address?.toLowerCase() === walletAddress.toLowerCase()
-        );
+        return walletAccount.address?.toLowerCase() === walletAddress.toLowerCase();
       }
       return false;
     });
@@ -45,34 +60,20 @@ export default async function handler(
       return res.status(401).json({ error: "Wallet not owned by user" });
     }
 
-    // Fetch page data to check ownership and token requirements
-    const pageResponse = await fetch(
-      `${process.env.NODE_ENV === "development" ? "http://localhost:3000" : ""}/api/page-store?slug=${slug}`,
-    );
-    const { mapping } = await pageResponse.json();
+    // Fetch page data to check ownership
+    const page = await prisma.page.findUnique({
+      where: { slug },
+    });
 
-    if (!mapping) {
+    if (!page) {
       return res.status(404).json({ error: "Page not found" });
     }
 
     // Check page ownership
-    const isOwner =
-      mapping.walletAddress.toLowerCase() === walletAddress.toLowerCase();
-
-    // Check token access if the page has token gating
-    let hasTokenAccess = false;
-    if (mapping.connectedToken) {
-      // TODO: Add token balance check logic here
-      // This would involve checking if the wallet has the required token
-      // For now, we'll just return false
-      hasTokenAccess = false;
-    }
+    const isOwner = page.walletAddress.toLowerCase() === walletAddress.toLowerCase();
 
     return res.status(200).json({
       isOwner,
-      hasTokenAccess,
-      tokenRequired: !!mapping.connectedToken,
-      gatedLinks: mapping.items?.filter((item: PageItem) => item.tokenGated) || [],
     });
   } catch (error) {
     console.error("Error verifying page access:", error);

@@ -273,21 +273,32 @@ export default function CreatePageModal({
         body: JSON.stringify({
           slug,
           walletAddress,
-          createdAt: new Date().toISOString(),
-          items: [],
           title: tokenMetadata?.name || "My Page",
           description: tokenMetadata?.description || "A page for my community",
           image: tokenMetadata?.image || null,
           designStyle: "default",
-          connectedToken: selectedToken,
-          tokenSymbol: tokenMetadata?.symbol,
+          connectedToken: selectedToken || null,
+          tokenSymbol: tokenMetadata?.symbol || null,
           pageType,
+          items: [],
+          fonts: {
+            global: "",
+            heading: "",
+            paragraph: "",
+            links: "",
+          },
         }),
       });
 
+      const data = await response.json();
+
       if (!response.ok) {
-        const error = await response.json();
-        setSlugError(error.error || "Failed to save custom URL");
+        console.error('Error response:', data);
+        toast({
+          title: "Error creating page",
+          description: data.error || data.message || "Failed to create page",
+          variant: "destructive",
+        });
         return;
       }
 
@@ -298,7 +309,11 @@ export default function CreatePageModal({
       router.push(`/edit/${slug}`);
     } catch (error) {
       console.error("Error:", error);
-      setSlugError("An error occurred. Please try again.");
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred. Please try again.",
+        variant: "destructive",
+      });
     } finally {
       setIsCheckingSlug(false);
     }

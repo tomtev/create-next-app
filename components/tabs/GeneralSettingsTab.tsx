@@ -3,9 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import TokenSelector from "@/components/TokenSelector";
 import { PageData } from "@/types";
-import { useState, useRef, useEffect } from "react";
-import { useRouter } from "next/router";
-import { useToast } from "@/hooks/use-toast";
+import { useRef, useEffect } from "react";
 
 interface GeneralSettingsTabProps {
   pageDetails: PageData | null;
@@ -20,8 +18,6 @@ export function GeneralSettingsTab({
   setPageDetails,
   focusField,
 }: GeneralSettingsTabProps) {
-  const router = useRouter();
-  const { toast } = useToast();
   const titleInputRef = useRef<HTMLInputElement>(null);
   const descriptionInputRef = useRef<HTMLTextAreaElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
@@ -85,7 +81,6 @@ export function GeneralSettingsTab({
               </div>
             ) : (
               <TokenSelector
-                walletAddress={pageDetails.walletAddress}
                 selectedToken={null}
                 onTokenSelect={(tokenAddress) => {
                   if (!tokenAddress) return;

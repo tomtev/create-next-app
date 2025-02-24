@@ -1,8 +1,31 @@
-import type { NextApiRequest, NextApiResponse } from "next";
-import { Redis } from "@upstash/redis";
+// Add edge runtime configuration at the top
+export const config = {
+  runtime: 'edge',
+  regions: ['fra1'], // Specify your Vercel region
+};
+
+import { NextRequest } from 'next/server';
 import { PrivyClient } from "@privy-io/server-auth";
 import { z } from "zod";
 import { validateLinkUrl } from "../../lib/links";
+import { PrismaClient } from '@prisma/client';
+import { PrismaNeonHTTP } from '@prisma/adapter-neon';
+import { neon, neonConfig } from '@neondatabase/serverless';
+
+// Configure neon to use fetch
+neonConfig.fetchConnectionCache = true;
+
+// Initialize Prisma client with Neon adapter - using edge-compatible initialization
+const sql = neon(process.env.DATABASE_URL!);
+const adapter = new PrismaNeonHTTP(sql);
+// @ts-ignore - Prisma doesn't have proper edge types yet
+const prisma = new PrismaClient({ adapter }).$extends({
+  query: {
+    $allOperations({ operation, args, query }) {
+      return query(args);
+    },
+  },
+});
 
 // Validation schemas
 const urlPattern = /^[a-zA-Z0-9-]+$/;
@@ -53,10 +76,10 @@ const RESERVED_SLUGS = [
 
 const FontsSchema = z
   .object({
-    global: z.string().optional(),
-    heading: z.string().optional(),
-    paragraph: z.string().optional(),
-    links: z.string().optional(),
+    global: z.string().nullable(),
+    heading: z.string().nullable(),
+    paragraph: z.string().nullable(),
+    links: z.string().nullable(),
   })
   .optional();
 
@@ -94,12 +117,18 @@ const PageDataSchema = z.object({
   description: z.string().max(500).optional(),
   image: z.string().regex(urlRegex).nullable().optional(),
   items: z.array(PageItemSchema).optional(),
-  designStyle: z.string().optional(),
-  fonts: z.object({
-    global: z.string().optional(),
-    heading: z.string().optional(),
-    paragraph: z.string().optional(),
-    links: z.string().optional(),
+  theme: z.string().optional(),
+  themeFonts: z.object({
+    global: z.string().nullable(),
+    heading: z.string().nullable(),
+    paragraph: z.string().nullable(),
+    links: z.string().nullable(),
+  }).optional(),
+  themeColors: z.object({
+    primary: z.string().nullable(),
+    secondary: z.string().nullable(),
+    background: z.string().nullable(),
+    text: z.string().nullable(),
   }).optional(),
   createdAt: z.string().optional(),
   updatedAt: z.string().optional(),
@@ -125,57 +154,76 @@ const CreatePageSchema = z.object({
   connectedToken: z.string().nullable().optional(),
   tokenSymbol: z.string().nullable().optional(),
   image: z.string().regex(urlRegex).nullable().optional(),
-  designStyle: z.string().optional(),
-  fonts: FontsSchema,
+  theme: z.string().optional(),
+  themeFonts: z.object({
+    global: z.string().nullable(),
+    heading: z.string().nullable(),
+    paragraph: z.string().nullable(),
+    links: z.string().nullable(),
+  }).optional(),
+  themeColors: z.object({
+    primary: z.string().nullable(),
+    secondary: z.string().nullable(),
+    background: z.string().nullable(),
+    text: z.string().nullable(),
+  }).optional(),
+  pageType: z.enum(["personal", "meme", "ai-bot"]).optional(),
 });
 
 type PageItem = {
   id: string;
+  pageId: string;
   presetId: string;
-  title?: string;
-  url?: string;
+  title: string | null;
+  url: string | null;
   order: number;
-  isPlugin?: boolean;
-  tokenGated?: boolean;
-  requiredTokens?: string[];
+  isPlugin: boolean;
+  tokenGated: boolean;
+  requiredTokens: string[];
 };
 
 type PageData = {
+  id: string;
   walletAddress: string;
   slug: string;
-  connectedToken?: string;
-  tokenSymbol?: string;
-  title?: string;
-  description?: string;
-  image?: string;
-  items?: PageItem[];
-  designStyle?: string;
-  fonts?: {
-    global?: string;
-    heading?: string;
-    paragraph?: string;
-    links?: string;
-  };
-  createdAt?: string;
-  updatedAt?: string;
+  connectedToken: string | null;
+  tokenSymbol: string | null;
+  title: string | null;
+  description: string | null;
+  image: string | null;
+  items: PageItem[];
+  theme: string | null;
+  themeFonts: {
+    global: string | null;
+    heading: string | null;
+    paragraph: string | null;
+    links: string | null;
+  } | null;
+  themeColors: {
+    primary: string | null;
+    secondary: string | null;
+    background: string | null;
+    text: string | null;
+  } | null;
+  createdAt: Date;
+  updatedAt: Date;
 };
 
 const PRIVY_APP_ID = process.env.NEXT_PUBLIC_PRIVY_APP_ID;
 const PRIVY_APP_SECRET = process.env.PRIVY_APP_SECRET;
 const client = new PrivyClient(PRIVY_APP_ID!, PRIVY_APP_SECRET!);
 
-// Initialize Redis client
-const redis = new Redis({
-  url: process.env.KV_REST_API_URL!,
-  token: process.env.KV_REST_API_TOKEN!,
-});
+// Helper function to get cookies from edge request
+function getCookie(request: NextRequest, name: string) {
+  return request.cookies.get(name)?.value;
+}
 
-// Helper function to verify wallet ownership
+// Update verifyWalletOwnership to use NextRequest
 async function verifyWalletOwnership(
-  req: NextApiRequest,
+  req: NextRequest,
   walletAddress: string,
 ) {
-  const idToken = req.cookies["privy-id-token"];
+  const idToken = getCookie(req, "privy-id-token");
 
   if (!idToken) {
     throw new Error("Missing identity token");
@@ -203,138 +251,36 @@ async function verifyWalletOwnership(
   }
 }
 
-// Helper function to get the Redis key for a slug
-const getRedisKey = (slug: string) => `page:${slug}`;
-
-// Helper function to get the Redis key for a wallet's pages
-const getWalletPagesKey = (walletAddress: string) => `wallet:${walletAddress.toLowerCase()}:pages`;
-
-// Helper function to add page to wallet's pages
-async function addPageToWallet(walletAddress: string, slug: string) {
+// Update getPagesForWallet to use NextRequest
+async function getPagesForWallet(walletAddress: string, req: NextRequest) {
   try {
-    const pagesKey = getWalletPagesKey(walletAddress);
-    // Add to sorted set with timestamp as score for ordering
-    await redis.zadd(pagesKey, { score: Date.now(), member: slug });
-  } catch (error) {
-    throw new Error("Failed to add page to wallet");
-  }
-}
-
-// Helper function to remove page from wallet's pages
-async function removePageFromWallet(walletAddress: string, slug: string) {
-  try {
-    const pagesKey = getWalletPagesKey(walletAddress);
-    await redis.zrem(pagesKey, slug);
-  } catch (error) {
-    throw new Error("Failed to remove page from wallet");
-  }
-}
-
-// Helper function to get all pages for a wallet
-async function getPagesForWallet(walletAddress: string, req: NextApiRequest) {
-  try {
-    // Get authenticated user from request
-    const idToken = req.cookies["privy-id-token"];
+    const idToken = getCookie(req, "privy-id-token");
     if (!idToken) {
       throw new Error("Missing identity token");
     }
 
-    // Verify wallet ownership
     await verifyWalletOwnership(req, walletAddress);
 
-    // Get all slugs for this wallet from Redis
-    const pagesKey = getWalletPagesKey(walletAddress);
-    const slugs = await redis.zrange<string[]>(pagesKey, 0, -1);
+    const pages = await prisma.page.findMany({
+      where: {
+        walletAddress: walletAddress.toLowerCase(),
+      },
+      include: {
+        items: true,
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
 
-    // Get the full page data for each slug
-    const pages = await Promise.all(
-      slugs.map(async (slug) => {
-        const pageData = await redis.get<PageData>(getRedisKey(slug));
-        if (pageData) {
-          return {
-            slug,
-            ...pageData,
-          };
-        }
-        return null;
-      })
-    );
-
-    return { pages: pages.filter(Boolean) };
+    return { pages };
   } catch (error) {
     return { pages: [] };
   }
 }
 
-// Helper function to add page to user's metadata
-async function addPageToUserMetadata(
-  userId: string,
-  walletAddress: string,
-  slug: string,
-) {
-  try {
-    const currentMetadata = await client.getUser(userId);
-    const pagesStr = (currentMetadata.customMetadata || {})?.pages;
-    let currentPages = [];
-
-    // Parse existing pages if they exist
-    if (pagesStr) {
-      try {
-        currentPages = JSON.parse(pagesStr as string);
-      } catch (e) {
-        currentPages = [];
-      }
-    }
-
-    // Add new page if it doesn't exist
-    if (!Array.isArray(currentPages)) {
-      currentPages = [];
-    }
-
-    if (!currentPages.some((p: any) => p.slug === slug)) {
-      const updatedPages = [...currentPages, { walletAddress, slug }];
-      // Store as stringified JSON
-      await client.setCustomMetadata(userId, {
-        pages: JSON.stringify(updatedPages),
-      });
-    }
-  } catch (error) {
-    throw new Error("Failed to update user metadata");
-  }
-}
-
-// Helper function to remove page from user's metadata
-async function removePageFromUserMetadata(userId: string, slug: string) {
-  try {
-    const currentMetadata = await client.getUser(userId);
-    const pagesStr = (currentMetadata.customMetadata || {})?.pages;
-    let currentPages = [];
-
-    // Parse existing pages if they exist
-    if (pagesStr) {
-      try {
-        currentPages = JSON.parse(pagesStr as string);
-      } catch (e) {
-        currentPages = [];
-      }
-    }
-
-    if (!Array.isArray(currentPages)) {
-      currentPages = [];
-    }
-
-    const updatedPages = currentPages.filter((p: any) => p.slug !== slug);
-    // Store as stringified JSON
-    await client.setCustomMetadata(userId, {
-      pages: JSON.stringify(updatedPages),
-    });
-  } catch (error) {
-    throw new Error("Failed to update user metadata");
-  }
-}
-
 // Helper function to sanitize page data for public access
-function sanitizePageData(pageData: PageData | null, isOwner: boolean = false): PageData | null {
+function sanitizePageData(pageData: any | null, isOwner: boolean = false): PageData | null {
   if (!pageData) return pageData;
 
   // If user is the owner, return full data
@@ -350,45 +296,42 @@ function sanitizePageData(pageData: PageData | null, isOwner: boolean = false): 
 
 // Helper function to check rate limit
 async function checkRateLimit(userId: string): Promise<{ allowed: boolean; timeLeft?: number }> {
-  const rateKey = `rate:page-create:${userId}`;
-  const maxPages = 10; // Maximum pages per window
   const windowSeconds = 60 * 60; // 1 hour in seconds
+  const maxPages = 10; // Maximum pages per window
 
   try {
-    // Get current count and timestamp
-    const currentData = await redis.get<{ count: number; timestamp: number }>(rateKey);
+    // Count pages created in the last hour
+    const count = await prisma.page.count({
+      where: {
+        createdAt: {
+          gte: new Date(Date.now() - windowSeconds * 1000),
+        },
+        walletAddress: userId,
+      },
+    });
 
-    const now = Math.floor(Date.now() / 1000);
-
-    if (!currentData) {
-      // First request, set initial count
-      await redis.set(rateKey, { count: 1, timestamp: now }, { ex: windowSeconds });
+    if (count < maxPages) {
       return { allowed: true };
     }
 
-    // Check if window has expired
-    if (now - currentData.timestamp >= windowSeconds) {
-      // Reset counter for new window
-      await redis.set(rateKey, { count: 1, timestamp: now }, { ex: windowSeconds });
-      return { allowed: true };
-    }
+    // Calculate time left in the window
+    const oldestPage = await prisma.page.findFirst({
+      where: {
+        walletAddress: userId,
+      },
+      orderBy: {
+        createdAt: 'asc',
+      },
+      select: {
+        createdAt: true,
+      },
+    });
 
-    // Check if under limit
-    if (currentData.count < maxPages) {
-      // Increment counter
-      await redis.set(
-        rateKey,
-        { count: currentData.count + 1, timestamp: currentData.timestamp },
-        { ex: windowSeconds }
-      );
-      return { allowed: true };
-    }
+    if (!oldestPage) return { allowed: true };
 
-    // Rate limit exceeded
-    const timeLeft = windowSeconds - (now - currentData.timestamp);
-    return { allowed: false, timeLeft };
+    const timeLeft = windowSeconds - (Date.now() - oldestPage.createdAt.getTime()) / 1000;
+    return { allowed: false, timeLeft: Math.max(0, timeLeft) };
   } catch (error) {
-    // In case of error, allow the request
     return { allowed: true };
   }
 }
@@ -431,64 +374,70 @@ async function checkTokenHoldings(walletAddress: string): Promise<boolean> {
   }
 }
 
-export default async function handler(
-  req: NextApiRequest,
-  res: NextApiResponse,
-) {
-  // GET: Fetch page data for a specific slug or wallet's pages
+// Helper function to create JSON response
+function jsonResponse(data: any, status = 200) {
+  return new Response(JSON.stringify(data), {
+    status,
+    headers: {
+      'content-type': 'application/json',
+    },
+  });
+}
+
+// Update the main handler to use Edge format
+export default async function handler(req: NextRequest) {
   if (req.method === "GET") {
-    const { slug, walletAddress } = req.query;
+    const url = new URL(req.url);
+    const slug = url.searchParams.get('slug');
+    const walletAddress = url.searchParams.get('walletAddress');
 
     try {
-      // If walletAddress is provided, require authentication
       if (walletAddress) {
-        const result = await getPagesForWallet(walletAddress as string, req);
-        // These are the user's own pages, so don't sanitize them
-        return res.status(200).json({ pages: result.pages });
+        const result = await getPagesForWallet(walletAddress, req);
+        return jsonResponse({ pages: result.pages });
       }
 
-      // If slug is provided, return specific page data
       if (slug) {
-        const pageData = await redis.get<PageData>(getRedisKey(slug as string));
+        const pageData = await prisma.page.findUnique({
+          where: { slug },
+          include: {
+            items: true,
+          },
+        });
 
-        // If there's data, try to verify ownership
         let isOwner = false;
         if (pageData) {
           try {
-            // Only attempt to verify ownership if we have an identity token
-            const idToken = req.cookies["privy-id-token"];
+            const idToken = getCookie(req, "privy-id-token");
             if (idToken) {
               await verifyWalletOwnership(req, pageData.walletAddress);
               isOwner = true;
             }
           } catch (error) {
-            // Ignore verification errors - just means user doesn't own the page
+            // Ignore verification errors
           }
         }
 
-        // Sanitize the page data before returning
         const sanitizedData = sanitizePageData(pageData, isOwner);
-        return res.status(200).json({ mapping: sanitizedData, isOwner });
+        return jsonResponse({ mapping: sanitizedData, isOwner });
       }
 
-      // Return error if neither slug nor walletAddress provided
-      return res.status(400).json({ error: "Slug or wallet address is required" });
+      return jsonResponse({ error: "Slug or wallet address is required" }, 400);
     } catch (error) {
-      return res.status(500).json({ error: "Failed to fetch page data" });
+      return jsonResponse({ error: "Failed to fetch page data" }, 500);
     }
   }
 
-  // POST: Create or update a page
   if (req.method === "POST") {
     try {
-      // Validate request body against schema
-      const validationResult = CreatePageSchema.safeParse(req.body);
+      const body = await req.json();
+      const validationResult = CreatePageSchema.safeParse(body);
 
       if (!validationResult.success) {
-        return res.status(400).json({
+        return jsonResponse({
           error: "Invalid request data",
           details: validationResult.error.issues,
-        });
+        }, 400);
       }
 
       const {
@@ -501,227 +450,322 @@ export default async function handler(
         connectedToken,
         tokenSymbol,
         image,
-        designStyle,
-        fonts,
+        theme,
+        themeFonts,
+        themeColors,
+        pageType,
       } = validationResult.data;
 
-      // Check if slug exists first
-      const existingPage = await redis.get<PageData>(getRedisKey(slug));
+      // Check if slug exists
+      const existingPage = await prisma.page.findUnique({
+        where: { slug },
+        include: {
+          items: true,
+        },
+      });
+
       if (existingPage) {
-        // If page exists but belongs to another user, reject
         if (existingPage.walletAddress !== walletAddress) {
-          return res.status(400).json({ error: "This URL is already taken" });
+          return jsonResponse({ error: "This URL is already taken" }, 400);
         }
       }
 
-      // Verify ownership of the wallet being used to create/update the page
+      // Verify ownership of the wallet
       let user;
       try {
         user = await verifyWalletOwnership(req, walletAddress);
       } catch (error) {
-        return res
-          .status(401)
-          .json({
-            error:
-              error instanceof Error ? error.message : "Authentication failed",
-          });
+        return jsonResponse({
+          error: error instanceof Error ? error.message : "Authentication failed",
+        }, 401);
       }
 
-      // Only check token holdings and rate limit for new page creation, not updates
+      // Check token holdings and rate limit for new pages
       if (!existingPage) {
-        // Get user's existing pages
         const { pages } = await getPagesForWallet(walletAddress, req);
         
-        // If user already has a page, check token holdings
         if (pages.length > 0) {
           const hasRequiredTokens = await checkTokenHoldings(walletAddress);
           if (!hasRequiredTokens) {
-            return res.status(403).json({ 
+            return jsonResponse({ 
               error: "Token requirement not met",
               message: `You need to hold at least ${process.env.NEXT_PUBLIC_PAGE_DOT_FUN_TOKEN_REQUIRED_HOLDING} PAGE.FUN tokens to create more than one page`
-            });
+            }, 403);
           }
         }
 
-        // Check rate limit after token check
         const rateLimit = await checkRateLimit(user.id);
         if (!rateLimit.allowed) {
-          return res.status(429).json({
+          return jsonResponse({
             error: "Rate limit exceeded",
             timeLeft: rateLimit.timeLeft,
             message: `You can create more pages in ${Math.ceil(rateLimit.timeLeft! / 3600)} hours`,
-          });
+          }, 429);
         }
       }
 
-      // For initial setup wizard step, only store minimal data
+      // For initial setup wizard step
       if (isSetupWizard === true) {
-        const initialData = PageDataSchema.parse({
-          walletAddress,
-          slug,
-          createdAt: new Date().toISOString(),
+        await prisma.page.create({
+          data: {
+            slug,
+            walletAddress,
+          },
         });
-        await redis.set(getRedisKey(slug), initialData);
-        // Add page to wallet's pages in Redis
-        await addPageToWallet(walletAddress, slug);
-        return res.status(200).json({ success: true });
+        return jsonResponse({ success: true });
       }
 
-      // Create/Update page data, preserving existing data
-      const pageData = PageDataSchema.parse({
-        ...(existingPage && { ...existingPage }),
-        walletAddress,
+      // Create or update page with full data
+      const pageData = {
         slug,
-        ...(title && { title }),
-        ...(description && { description }),
-        ...(items && { items }),
-        ...(connectedToken && { connectedToken }),
-        ...(tokenSymbol && { tokenSymbol }),
-        ...(image && { image }),
-        ...(designStyle && { designStyle }),
-        ...(fonts && { fonts }),
-        updatedAt: new Date().toISOString(),
-      });
+        walletAddress: walletAddress.toLowerCase(),
+        title: title || null,
+        description: description || null,
+        connectedToken: connectedToken || null,
+        tokenSymbol: tokenSymbol || null,
+        image: image || null,
+        theme: theme || null,
+        themeFonts: themeFonts || undefined,
+        themeColors: themeColors || undefined,
+        pageType: pageType || null,
+      };
 
-      // Save to Redis with unique key
-      await redis.set(getRedisKey(slug), pageData);
-      // Add page to wallet's pages in Redis if it's a new page
-      if (!existingPage) {
-        await addPageToWallet(walletAddress, slug);
+      try {
+        let page;
+        if (existingPage) {
+          // Update the main page first
+          page = await prisma.page.update({
+            where: { id: existingPage.id },
+            data: pageData,
+          });
+
+          // Update related records separately
+          if (items) {
+            await prisma.pageItem.deleteMany({
+              where: { pageId: page.id }
+            });
+            for (const item of items) {
+              await prisma.pageItem.create({
+                data: {
+                  pageId: page.id,
+                  presetId: item.presetId,
+                  title: item.title || null,
+                  url: item.url || null,
+                  order: item.order,
+                  isPlugin: item.isPlugin || false,
+                  tokenGated: item.tokenGated || false,
+                  requiredTokens: item.requiredTokens || [],
+                }
+              });
+            }
+          }
+        } else {
+          // Create the main page first
+          page = await prisma.page.create({
+            data: pageData,
+          });
+
+          // Create related records separately
+          if (items && items.length > 0) {
+            for (const item of items) {
+              await prisma.pageItem.create({
+                data: {
+                  pageId: page.id,
+                  presetId: item.presetId,
+                  title: item.title || null,
+                  url: item.url || null,
+                  order: item.order,
+                  isPlugin: item.isPlugin || false,
+                  tokenGated: item.tokenGated || false,
+                  requiredTokens: item.requiredTokens || [],
+                }
+              });
+            }
+          }
+        }
+
+        return jsonResponse({ success: true });
+      } catch (error) {
+        console.error('Error saving page data:', error);
+        return jsonResponse({ 
+          error: "Failed to store page data",
+          message: error instanceof Error ? error.message : "An unexpected error occurred",
+          details: process.env.NODE_ENV === 'development' ? String(error) : undefined
+        }, 500);
       }
-      return res.status(200).json({ success: true });
     } catch (error) {
+      console.error('POST handler error:', error);
       if (error instanceof z.ZodError) {
-        return res.status(400).json({
+        return jsonResponse({
           error: "Invalid data format",
           details: error.issues,
-        });
+        }, 400);
       }
-      return res.status(500).json({ error: "Failed to store page data" });
+      return jsonResponse({ 
+        error: "Failed to store page data",
+        message: error instanceof Error ? error.message : "An unexpected error occurred",
+        details: process.env.NODE_ENV === 'development' ? String(error) : undefined
+      }, 500);
     }
   }
 
-  // DELETE: Remove a page
   if (req.method === "DELETE") {
     try {
-      const { slug } = req.body;
+      const body = await req.json();
+      const { slug } = body;
 
       if (!slug) {
-        return res.status(400).json({ error: "Slug is required" });
+        return jsonResponse({ error: "Slug is required" }, 400);
       }
 
-      // Get current page data to verify ownership
-      const currentPage = await redis.get<PageData>(getRedisKey(slug));
+      const currentPage = await prisma.page.findUnique({
+        where: { slug },
+        include: {
+          items: true,
+        },
+      });
+
       if (!currentPage) {
-        return res.status(404).json({ error: "Page not found" });
+        return jsonResponse({ error: "Page not found" }, 404);
       }
 
       // Verify wallet ownership
       try {
         await verifyWalletOwnership(req, currentPage.walletAddress);
       } catch (error) {
-        return res
-          .status(401)
-          .json({
-            error:
-              error instanceof Error ? error.message : "Authentication failed",
-          });
+        return jsonResponse({
+          error: error instanceof Error ? error.message : "Authentication failed",
+        }, 401);
       }
 
-      // Remove the page from Redis
-      await redis.del(getRedisKey(slug));
-      // Remove page from wallet's pages
-      await removePageFromWallet(currentPage.walletAddress, slug);
-      return res.status(200).json({ success: true });
+      // Delete the page and all related data
+      await prisma.page.delete({
+        where: { slug },
+      });
+
+      return jsonResponse({ success: true });
     } catch (error) {
-      return res.status(500).json({ error: "Failed to delete page" });
+      return jsonResponse({ error: "Failed to delete page" }, 500);
     }
   }
 
-  // PATCH: Update existing page
   if (req.method === "PATCH") {
     try {
-      const { slug, connectedToken, title, description, image, items, designStyle, fonts } = req.body;
+      const body = await req.json();
+      const { slug, connectedToken, title, description, image, items, theme, themeFonts, themeColors } = body;
 
       if (!slug) {
-        return res.status(400).json({ error: "Slug is required" });
+        return jsonResponse({ error: "Slug is required" }, 400);
       }
 
-      // Get current page data to verify ownership
-      const currentPage = await redis.get<PageData>(getRedisKey(slug));
+      // Verify authentication
+      const idToken = req.cookies.get("privy-id-token")?.value;
+      if (!idToken) {
+        return jsonResponse({ error: "Authentication required" }, 401);
+      }
+
+      // Get the current page
+      const currentPage = await prisma.page.findUnique({
+        where: { slug },
+        include: {
+          items: true,
+        },
+      });
+
       if (!currentPage) {
-        return res.status(404).json({ error: "Page not found" });
+        return jsonResponse({ error: "Page not found" }, 404);
       }
 
-      // Verify wallet ownership and page access
+      // Verify wallet ownership
       try {
-        const idToken = req.cookies["privy-id-token"];
-        if (!idToken) {
-          return res.status(401).json({ error: "Authentication required" });
-        }
-
         const user = await client.getUser({ idToken });
         
         // Check if the wallet is in user's linked accounts
-        let userWallet = null;
+        let isOwner = false;
         for (const account of user.linkedAccounts) {
           if (account.type === "wallet" && account.chainType === "solana") {
             const walletAccount = account as { address?: string };
             if (walletAccount.address?.toLowerCase() === currentPage.walletAddress.toLowerCase()) {
-              userWallet = walletAccount;
+              isOwner = true;
               break;
             }
           }
         }
 
-        if (!userWallet) {
-          return res.status(403).json({ error: "You don't have permission to edit this page" });
+        if (!isOwner) {
+          return jsonResponse({ error: "You don't have permission to edit this page" }, 401);
         }
-
-        // Check if the page exists in the user's wallet:id set
-        const pagesKey = getWalletPagesKey(userWallet.address!);
-        const hasPage = await redis.zscore(pagesKey, slug);
-        
-        if (hasPage === null) {
-          return res.status(403).json({ error: "Page not found in your collection" });
-        }
-
       } catch (error) {
-        return res.status(401).json({ error: "Authentication failed" });
+        console.error("Auth verification error:", error);
+        return jsonResponse({ 
+          error: "Authentication failed",
+          details: error instanceof Error ? error.message : "Failed to verify ownership"
+        }, 401);
       }
 
-      // Validate the update data
-      const updateData = {
-        walletAddress: currentPage.walletAddress,
-        slug,
-        connectedToken: connectedToken ?? currentPage.connectedToken,
-        tokenSymbol: currentPage.tokenSymbol,
-        title: title ?? currentPage.title,
-        description: description ?? currentPage.description,
-        image: image ?? currentPage.image,
-        items: items ?? currentPage.items,
-        designStyle: designStyle ?? currentPage.designStyle,
-        fonts: fonts ?? currentPage.fonts,
-        createdAt: currentPage.createdAt,
-        updatedAt: new Date().toISOString(),
-      };
-
-      // Validate the complete page data
-      const validatedData = PageDataSchema.parse(updateData);
-
-      // Save to Redis
-      await redis.set(getRedisKey(slug), validatedData);
-      return res.status(200).json({ success: true });
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        return res.status(400).json({
-          error: "Invalid data format",
-          details: error.issues,
+      try {
+        // Update the page
+        await prisma.page.update({
+          where: { slug },
+          data: {
+            connectedToken: connectedToken || null,
+            title: title || null,
+            description: description || null,
+            image: image || null,
+            theme: theme || "default",
+            themeFonts: themeFonts ? JSON.stringify(themeFonts) : undefined,
+            themeColors: themeColors ? JSON.stringify(themeColors) : undefined,
+          },
         });
+
+        // Update items if provided
+        if (items) {
+          // Delete existing items
+          await prisma.pageItem.deleteMany({
+            where: { pageId: currentPage.id }
+          });
+
+          // Create new items
+          if (items.length > 0) {
+            await Promise.all(items.map(async (item: any) => {
+              try {
+                await prisma.pageItem.create({
+                  data: {
+                    pageId: currentPage.id,
+                    presetId: item.presetId,
+                    title: item.title || null,
+                    url: item.url || null,
+                    order: item.order,
+                    isPlugin: item.isPlugin || false,
+                    tokenGated: item.tokenGated || false,
+                    requiredTokens: item.requiredTokens || [],
+                  }
+                });
+              } catch (itemError) {
+                console.error("Error creating item:", itemError, item);
+                throw new Error(`Failed to create item: ${item.presetId}`);
+              }
+            }));
+          }
+        }
+
+        return jsonResponse({ success: true });
+      } catch (error) {
+        console.error("Database update error:", error);
+        return jsonResponse({ 
+          error: "Failed to update page",
+          details: error instanceof Error ? error.message : "Database update failed"
+        }, 500);
       }
-      return res.status(500).json({ error: "Failed to update page" });
+    } catch (error) {
+      console.error("PATCH handler error:", error);
+      return jsonResponse({ 
+        error: "Failed to update page",
+        details: error instanceof Error ? error.message : "Unexpected error occurred",
+        stack: process.env.NODE_ENV === 'development' ? error instanceof Error ? error.stack : undefined : undefined
+      }, 500);
     }
   }
 
-  return res.status(405).json({ error: "Method not allowed" });
+  return jsonResponse({ error: "Method not allowed" }, 405);
 }
