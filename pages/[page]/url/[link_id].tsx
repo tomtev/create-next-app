@@ -127,7 +127,8 @@ export const getServerSideProps: GetServerSideProps<
       if (
         idToken &&
         linkItem.requiredTokens?.[0] &&
-        parentProps.pageData.connectedToken
+        parentProps.pageData.connectedToken &&
+        linkItem.url // Make sure we have a URL to gate
       ) {
         try {
           const user = await privyClient.getUser({ idToken });
@@ -150,7 +151,8 @@ export const getServerSideProps: GetServerSideProps<
             );
 
             if (hasAccess) {
-              gatedUrl = linkItem.url || null;
+              // Replace any token placeholders in the URL
+              gatedUrl = linkItem.url.replace('[token]', parentProps.pageData.connectedToken || '');
             }
           }
         } catch (error) {
@@ -158,10 +160,19 @@ export const getServerSideProps: GetServerSideProps<
         }
       }
 
+      // If the link item doesn't have a URL, set hasAccess to false
+      if (!linkItem.url) {
+        hasAccess = false;
+        gatedUrl = null;
+      }
+
       return {
         props: {
           ...parentProps,
-          linkItem,
+          linkItem: {
+            ...linkItem,
+            url: linkItem.tokenGated ? null : linkItem.url, // Only nullify URL in the link item if it's token gated
+          },
           hasAccess,
           gatedUrl,
         },
@@ -196,6 +207,18 @@ export default function GatedLinkPage(props: GatedLinkPageProps) {
   const { toast } = useToast();
   const [isClosing, setIsClosing] = useState(false);
 
+  // Debug logging for initial props and state
+  console.log('GatedLinkPage Debug:', {
+    propsHasAccess: props.hasAccess,
+    propsGatedUrl: props.gatedUrl,
+    stateHasAccess: hasAccess,
+    stateGatedUrl: gatedUrl,
+    authenticated,
+    linkItem: props.linkItem,
+    connectedToken: props.pageData.connectedToken,
+    requiredTokens: props.linkItem?.requiredTokens
+  });
+
   // Track link clicks
   const trackClick = async (isGated: boolean) => {
     if (!props.linkItem) return;
@@ -219,8 +242,14 @@ export default function GatedLinkPage(props: GatedLinkPageProps) {
       !props.linkItem?.requiredTokens?.[0] ||
       !props.pageData.connectedToken ||
       !user
-    )
+    ) {
+      console.error('Missing required data for check:', {
+        requiredTokens: props.linkItem?.requiredTokens,
+        connectedToken: props.pageData.connectedToken,
+        user: !!user
+      });
       return;
+    }
 
     setIsChecking(true);
     try {
@@ -232,6 +261,12 @@ export default function GatedLinkPage(props: GatedLinkPageProps) {
       if (!solanaWallet?.address) {
         throw new Error("No Solana wallet found");
       }
+
+      console.log('Verifying token access:', {
+        walletAddress: solanaWallet.address,
+        tokenAddress: props.pageData.connectedToken,
+        requiredAmount: props.linkItem.requiredTokens[0]
+      });
 
       // Call our API endpoint instead of KV directly
       const response = await fetch("/api/verify-token-access", {
@@ -263,17 +298,22 @@ export default function GatedLinkPage(props: GatedLinkPageProps) {
         requiredAmount: props.linkItem.requiredTokens[0],
         balance,
         hasAccess: newHasAccess,
+        originalUrl: props.linkItem.url
       });
 
       setHasAccess(newHasAccess);
       if (newHasAccess && props.linkItem.url) {
-        setGatedUrl(props.linkItem.url);
+        // Replace any token placeholders in the URL
+        const processedUrl = props.linkItem.url.replace('[token]', props.pageData.connectedToken || '');
+        console.log('Setting gated URL:', { processedUrl, originalUrl: props.linkItem.url });
+        setGatedUrl(processedUrl);
         toast({
           title: "Access Granted! 🎉",
           description: `You have enough ${props.pageData.tokenSymbol} tokens to access this link.`,
           variant: "default",
         });
       } else {
+        console.log('Access denied or no URL:', { newHasAccess, url: props.linkItem.url });
         setGatedUrl(null);
         toast({
           title: "Access Denied",
@@ -287,7 +327,7 @@ export default function GatedLinkPage(props: GatedLinkPageProps) {
       setGatedUrl(null);
       toast({
         title: "Error",
-        description: "Failed to verify token access. Please try again.",
+        description: error instanceof Error ? error.message : "Failed to verify token access. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -295,23 +335,26 @@ export default function GatedLinkPage(props: GatedLinkPageProps) {
     }
   };
 
+  // Add debug logging for render conditions
+  console.log('Render conditions:', {
+    authenticated,
+    hasAccess,
+    gatedUrl,
+    isChecking
+  });
+
   if (!props.linkItem) {
+    console.log('No link item found, redirecting...');
     router.replace(`/${page}`);
     return null;
   }
 
-  // Use local state for hasAccess and gatedUrl instead of props
-  const currentHasAccess = hasAccess;
-  const currentGatedUrl = gatedUrl;
-
   return (
     <>
-      {/* Render the parent page in the background */}
       <div className="pointer-events-none">
         <ParentPage {...props} />
       </div>
 
-      {/* Render the drawer */}
       <Drawer
         open={!isClosing}
         onOpenChange={(open) => {
@@ -343,18 +386,18 @@ export default function GatedLinkPage(props: GatedLinkPageProps) {
                   Connect Wallet
                 </Button>
               </>
-            ) : currentHasAccess ? (
+            ) : hasAccess ? (
               <>
                 <div className="inline-flex items-center justify-center gap-2 text-sm text-green-700 px-3 py-1.5 rounded-full mx-auto mb-3">
                   You have enough ${props.pageData.tokenSymbol} to access this link.
                 </div>
-                {currentGatedUrl ? (
+                {gatedUrl ? (
                   <Button
                     asChild
                     className="w-full"
                     onClick={() => trackClick(true)}>
                     <a
-                      href={currentGatedUrl}
+                      href={gatedUrl}
                       target="_blank"
                       rel="noopener noreferrer">
                       Open Link

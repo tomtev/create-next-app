@@ -11,6 +11,7 @@ import { validateLinkUrl } from "../../lib/links";
 import { PrismaClient } from '@prisma/client';
 import { PrismaNeonHTTP } from '@prisma/adapter-neon';
 import { neon, neonConfig } from '@neondatabase/serverless';
+import { encryptUrl, decryptUrl } from '@/lib/encryption';
 
 // Configure neon to use fetch
 neonConfig.fetchConnectionCache = true;
@@ -539,7 +540,7 @@ export default async function handler(req: NextRequest) {
                   pageId: page.id,
                   presetId: item.presetId,
                   title: item.title || null,
-                  url: item.url || null,
+                  url: item.tokenGated && item.url ? encryptUrl(item.url) : item.url,
                   order: item.order,
                   tokenGated: item.tokenGated || false,
                   requiredTokens: item.requiredTokens || [],
@@ -561,7 +562,7 @@ export default async function handler(req: NextRequest) {
                   pageId: page.id,
                   presetId: item.presetId,
                   title: item.title || null,
-                  url: item.url || null,
+                  url: item.tokenGated && item.url ? encryptUrl(item.url) : item.url,
                   order: item.order,
                   tokenGated: item.tokenGated || false,
                   requiredTokens: item.requiredTokens || [],
@@ -722,7 +723,7 @@ export default async function handler(req: NextRequest) {
                     pageId: currentPage.id,
                     presetId: item.presetId,
                     title: item.title || null,
-                    url: item.url || null,
+                    url: item.tokenGated && item.url ? encryptUrl(item.url) : item.url,
                     order: item.order,
                     tokenGated: item.tokenGated || false,
                     requiredTokens: item.requiredTokens || [],

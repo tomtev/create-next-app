@@ -4,6 +4,7 @@ import type { PageData, PageItem } from "@/types";
 import { PrismaClient } from '@prisma/client';
 import { PrismaNeonHTTP } from '@prisma/adapter-neon';
 import { neon, neonConfig } from '@neondatabase/serverless';
+import { decryptUrl, isEncryptedUrl } from '@/lib/encryption';
 
 // Configure neon to use fetch
 neonConfig.fetchConnectionCache = true;
@@ -91,9 +92,20 @@ export default async function handler(
       return res.status(401).json({ error: "Not authenticated" });
     }
 
-    // Return only the URL
+    // Decrypt the URL if it's encrypted
+    let decryptedUrl = item.url;
+    if (isEncryptedUrl(item.url)) {
+      try {
+        decryptedUrl = decryptUrl(item.url);
+      } catch (error) {
+        console.error('Failed to decrypt URL:', error);
+        return res.status(500).json({ error: "Failed to decrypt URL" });
+      }
+    }
+
+    // Return the decrypted URL with any token replacements
     return res.status(200).json({ 
-      url: item.url.replace('[token]', pageData.connectedToken || '')
+      url: decryptedUrl.replace('[token]', pageData.connectedToken || '')
     });
 
   } catch (error) {

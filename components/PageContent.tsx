@@ -167,10 +167,11 @@ export default function PageContent({
         </div>
       )}
       <div className="flex mt-10 items-center justify-center gap-1 text-sm opacity-50 hover:opacity-100 transition-opacity">
-        <Link href="/" className="flex items-center gap-1">
-          <span> Built with</span>
-          <Logo />
+        <Link href="/" className="flex items-center gap-0.5">
+          <Logo className="w-4 h-4 mr-0.5" />
           <span>page.fun</span>
+          <span className="opacity-50"> / </span>
+          <span>{pageData.slug}</span>
         </Link>
       </div>
     </div>

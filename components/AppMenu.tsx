@@ -140,7 +140,7 @@ export default function AppMenu({
           </Button>
         </DrawerTrigger>
         <DrawerContent direction="left">
-          <div className="flex-1 overflow-y-auto">
+          <div className="flex-1 overflow-y-auto p-1">
             <div className="space-y-4">
               <div className="sticky top-0 bg-background z-40 pb-2 flex items-center justify-between">
                 <Link href="/" className="flex items-center gap-1.5">
@@ -265,7 +265,7 @@ export default function AppMenu({
         onOpenChange={setWalletDrawerOpen}
         direction="left">
         <DrawerContent direction="left">
-          <div className="flex-1 overflow-y-auto">
+          <div className="flex-1 overflow-y-auto p-1">
             <div className="space-y-4">
               <div className="sticky top-0 bg-background z-40 pb-2 flex items-center gap-5">
                 <Button

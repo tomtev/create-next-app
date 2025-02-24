@@ -23,6 +23,7 @@ import { useThemeStyles } from '@/hooks/use-theme-styles';
 import { PrismaClient } from '@prisma/client';
 import { PrismaNeonHTTP } from '@prisma/adapter-neon';
 import { neon, neonConfig } from '@neondatabase/serverless';
+import { decryptUrl, isEncryptedUrl } from '@/lib/encryption';
 
 // Configure neon to use fetch
 neonConfig.fetchConnectionCache = true;
@@ -132,16 +133,29 @@ export const getServerSideProps: GetServerSideProps<PageProps> = async ({
           background: null,
           text: null,
         },
-        items: pageData.items.map(item => ({
-          id: item.id,
-          pageId: item.pageId,
-          presetId: item.presetId,
-          title: item.title,
-          url: item.url || null,
-          order: item.order || 0,
-          tokenGated: item.tokenGated,
-          requiredTokens: item.requiredTokens,
-        })),
+        items: pageData.items.map(item => {
+          // Decrypt URL if it's encrypted
+          let url = item.url;
+          if (url && isEncryptedUrl(url)) {
+            try {
+              url = decryptUrl(url);
+            } catch (error) {
+              console.error('Failed to decrypt URL for item:', item.id, error);
+              url = null;
+            }
+          }
+
+          return {
+            id: item.id,
+            pageId: item.pageId,
+            presetId: item.presetId,
+            title: item.title,
+            url: url || null,
+            order: item.order || 0,
+            tokenGated: item.tokenGated,
+            requiredTokens: item.requiredTokens,
+          };
+        }),
         createdAt: pageData.createdAt.toISOString(),
         updatedAt: pageData.updatedAt.toISOString(),
       };

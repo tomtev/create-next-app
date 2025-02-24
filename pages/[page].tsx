@@ -175,7 +175,7 @@ export const getServerSideProps: GetServerSideProps<PageProps> = async ({
         pageId: item.pageId,
         presetId: item.presetId,
         title: item.title,
-        url: item.tokenGated && !isOwner ? null : (item.url || null),
+        url: item.url || null,
         order: item.order || 0,
         tokenGated: item.tokenGated,
         requiredTokens: item.requiredTokens,
