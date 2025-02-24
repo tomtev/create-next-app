@@ -1,7 +1,7 @@
-import { useState } from 'react';
+import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import Spinner from './Spinner';
+import Spinner from "./Spinner";
 
 type TokenMetadata = {
   name: string;
@@ -17,12 +17,12 @@ interface TokenSelectorProps {
   onMetadataLoad?: (metadata: TokenMetadata | null) => void;
 }
 
-export default function TokenSelector({ 
-  selectedToken, 
+export default function TokenSelector({
+  selectedToken,
   onTokenSelect,
-  onMetadataLoad
+  onMetadataLoad,
 }: TokenSelectorProps) {
-  const [inputValue, setInputValue] = useState(selectedToken || '');
+  const [inputValue, setInputValue] = useState(selectedToken || "");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -50,19 +50,22 @@ export default function TokenSelector({
     try {
       const response = await fetch(`/api/token-metadata?address=${address}`);
       const data = await response.json();
-      
+
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to fetch asset data');
+        throw new Error(data.error || "Failed to fetch asset data");
       }
 
       if (data.metadata) {
         onMetadataLoad?.(data.metadata);
         onTokenSelect(address);
       } else {
-        throw new Error('No asset metadata found');
+        throw new Error("No asset metadata found");
       }
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Failed to fetch asset metadata';
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Failed to fetch asset metadata";
       setError(message);
       onMetadataLoad?.(null);
       onTokenSelect(null);
@@ -92,17 +95,11 @@ export default function TokenSelector({
           maxLength={44}
         />
         <Button type="submit" disabled={isLoading || !inputValue.trim()}>
-          {isLoading ? <Spinner className="h-4 w-4" /> : 'Load'}
+          {isLoading ? <Spinner className="h-4 w-4" /> : "Load"}
         </Button>
       </form>
-      
-      {error && (
-        <p className="text-sm text-red-500">{error}</p>
-      )}
-      
-      <p className="text-xs text-gray-500">
-        Enter a valid Solana asset address to load its metadata
-      </p>
+
+      {error && <p className="text-sm text-red-500">{error}</p>}
     </div>
   );
-} 
+}

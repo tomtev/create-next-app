@@ -36,7 +36,9 @@ interface LinkSettingsDrawerProps {
   error?: string;
   tokenSymbol?: string;
   pageDetails?: PageData | null;
-  setPageDetails: (data: PageData | ((prev: PageData | null) => PageData | null)) => void;
+  setPageDetails: (
+    data: PageData | ((prev: PageData | null) => PageData | null)
+  ) => void;
   onDelete?: () => void;
   onUrlChange?: (url: string) => void;
   onValidationChange?: (itemId: string, error: string | undefined) => void;
@@ -56,16 +58,16 @@ export function LinkSettingsDrawer({
 }: LinkSettingsDrawerProps) {
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const titleInputRef = useRef<HTMLInputElement>(null);
-  
+
   // Debug logging for all props and state
   useEffect(() => {
-    console.log('LinkSettingsDrawer props and state:', {
+    console.log("LinkSettingsDrawer props and state:", {
       item,
       tokenSymbol,
       pageDetails: {
         connectedToken: pageDetails?.connectedToken,
         tokenSymbol: pageDetails?.tokenSymbol,
-        fullDetails: pageDetails
+        fullDetails: pageDetails,
       },
     });
   }, [item, tokenSymbol, pageDetails]);
@@ -84,7 +86,7 @@ export function LinkSettingsDrawer({
   }, []);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !error) {
+    if (e.key === "Enter" && !error) {
       e.preventDefault();
       closeButtonRef.current?.click();
     }
@@ -175,10 +177,11 @@ export function LinkSettingsDrawer({
   };
 
   // Debug logging for token gating conditions
-  console.log('Token gating conditions:', {
+  console.log("Token gating conditions:", {
     presetCanBeTokenGated: preset.options?.canBeTokenGated,
     connectedToken: pageDetails?.connectedToken,
-    shouldShowTokenGating: preset.options?.canBeTokenGated && Boolean(pageDetails?.connectedToken)
+    shouldShowTokenGating:
+      preset.options?.canBeTokenGated && Boolean(pageDetails?.connectedToken),
   });
 
   return (
@@ -209,18 +212,23 @@ export function LinkSettingsDrawer({
               <div className="flex gap-2">
                 <Input
                   type="text"
-                  placeholder={item.presetId === 'email' ? "Enter email address" : `Enter ${preset.title} URL`}
-                  value={item.url || ''}
+                  placeholder={
+                    item.presetId === "email"
+                      ? "Enter email address"
+                      : `Enter ${preset.title} URL`
+                  }
+                  value={item.url || ""}
                   onChange={(e) => handleUrlChange(e.target.value)}
                   onKeyDown={handleKeyDown}
-                  className={`${error ? "border-red-500 focus:ring-red-500" : ""} flex-1`}
+                  className={`${
+                    error ? "border-red-500 focus:ring-red-500" : ""
+                  } flex-1`}
                 />
                 {item.url && (
                   <Button
                     variant="outline"
-                    onClick={() => item.url && window.open(item.url, '_blank')}
-                    className="whitespace-nowrap"
-                  >
+                    onClick={() => item.url && window.open(item.url, "_blank")}
+                    className="whitespace-nowrap">
                     Test Link
                   </Button>
                 )}
@@ -238,12 +246,7 @@ export function LinkSettingsDrawer({
         {preset.options?.canBeTokenGated && (
           <div className="space-y-3">
             {!pageDetails?.connectedToken ? (
-              <div className="text-sm text-amber-600 bg-amber-50 p-3 rounded-md">
-                Connect a token in the page settings to enable token gating.
-                <pre className="mt-2 text-xs bg-white p-2 rounded">
-                  Debug: {JSON.stringify({ connectedToken: pageDetails?.connectedToken, tokenSymbol: pageDetails?.tokenSymbol }, null, 2)}
-                </pre>
-              </div>
+              <></>
             ) : (
               <>
                 <div className="flex items-center gap-2">
@@ -260,7 +263,10 @@ export function LinkSettingsDrawer({
                         <HelpCircle className="h-4 w-4 text-gray-400" />
                       </TooltipTrigger>
                       <TooltipContent>
-                        <p>This requires your visitor to own {tokenSymbol || "tokens"} to get access to this link.</p>
+                        <p>
+                          This requires your visitor to own{" "}
+                          {tokenSymbol || "tokens"} to get access to this link.
+                        </p>
                       </TooltipContent>
                     </Tooltip>
                   </TooltipProvider>
@@ -275,7 +281,9 @@ export function LinkSettingsDrawer({
                         type="number"
                         min="1"
                         value={item.requiredTokens?.[0] || "1"}
-                        onChange={(e) => handleRequiredTokensChange(e.target.value)}
+                        onChange={(e) =>
+                          handleRequiredTokensChange(e.target.value)
+                        }
                         onKeyDown={handleKeyDown}
                         className="w-24"
                       />
@@ -320,7 +328,10 @@ export function LinkSettingsDrawer({
             </AlertDialogContent>
           </AlertDialog>
           {error ? (
-            <Button onClick={() => {}} variant="outline" className="text-red-500 hover:bg-red-50">
+            <Button
+              onClick={() => {}}
+              variant="outline"
+              className="text-red-500 hover:bg-red-50">
               Fix Error to Continue
             </Button>
           ) : (
@@ -332,4 +343,4 @@ export function LinkSettingsDrawer({
       </div>
     </div>
   );
-} 
+}

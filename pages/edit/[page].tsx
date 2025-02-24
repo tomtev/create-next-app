@@ -15,15 +15,17 @@ import { validateLinkUrl } from "@/lib/links";
 import { LINK_PRESETS } from "@/lib/linkPresets";
 import { themes } from "@/lib/themes";
 import EditPageContent from "@/components/EditPageContent";
-import { ActionBar } from "@/components/ActionBar";
 import { LinkSettingsDrawer } from "@/components/LinkSettingsDrawer";
 import { LinksDrawer } from "@/components/drawers/LinksDrawer";
-import { SettingsDrawer } from "@/components/drawers/SettingsDrawer";
+import { GeneralSettingsDrawer } from "@/components/drawers/GeneralSettingsDrawer";
+import { DesignDrawer } from "@/components/drawers/DesignDrawer";
 import { useThemeStyles } from '@/hooks/use-theme-styles';
 import { PrismaClient } from '@prisma/client';
 import { PrismaNeonHTTP } from '@prisma/adapter-neon';
 import { neon, neonConfig } from '@neondatabase/serverless';
 import { decryptUrl, isEncryptedUrl } from '@/lib/encryption';
+import { PublishBar } from "@/components/PublishBar";
+import { Navbar } from "@/components/Navbar";
 
 // Configure neon to use fetch
 neonConfig.fetchConnectionCache = true;
@@ -204,6 +206,7 @@ export default function EditPage({ slug, pageData, error }: PageProps) {
     [key: string]: string;
   }>({});
   const [settingsDrawerOpen, setSettingsDrawerOpen] = useState(false);
+  const [designDrawerOpen, setDesignDrawerOpen] = useState(false);
   const [linkSettingsDrawerOpen, setLinkSettingsDrawerOpen] = useState(false);
   const [selectedLinkId, setSelectedLinkId] = useState<string | null>(null);
   const [linksDrawerOpen, setLinksDrawerOpen] = useState(false);
@@ -574,11 +577,9 @@ export default function EditPage({ slug, pageData, error }: PageProps) {
       </Head>
 
       <main className="min-h-screen min-h-[100dvh]">
-        <ActionBar
+        <PublishBar
           isSaving={isSaving}
           onSave={handleSavePageDetails}
-          onSettingsClick={() => setSettingsDrawerOpen(true)}
-          onLinksClick={() => setLinksDrawerOpen(true)}
         />
 
         {/* Main content */}
@@ -608,8 +609,14 @@ export default function EditPage({ slug, pageData, error }: PageProps) {
           </div>
         )}
 
-        {/* Settings Drawer */}
-        <SettingsDrawer
+        <Navbar 
+          onAddLinkClick={handleAddLink}
+          onSettingsClick={() => setSettingsDrawerOpen(true)}
+          onDesignClick={() => setDesignDrawerOpen(true)}
+        />
+
+        {/* General Settings Drawer */}
+        <GeneralSettingsDrawer
           open={settingsDrawerOpen}
           onOpenChange={(open) => {
             setSettingsDrawerOpen(open);
@@ -618,6 +625,14 @@ export default function EditPage({ slug, pageData, error }: PageProps) {
           pageDetails={pageDetails}
           setPageDetails={setPageDetails}
           focusField={focusField}
+        />
+
+        {/* Design Drawer */}
+        <DesignDrawer
+          open={designDrawerOpen}
+          onOpenChange={setDesignDrawerOpen}
+          pageDetails={pageDetails}
+          setPageDetails={setPageDetails}
         />
 
         {/* Links Drawer */}
@@ -633,7 +648,7 @@ export default function EditPage({ slug, pageData, error }: PageProps) {
 
         {/* Link Settings Drawer */}
         <Drawer open={linkSettingsDrawerOpen} onOpenChange={setLinkSettingsDrawerOpen}>
-          <DrawerContent className="max-h-[95vh]">
+          <DrawerContent>
             <LinkSettingsDrawer
               item={selectedLink}
               error={selectedLinkId ? validationErrors[selectedLinkId] : undefined}

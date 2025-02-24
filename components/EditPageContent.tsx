@@ -29,7 +29,6 @@ export default function EditPageContent({
   onImageClick,
   onItemsReorder,
   validationErrors = {},
-  onAddLinkClick,
 }: EditPageContentProps) {
   const handleDragEnd = (event: any) => {
     const { operation, canceled } = event;
@@ -118,15 +117,6 @@ export default function EditPageContent({
             </DragDropProvider>
           </div>
         )}
-      </div>
-      {/* Add Link Button */}
-      <div className="fixed bottom-4 left-1/2 -translate-x-1/2">
-        <div className="animate-slide-up">
-          <Button variant={"secondary"} size={"lg"} onClick={onAddLinkClick}>
-            <Plus className="h-5 w-5" />
-            <span>Add Link or App</span>
-          </Button>
-        </div>
       </div>
     </>
   );

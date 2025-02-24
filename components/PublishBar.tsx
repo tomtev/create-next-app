@@ -1,21 +1,18 @@
 import { Button } from "@/components/ui/button";
-import { Settings, Settings2, X } from "lucide-react";
+import { X } from "lucide-react";
 import { useRouter } from "next/router";
 import Link from "next/link";
 import Loader from "@/components/ui/loader";
 
-interface ActionBarProps {
-  onSettingsClick: () => void;
-  onLinksClick: () => void;
+interface PublishBarProps {
   isSaving: boolean;
   onSave: () => void;
 }
 
-export function ActionBar({
-  onSettingsClick,
+export function PublishBar({
   isSaving,
   onSave,
-}: ActionBarProps) {
+}: PublishBarProps) {
   const router = useRouter();
 
   return (
@@ -32,9 +29,6 @@ export function ActionBar({
             ) : (
               "Publish"
             )}
-          </Button>
-          <Button variant="outline" size={"icon"} onClick={onSettingsClick}>
-            <Settings2 />
           </Button>
           <Link href={`/${router.query.page}`}>
             <Button variant="outline" size={"icon"}>
