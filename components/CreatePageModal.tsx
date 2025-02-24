@@ -37,6 +37,8 @@ export default function CreatePageModal({
   const [isSlugValid, setIsSlugValid] = useState(false);
   const [selectedToken, setSelectedToken] = useState<string | null>(null);
   const [tokenMetadata, setTokenMetadata] = useState<any>(null);
+  const [selectedDrawer, setSelectedDrawer] = useState<PageType | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Check if user can create more pages
   const canCreatePage = hasPageTokenAccess || userPages.length === 0;
@@ -53,7 +55,7 @@ export default function CreatePageModal({
     }
   }, [canCreatePage, onClose]);
 
-  const checkSlug = async (value: string, shouldRedirect = false) => {
+  const checkSlug = async (value: string) => {
     if (!value) {
       setSlugError("Please enter a custom URL");
       setIsSlugValid(false);
@@ -68,11 +70,7 @@ export default function CreatePageModal({
       const checkData = await checkResponse.json();
 
       if (checkData.mapping) {
-        // If user owns this page, only redirect if explicitly requested
         if (checkData.isOwner) {
-          if (shouldRedirect) {
-            router.push(`/edit/${value}`);
-          }
           setSlugError("You already own this page");
           setIsSlugValid(false);
           return false;
@@ -96,7 +94,7 @@ export default function CreatePageModal({
 
   // Debounced version of checkSlug that never redirects
   const debouncedCheckSlug = useCallback(
-    debounce((value: string) => checkSlug(value, false), 300),
+    debounce((value: string) => checkSlug(value), 300),
     []
   );
 
@@ -112,13 +110,13 @@ export default function CreatePageModal({
 
   const handleBlur = () => {
     if (slug) {
-      checkSlug(slug, false);
+      checkSlug(slug);
     }
   };
 
   const handlePageTypeSelect = (type: PageType) => {
     setPageType(type);
-    setStep("details");
+    setSelectedDrawer(type);
   };
 
   const fadeVariants = {
@@ -158,7 +156,7 @@ export default function CreatePageModal({
   };
 
   const renderPageTypeSelection = () => (
-    <div className="space-y-6">
+    <div>
       <h2 className="text-lg font-semibold mb-6">Create New Page</h2>
       <div className="grid gap-4">
         <Card
@@ -249,6 +247,185 @@ export default function CreatePageModal({
     </div>
   );
 
+  const renderPersonalDrawer = () => (
+    <div>
+      <h2 className="text-lg font-semibold mb-6 pl-12">Create Personal Page</h2>
+      <div className="space-y-4">
+        <div className="space-y-2">
+          <div className="flex items-center space-x-2">
+            <span className="text-gray-500">page.fun/</span>
+            <Input
+              type="text"
+              value={slug}
+              onChange={(e) => {
+                const lowercaseValue = e.target.value.toLowerCase();
+                setSlug(lowercaseValue);
+                setSlugError("");
+                setIsSlugValid(false);
+              }}
+              onBlur={handleBlur}
+              placeholder="your-custom-url"
+              pattern="^[a-zA-Z0-9-]+$"
+              title="Only letters, numbers, and hyphens allowed"
+              required
+              className="lowercase"
+            />
+          </div>
+          {slugError && (
+            <div className="flex items-center gap-2">
+              <p className="text-sm text-red-500">{slugError}</p>
+              {slugError === "You already own this page" && (
+                <Link
+                  href={`/edit/${slug}`}
+                  className="text-sm text-blue-500 hover:underline">
+                  View page →
+                </Link>
+              )}
+            </div>
+          )}
+          {isCheckingSlug && (
+            <p className="text-sm text-gray-500">
+              Checking availability...
+            </p>
+          )}
+          {isSlugValid && (
+            <p className="text-sm text-green-500">
+              URL is available!
+            </p>
+          )}
+        </div>
+      </div>
+      {renderSubmitButton()}
+    </div>
+  );
+
+  const renderTokenBasedDrawer = () => (
+    <div>
+      <h2 className="text-lg font-semibold mb-6 pl-12">
+        {pageType === "meme" ? "Create Meme Page" : "Create AI Bot Page"}
+      </h2>
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-3">
+          Enter Token Address
+        </label>
+        <TokenSelector
+          selectedToken={selectedToken}
+          onTokenSelect={(tokenAddress) => {
+            setSelectedToken(tokenAddress || null);
+            if (!tokenAddress) {
+              setTokenMetadata(null);
+              setSlug("");
+            }
+          }}
+          onMetadataLoad={(metadata) => {
+            setTokenMetadata(metadata);
+            if (metadata?.symbol) {
+              const suggestedSlug = metadata.symbol.toLowerCase();
+              setSlug(suggestedSlug);
+              debouncedCheckSlug(suggestedSlug);
+            }
+          }}
+        />
+      </div>
+
+      {tokenMetadata && (
+        <div className="flex gap-5 items-start">
+          <div className="space-y-2 flex-1 order-2">
+            <div>
+              <label className="block text-xs text-gray-500">
+                Title
+              </label>
+              <p className="text-sm font-medium">
+                {tokenMetadata.name || "My Page"}
+              </p>
+            </div>
+            <div>
+              <label className="block text-xs text-gray-500">
+                Description
+              </label>
+              <p className="text-sm text-gray-700 line-clamp-3">
+                {tokenMetadata.description ||
+                  "A page for my community"}
+              </p>
+            </div>
+            {tokenMetadata.symbol && (
+              <div>
+                <label className="block text-xs text-gray-500">
+                  Token Symbol
+                </label>
+                <p className="text-sm font-medium">
+                  {tokenMetadata.symbol}
+                </p>
+              </div>
+            )}
+          </div>
+          {tokenMetadata.image && (
+            <img
+              src={tokenMetadata.image}
+              alt={tokenMetadata.name}
+              className="object-cover w-24 h-24 shadow"
+              onError={(e) => {
+                (e.target as HTMLImageElement).style.display =
+                  "none";
+              }}
+            />
+          )}
+        </div>
+      )}
+
+      <div className="space-y-4">
+        <div className="space-y-2">
+          <div className="flex items-center space-x-2">
+            <span className="text-gray-500">page.fun/</span>
+            <Input
+              type="text"
+              value={slug}
+              onChange={(e) => {
+                const lowercaseValue = e.target.value.toLowerCase();
+                setSlug(lowercaseValue);
+                setSlugError("");
+                setIsSlugValid(false);
+              }}
+              onBlur={handleBlur}
+              placeholder={
+                tokenMetadata?.symbol
+                  ? tokenMetadata.symbol.toLowerCase()
+                  : "your-custom-url"
+              }
+              pattern="^[a-zA-Z0-9-]+$"
+              title="Only letters, numbers, and hyphens allowed"
+              required
+              className="lowercase"
+            />
+          </div>
+          {slugError && (
+            <div className="flex items-center gap-2">
+              <p className="text-sm text-red-500">{slugError}</p>
+              {slugError === "You already own this page" && (
+                <Link
+                  href={`/edit/${slug}`}
+                  className="text-sm text-blue-500 hover:underline">
+                  View page →
+                </Link>
+              )}
+            </div>
+          )}
+          {isCheckingSlug && (
+            <p className="text-sm text-gray-500">
+              Checking availability...
+            </p>
+          )}
+          {isSlugValid && (
+            <p className="text-sm text-green-500">
+              URL is available!
+            </p>
+          )}
+        </div>
+      </div>
+      {renderSubmitButton()}
+    </div>
+  );
+
   const handleSubmit = async () => {
     if (!canCreatePage) {
       toast({
@@ -260,10 +437,11 @@ export default function CreatePageModal({
       return;
     }
 
-    const isAvailable = await checkSlug(slug, true);
-    if (!isAvailable) return;
+    if (!isSlugValid) {
+      return;
+    }
 
-    setIsCheckingSlug(true);
+    setIsSubmitting(true);
     try {
       const response = await fetch("/api/page-store", {
         method: "POST",
@@ -315,186 +493,76 @@ export default function CreatePageModal({
         variant: "destructive",
       });
     } finally {
-      setIsCheckingSlug(false);
+      setIsSubmitting(false);
     }
   };
+
+  const renderSubmitButton = () => (
+    <div className="flex justify-end pt-4">
+      <Button
+        onClick={handleSubmit}
+        disabled={!isSlugValid || isSubmitting || (pageType !== "personal" && !selectedToken)}>
+        {isSubmitting ? (
+          <>
+            <Loader className="h-4 w-4 mr-2" />
+            Creating...
+          </>
+        ) : (
+          "Create Page"
+        )}
+      </Button>
+    </div>
+  );
 
   if (!canCreatePage) {
     return null;
   }
 
   return (
-    <Drawer open={open} onOpenChange={(isOpen: boolean) => !isOpen && onClose()} direction="left">
-      <DrawerContent direction="left">
-        {userPages.length > 0 && !hasPageTokenAccess && (
-          <p className="text-sm text-amber-600 mb-4">
-            Note: You need to hold at least {process.env.NEXT_PUBLIC_PAGE_DOT_FUN_TOKEN_REQUIRED_HOLDING} PAGE.FUN tokens to create
-            more than one page
-          </p>
-        )}
+    <>
+      <Drawer 
+        open={open && !selectedDrawer} 
+        onOpenChange={(isOpen: boolean) => !isOpen && onClose()}
+        direction="left"
+      >
+        <DrawerContent direction="left">
+          {userPages.length > 0 && !hasPageTokenAccess && (
+            <p className="text-sm text-amber-600 mb-4">
+              Note: You need to hold at least {process.env.NEXT_PUBLIC_PAGE_DOT_FUN_TOKEN_REQUIRED_HOLDING} PAGE.FUN tokens to create
+              more than one page
+            </p>
+          )}
+          {renderPageTypeSelection()}
+        </DrawerContent>
+      </Drawer>
 
-        <div className="relative">
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={step}
-              variants={fadeVariants}
-              initial="enter"
-              animate="center"
-              exit="exit"
-              transition={{
-                duration: 0.3,
-                ease: [0.32, 0.72, 0, 1]
-              }}>
-              {step === "type" ? (
-                renderPageTypeSelection()
-              ) : (
-                <div className="space-y-6">
-                  <h2 className="text-lg font-semibold mb-6">
-                    {pageType === "personal"
-                      ? "Create Personal Page"
-                      : pageType === "meme"
-                      ? "Create Meme Page"
-                      : "Create AI Bot Page"}
-                  </h2>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-3">
-                      Enter Token Address
-                    </label>
-                    <TokenSelector
-                      selectedToken={selectedToken}
-                      onTokenSelect={(tokenAddress) => {
-                        setSelectedToken(tokenAddress || null);
-                        if (!tokenAddress) {
-                          setTokenMetadata(null);
-                          setSlug("");
-                        }
-                      }}
-                      onMetadataLoad={(metadata) => {
-                        setTokenMetadata(metadata);
-                        if (metadata?.symbol) {
-                          const suggestedSlug = metadata.symbol.toLowerCase();
-                          setSlug(suggestedSlug);
-                          debouncedCheckSlug(suggestedSlug);
-                        }
-                      }}
-                    />
-                  </div>
+      <Drawer
+        open={selectedDrawer === "personal"}
+        onOpenChange={(isOpen: boolean) => !isOpen && setSelectedDrawer(null)}
+        direction="left"
+      >
+        <DrawerContent 
+          direction="left"
+          showBackButton
+          onBack={() => setSelectedDrawer(null)}
+        >
+          {renderPersonalDrawer()}
+        </DrawerContent>
+      </Drawer>
 
-                  {tokenMetadata && (
-                    <div className="flex gap-5 items-start">
-                      <div className="space-y-2 flex-1 order-2">
-                        <div>
-                          <label className="block text-xs text-gray-500">
-                            Title
-                          </label>
-                          <p className="text-sm font-medium">
-                            {tokenMetadata.name || "My Page"}
-                          </p>
-                        </div>
-                        <div>
-                          <label className="block text-xs text-gray-500">
-                            Description
-                          </label>
-                          <p className="text-sm text-gray-700 line-clamp-3">
-                            {tokenMetadata.description ||
-                              "A page for my community"}
-                          </p>
-                        </div>
-                        {tokenMetadata.symbol && (
-                          <div>
-                            <label className="block text-xs text-gray-500">
-                              Token Symbol
-                            </label>
-                            <p className="text-sm font-medium">
-                              {tokenMetadata.symbol}
-                            </p>
-                          </div>
-                        )}
-                      </div>
-                      {tokenMetadata.image && (
-                        <img
-                          src={tokenMetadata.image}
-                          alt={tokenMetadata.name}
-                          className="object-cover w-24 h-24 shadow"
-                          onError={(e) => {
-                            (e.target as HTMLImageElement).style.display =
-                              "none";
-                          }}
-                        />
-                      )}
-                    </div>
-                  )}
-
-                  <div className="space-y-4">
-                    <div className="space-y-2">
-                      <div className="flex items-center space-x-2">
-                        <span className="text-gray-500">page.fun/</span>
-                        <Input
-                          type="text"
-                          value={slug}
-                          onChange={(e) => {
-                            const lowercaseValue = e.target.value.toLowerCase();
-                            setSlug(lowercaseValue);
-                            setSlugError("");
-                            setIsSlugValid(false);
-                          }}
-                          onBlur={handleBlur}
-                          placeholder={
-                            tokenMetadata?.symbol
-                              ? tokenMetadata.symbol.toLowerCase()
-                              : "your-custom-url"
-                          }
-                          pattern="^[a-zA-Z0-9-]+$"
-                          title="Only letters, numbers, and hyphens allowed"
-                          required
-                          className="lowercase"
-                        />
-                      </div>
-                      {slugError && (
-                        <div className="flex items-center gap-2">
-                          <p className="text-sm text-red-500">{slugError}</p>
-                          {slugError === "You already own this page" && (
-                            <Link
-                              href={`/edit/${slug}`}
-                              className="text-sm text-blue-500 hover:underline">
-                              View page →
-                            </Link>
-                          )}
-                        </div>
-                      )}
-                      {isCheckingSlug && (
-                        <p className="text-sm text-gray-500">
-                          Checking availability...
-                        </p>
-                      )}
-                      {isSlugValid && (
-                        <p className="text-sm text-green-500">
-                          URL is available!
-                        </p>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="flex justify-end pt-4">
-                    <Button
-                      onClick={handleSubmit}
-                      disabled={isCheckingSlug || !slug || !isSlugValid}>
-                      {isCheckingSlug ? (
-                        <>
-                          <Loader className="h-4 w-4 mr-2" />
-                          Creating...
-                        </>
-                      ) : (
-                        "Create Page"
-                      )}
-                    </Button>
-                  </div>
-                </div>
-              )}
-            </motion.div>
-          </AnimatePresence>
-        </div>
-      </DrawerContent>
-    </Drawer>
+      <Drawer
+        open={selectedDrawer === "meme" || selectedDrawer === "ai-bot"}
+        onOpenChange={(isOpen: boolean) => !isOpen && setSelectedDrawer(null)}
+        direction="left"
+      >
+        <DrawerContent 
+          direction="left"
+          showBackButton
+          onBack={() => setSelectedDrawer(null)}
+        >
+          {renderTokenBasedDrawer()}
+        </DrawerContent>
+      </Drawer>
+    </>
   );
 }

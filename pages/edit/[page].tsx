@@ -401,7 +401,6 @@ export default function EditPage({ slug, pageData, error }: PageProps) {
           presetId: item.presetId,
           title: item.title || "",
           url: item.url || "",
-          order: item.order,
           isPlugin: !!item.isPlugin,
           tokenGated: !!item.tokenGated,
           requiredTokens: item.requiredTokens || [],
@@ -581,7 +580,9 @@ export default function EditPage({ slug, pageData, error }: PageProps) {
           <div className="pf-page">
             <EditPageContent
               pageData={previewData}
-              items={previewData.items?.filter((item): item is PageItem => Boolean(item && item.id && item.presetId)) || []}
+              items={previewData.items?.filter((item): item is PageItem => 
+                Boolean(item && item.id && item.presetId && typeof item.isPlugin === 'boolean' && typeof item.tokenGated === 'boolean' && Array.isArray(item.requiredTokens))
+              ) || []}
               themeStyle={themeConfig}
               onLinkClick={handleLinkClick}
               onTitleClick={() => {

@@ -37,7 +37,6 @@ model PageItem {
   presetId      String
   title         String?
   url           String?
-  order         Int
   isPlugin      Boolean  @default(false)
   tokenGated    Boolean  @default(false)
   requiredTokens String[] @default([])

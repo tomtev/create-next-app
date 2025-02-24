@@ -7,11 +7,15 @@ import { cn } from "@/lib/utils";
 
 type DrawerProps = React.ComponentProps<typeof DrawerPrimitive.Root> & {
   direction?: "bottom" | "right" | "left";
+  showBackButton?: boolean;
+  onBack?: () => void;
 };
 
 const Drawer = ({
   shouldScaleBackground = true,
   direction = "bottom",
+  showBackButton = false,
+  onBack,
   ...props
 }: DrawerProps) => {
   const [isMobile, setIsMobile] = React.useState(false);
@@ -57,12 +61,14 @@ DrawerOverlay.displayName = DrawerPrimitive.Overlay.displayName;
 interface DrawerContentProps
   extends React.ComponentPropsWithoutRef<typeof DrawerPrimitive.Content> {
   direction?: "bottom" | "right" | "left";
+  showBackButton?: boolean;
+  onBack?: () => void;
 }
 
 const DrawerContent = React.forwardRef<
   React.ElementRef<typeof DrawerPrimitive.Content>,
   DrawerContentProps
->(({ className, children, direction = "bottom", ...props }, ref) => {
+>(({ className, children, direction = "bottom", showBackButton, onBack, ...props }, ref) => {
   const [isMobile, setIsMobile] = React.useState(false);
 
   React.useEffect(() => {
@@ -95,6 +101,26 @@ const DrawerContent = React.forwardRef<
             "border border-primary max-h-[80vh] md:max-h-[98vh] shadow-brutalist h-full w-full grow p-5 flex flex-col rounded-t-md md:rounded-md bg-background",
             "overflow-y-auto overscroll-contain touch-pan-y"
           )}>
+          {showBackButton && (
+            <button
+              onClick={onBack}
+              className="absolute left-5 top-5 p-2 hover:bg-gray-100 rounded-md"
+            >
+              <svg
+                className="w-5 h-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M10 19l-7-7m0 0l7-7m-7 7h18"
+                />
+              </svg>
+            </button>
+          )}
           {children}
         </div>
         {(direction === "bottom" ||
