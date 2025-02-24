@@ -93,7 +93,6 @@ const PageItemSchema = z
       .optional()
       .nullable(),
     order: z.number().int().min(0),
-    isPlugin: z.boolean().optional(),
     tokenGated: z.boolean().optional(),
     requiredTokens: z.array(z.string()).optional(),
   })
@@ -118,12 +117,7 @@ const PageDataSchema = z.object({
   image: z.string().regex(urlRegex).nullable().optional(),
   items: z.array(PageItemSchema).optional(),
   theme: z.string().optional(),
-  themeFonts: z.object({
-    global: z.string().nullable(),
-    heading: z.string().nullable(),
-    paragraph: z.string().nullable(),
-    links: z.string().nullable(),
-  }).optional(),
+  themeFonts: FontsSchema,
   themeColors: z.object({
     primary: z.string().nullable(),
     secondary: z.string().nullable(),
@@ -155,12 +149,7 @@ const CreatePageSchema = z.object({
   tokenSymbol: z.string().nullable().optional(),
   image: z.string().regex(urlRegex).nullable().optional(),
   theme: z.string().optional(),
-  themeFonts: z.object({
-    global: z.string().nullable(),
-    heading: z.string().nullable(),
-    paragraph: z.string().nullable(),
-    links: z.string().nullable(),
-  }).optional(),
+  themeFonts: FontsSchema,
   themeColors: z.object({
     primary: z.string().nullable(),
     secondary: z.string().nullable(),
@@ -552,7 +541,6 @@ export default async function handler(req: NextRequest) {
                   title: item.title || null,
                   url: item.url || null,
                   order: item.order,
-                  isPlugin: item.isPlugin || false,
                   tokenGated: item.tokenGated || false,
                   requiredTokens: item.requiredTokens || [],
                 }
@@ -575,7 +563,6 @@ export default async function handler(req: NextRequest) {
                   title: item.title || null,
                   url: item.url || null,
                   order: item.order,
-                  isPlugin: item.isPlugin || false,
                   tokenGated: item.tokenGated || false,
                   requiredTokens: item.requiredTokens || [],
                 }
@@ -652,7 +639,7 @@ export default async function handler(req: NextRequest) {
   if (req.method === "PATCH") {
     try {
       const body = await req.json();
-      const { slug, connectedToken, title, description, image, items, theme, themeFonts, themeColors } = body;
+      const { slug, connectedToken, tokenSymbol, title, description, image, items, theme, themeFonts, themeColors } = body;
 
       if (!slug) {
         return jsonResponse({ error: "Slug is required" }, 400);
@@ -709,6 +696,7 @@ export default async function handler(req: NextRequest) {
           where: { slug },
           data: {
             connectedToken: connectedToken || null,
+            tokenSymbol: tokenSymbol || null,
             title: title || null,
             description: description || null,
             image: image || null,
@@ -735,8 +723,7 @@ export default async function handler(req: NextRequest) {
                     presetId: item.presetId,
                     title: item.title || null,
                     url: item.url || null,
-                    order: typeof item.order === 'number' ? item.order : 0,
-                    isPlugin: item.isPlugin || false,
+                    order: item.order,
                     tokenGated: item.tokenGated || false,
                     requiredTokens: item.requiredTokens || [],
                   }

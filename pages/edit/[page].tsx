@@ -139,7 +139,6 @@ export const getServerSideProps: GetServerSideProps<PageProps> = async ({
           title: item.title,
           url: item.url || null,
           order: item.order || 0,
-          isPlugin: item.isPlugin,
           tokenGated: item.tokenGated,
           requiredTokens: item.requiredTokens,
         })),
@@ -310,11 +309,6 @@ export default function EditPage({ slug, pageData, error }: PageProps) {
         return;
       }
 
-      // Skip validation for plugins
-      if (item.isPlugin) {
-        return;
-      }
-
       // If URL is required but not provided
       if (preset.options?.requiresUrl && !item.url) {
         errors[item.id] = "URL is required";
@@ -362,7 +356,6 @@ export default function EditPage({ slug, pageData, error }: PageProps) {
         presetId: item.presetId,
         url: item.url,
         title: item.title,
-        isPlugin: item.isPlugin,
       })),
     });
 
@@ -376,7 +369,6 @@ export default function EditPage({ slug, pageData, error }: PageProps) {
           presetId: item.presetId,
           title: item.title,
           url: item.url,
-          isPlugin: item.isPlugin,
         })),
       });
 
@@ -402,7 +394,6 @@ export default function EditPage({ slug, pageData, error }: PageProps) {
           title: item.title || "",
           url: item.url || "",
           order: typeof item.order === 'number' ? item.order : index,
-          isPlugin: !!item.isPlugin,
           tokenGated: !!item.tokenGated,
           requiredTokens: item.requiredTokens || [],
         };

@@ -61,10 +61,8 @@ export function GeneralSettingsTab({
                           prev
                             ? {
                                 ...prev,
-                                connectedToken: "",
-                                tokenSymbol: undefined,
-                                showToken: false,
-                                showSymbol: false,
+                                connectedToken: null,
+                                tokenSymbol: null,
                               }
                             : null
                         );
@@ -83,19 +81,39 @@ export function GeneralSettingsTab({
               <TokenSelector
                 selectedToken={null}
                 onTokenSelect={(tokenAddress) => {
-                  if (!tokenAddress) return;
+                  if (!tokenAddress) {
+                    setPageDetails((prev) =>
+                      prev
+                        ? {
+                            ...prev,
+                            connectedToken: null,
+                            tokenSymbol: null,
+                          }
+                        : null
+                    );
+                    return;
+                  }
                   setPageDetails((prev) =>
                     prev
                       ? {
                           ...prev,
                           connectedToken: tokenAddress,
-                          tokenSymbol: undefined, // Clear the symbol when token changes
                         }
                       : null
                   );
                 }}
                 onMetadataLoad={(metadata) => {
-                  if (!metadata) return;
+                  if (!metadata) {
+                    setPageDetails((prev) =>
+                      prev
+                        ? {
+                            ...prev,
+                            tokenSymbol: null,
+                          }
+                        : null
+                    );
+                    return;
+                  }
                   setPageDetails((prev) =>
                     prev
                       ? {
@@ -103,7 +121,7 @@ export function GeneralSettingsTab({
                           title: metadata.name,
                           description: metadata.description || "",
                           image: metadata.image || "",
-                          tokenSymbol: metadata.symbol,
+                          tokenSymbol: metadata.symbol || null,
                         }
                       : null
                   );

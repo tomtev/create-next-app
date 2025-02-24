@@ -5,7 +5,6 @@ export interface PageItem {
   title: string | null;
   url: string | null;
   order: number;
-  isPlugin: boolean;
   tokenGated: boolean;
   requiredTokens: string[];
 }

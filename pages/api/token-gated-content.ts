@@ -1,20 +1,28 @@
 import type { NextApiRequest, NextApiResponse } from "next";
-import { Redis } from "@upstash/redis";
 import { PrivyClient } from "@privy-io/server-auth";
 import type { PageData, PageItem } from "@/types";
+import { PrismaClient } from '@prisma/client';
+import { PrismaNeonHTTP } from '@prisma/adapter-neon';
+import { neon, neonConfig } from '@neondatabase/serverless';
+
+// Configure neon to use fetch
+neonConfig.fetchConnectionCache = true;
+
+// Initialize Prisma client with Neon adapter
+const sql = neon(process.env.DATABASE_URL!);
+const adapter = new PrismaNeonHTTP(sql);
+// @ts-ignore - Prisma doesn't have proper edge types yet
+const prisma = new PrismaClient({ adapter }).$extends({
+  query: {
+    $allOperations({ operation, args, query }) {
+      return query(args);
+    },
+  },
+});
 
 const PRIVY_APP_ID = process.env.NEXT_PUBLIC_PRIVY_APP_ID;
 const PRIVY_APP_SECRET = process.env.PRIVY_APP_SECRET;
 const client = new PrivyClient(PRIVY_APP_ID!, PRIVY_APP_SECRET!);
-
-// Initialize Redis client
-const redis = new Redis({
-  url: process.env.KV_REST_API_URL!,
-  token: process.env.KV_REST_API_TOKEN!,
-});
-
-// Helper function to get the Redis key for a slug
-const getRedisKey = (slug: string) => `page:${slug}`;
 
 export default async function handler(
   req: NextApiRequest,
@@ -42,8 +50,14 @@ export default async function handler(
       });
     }
 
-    // Get the page data
-    const pageData = await redis.get<PageData>(getRedisKey(slug));
+    // Get the page data using Prisma
+    const pageData = await prisma.page.findUnique({
+      where: { slug },
+      include: {
+        items: true
+      }
+    });
+
     if (!pageData) {
       return res.status(404).json({ 
         error: "Page not found",
@@ -52,12 +66,12 @@ export default async function handler(
     }
 
     // Find the specific item
-    const item = pageData.items?.find((i: PageItem) => i.id === itemId);
+    const item = pageData.items.find((i) => i.id === itemId);
     if (!item) {
       return res.status(404).json({ 
         error: "Item not found",
         itemId,
-        availableItems: pageData.items?.map(i => ({ id: i.id, presetId: i.presetId }))
+        availableItems: pageData.items.map(i => ({ id: i.id, presetId: i.presetId }))
       });
     }
 

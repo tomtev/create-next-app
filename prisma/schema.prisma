@@ -38,7 +38,6 @@ model PageItem {
   title         String?
   url           String?
   order         Int
-  isPlugin      Boolean  @default(false)
   tokenGated    Boolean  @default(false)
   requiredTokens String[] @default([])
   page          Page     @relation(fields: [pageId], references: [id])

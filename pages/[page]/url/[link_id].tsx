@@ -335,24 +335,19 @@ export default function GatedLinkPage(props: GatedLinkPageProps) {
             )}
             {!authenticated ? (
               <>
-                <RequiredTokenMessage
-                  tokenSymbol={props.pageData.tokenSymbol}
-                  requiredTokens={props.linkItem?.requiredTokens?.[0]}
-                  image={props.pageData.image}
-                />
+                <div className="inline-flex items-center justify-center gap-2 text-sm text-orange-700 px-3 py-1.5 rounded-full mx-auto mb-3">
+                  You need {props.linkItem.requiredTokens?.[0] || "0"} $
+                  {props.pageData.tokenSymbol} to access this link.
+                </div>
                 <Button onClick={login} className="w-full">
                   Connect Wallet
                 </Button>
               </>
             ) : currentHasAccess ? (
               <>
-                <RequiredTokenMessage
-                  tokenSymbol={props.pageData.tokenSymbol}
-                  requiredTokens={props.linkItem?.requiredTokens?.[0]}
-                  image={props.pageData.image}
-                  variant="green"
-                  balance={tokenBalance}
-                />
+                <div className="inline-flex items-center justify-center gap-2 text-sm text-green-700 px-3 py-1.5 rounded-full mx-auto mb-3">
+                  You have enough ${props.pageData.tokenSymbol} to access this link.
+                </div>
                 {currentGatedUrl ? (
                   <Button
                     asChild
