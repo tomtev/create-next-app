@@ -4,11 +4,8 @@ import { z } from "zod";
 import { validateLinkUrl } from "../../lib/links";
 import { PrismaClient } from '@prisma/client';
 import { PrismaNeonHTTP } from '@prisma/adapter-neon';
-import { neon, neonConfig } from '@neondatabase/serverless';
+import { neon } from '@neondatabase/serverless';
 import { encryptUrl, decryptUrl } from '@/lib/encryption';
-
-// Configure neon to use fetch
-neonConfig.fetchConnectionCache = true;
 
 // Initialize Prisma client with Neon adapter - using edge-compatible initialization
 const sql = neon(process.env.DATABASE_URL!);
@@ -585,7 +582,7 @@ export default async function handler(
 
   if (req.method === "DELETE") {
     try {
-      const body = await req.json();
+      const body = req.body;
       const { slug } = body;
 
       if (!slug) {
