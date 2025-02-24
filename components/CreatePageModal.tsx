@@ -59,10 +59,10 @@ export default function CreatePageModal({
     if (!value) {
       setSlugError("Please enter a custom URL");
       setIsSlugValid(false);
-      return false;
+      setIsCheckingSlug(false);
+      return;
     }
 
-    setIsCheckingSlug(true);
     try {
       const checkResponse = await fetch(
         `/api/page-store?slug=${encodeURIComponent(value)}`
@@ -73,40 +73,49 @@ export default function CreatePageModal({
         if (checkData.isOwner) {
           setSlugError("You already own this page");
           setIsSlugValid(false);
-          return false;
+        } else {
+          setSlugError("This URL is already taken");
+          setIsSlugValid(false);
         }
-        setSlugError("This URL is already taken");
-        setIsSlugValid(false);
-        return false;
+      } else {
+        setSlugError("");
+        setIsSlugValid(true);
       }
-      setSlugError("");
-      setIsSlugValid(true);
-      return true;
     } catch (error) {
       console.error("Error:", error);
       setSlugError("An error occurred. Please try again.");
       setIsSlugValid(false);
-      return false;
     } finally {
       setIsCheckingSlug(false);
     }
   };
 
-  // Debounced version of checkSlug that never redirects
   const debouncedCheckSlug = useCallback(
-    debounce((value: string) => checkSlug(value), 300),
+    debounce((value: string) => {
+      setIsCheckingSlug(true);
+      checkSlug(value);
+    }, 300),
     []
   );
 
-  // Check slug on input change
-  useEffect(() => {
-    if (slug) {
-      debouncedCheckSlug(slug);
-    } else {
-      setSlugError("");
-      setIsSlugValid(false);
+  const handleSlugChange = (value: string) => {
+    const lowercaseValue = value.toLowerCase();
+    setSlug(lowercaseValue);
+    setSlugError("");
+    setIsSlugValid(false);
+    setIsCheckingSlug(true);
+    debouncedCheckSlug(lowercaseValue);
+  };
+
+  const handleMetadataLoad = (metadata: any) => {
+    setTokenMetadata(metadata);
+    if (metadata?.symbol) {
+      const suggestedSlug = metadata.symbol.toLowerCase();
+      setSlug(suggestedSlug);
+      setIsCheckingSlug(true);
+      checkSlug(suggestedSlug);
     }
-  }, [slug]);
+  };
 
   const handleBlur = () => {
     if (slug) {
@@ -257,12 +266,7 @@ export default function CreatePageModal({
             <Input
               type="text"
               value={slug}
-              onChange={(e) => {
-                const lowercaseValue = e.target.value.toLowerCase();
-                setSlug(lowercaseValue);
-                setSlugError("");
-                setIsSlugValid(false);
-              }}
+              onChange={(e) => handleSlugChange(e.target.value)}
               onBlur={handleBlur}
               placeholder="your-custom-url"
               pattern="^[a-zA-Z0-9-]+$"
@@ -315,16 +319,11 @@ export default function CreatePageModal({
             if (!tokenAddress) {
               setTokenMetadata(null);
               setSlug("");
+              setIsSlugValid(false);
+              setSlugError("");
             }
           }}
-          onMetadataLoad={(metadata) => {
-            setTokenMetadata(metadata);
-            if (metadata?.symbol) {
-              const suggestedSlug = metadata.symbol.toLowerCase();
-              setSlug(suggestedSlug);
-              debouncedCheckSlug(suggestedSlug);
-            }
-          }}
+          onMetadataLoad={handleMetadataLoad}
         />
       </div>
 
@@ -380,12 +379,7 @@ export default function CreatePageModal({
             <Input
               type="text"
               value={slug}
-              onChange={(e) => {
-                const lowercaseValue = e.target.value.toLowerCase();
-                setSlug(lowercaseValue);
-                setSlugError("");
-                setIsSlugValid(false);
-              }}
+              onChange={(e) => handleSlugChange(e.target.value)}
               onBlur={handleBlur}
               placeholder={
                 tokenMetadata?.symbol

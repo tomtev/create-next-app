@@ -482,7 +482,7 @@ export default async function handler(req: NextRequest) {
 
       // Check token holdings and rate limit for new pages
       if (!existingPage) {
-        const { pages } = await getPagesForWallet(walletAddress, req);
+        /*const { pages } = await getPagesForWallet(walletAddress, req);
         
         if (pages.length > 0) {
           const hasRequiredTokens = await checkTokenHoldings(walletAddress);
@@ -492,7 +492,7 @@ export default async function handler(req: NextRequest) {
               message: `You need to hold at least ${process.env.NEXT_PUBLIC_PAGE_DOT_FUN_TOKEN_REQUIRED_HOLDING} PAGE.FUN tokens to create more than one page`
             }, 403);
           }
-        }
+        } */
 
         const rateLimit = await checkRateLimit(user.id);
         if (!rateLimit.allowed) {
@@ -735,7 +735,7 @@ export default async function handler(req: NextRequest) {
                     presetId: item.presetId,
                     title: item.title || null,
                     url: item.url || null,
-                    order: item.order,
+                    order: typeof item.order === 'number' ? item.order : 0,
                     isPlugin: item.isPlugin || false,
                     tokenGated: item.tokenGated || false,
                     requiredTokens: item.requiredTokens || [],

@@ -47,7 +47,12 @@ export default function EditPageContent({
       const [movedItem] = newItems.splice(oldIndex, 1);
       newItems.splice(newIndex, 0, movedItem);
 
-      onItemsReorder?.(newItems);
+      const reorderedItems = newItems.map((item, index) => ({
+        ...item,
+        order: index,
+      }));
+
+      onItemsReorder?.(reorderedItems);
     }
   };
 

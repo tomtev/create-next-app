@@ -138,7 +138,7 @@ export const getServerSideProps: GetServerSideProps<PageProps> = async ({
           presetId: item.presetId,
           title: item.title,
           url: item.url || null,
-          order: item.order,
+          order: item.order || 0,
           isPlugin: item.isPlugin,
           tokenGated: item.tokenGated,
           requiredTokens: item.requiredTokens,
@@ -395,19 +395,20 @@ export default function EditPage({ slug, pageData, error }: PageProps) {
       // Log the original items
       console.log("Original items:", pageDetails.items);
 
-      const items = pageDetails.items?.map((item) => {
+      const items = pageDetails.items?.map((item, index) => {
         const mappedItem = {
-          id: item.id,
+          id: item.id || `item-${index}`,
           presetId: item.presetId,
           title: item.title || "",
           url: item.url || "",
+          order: typeof item.order === 'number' ? item.order : index,
           isPlugin: !!item.isPlugin,
           tokenGated: !!item.tokenGated,
           requiredTokens: item.requiredTokens || [],
         };
 
         // Log each mapped item
-        console.log(`Mapped item:`, {
+        console.log(`Mapped item ${index}:`, {
           original: item,
           mapped: mappedItem,
         });
@@ -580,9 +581,7 @@ export default function EditPage({ slug, pageData, error }: PageProps) {
           <div className="pf-page">
             <EditPageContent
               pageData={previewData}
-              items={previewData.items?.filter((item): item is PageItem => 
-                Boolean(item && item.id && item.presetId && typeof item.isPlugin === 'boolean' && typeof item.tokenGated === 'boolean' && Array.isArray(item.requiredTokens))
-              ) || []}
+              items={previewData.items?.filter((item): item is PageItem => Boolean(item && item.id && item.presetId)) || []}
               themeStyle={themeConfig}
               onLinkClick={handleLinkClick}
               onTitleClick={() => {
