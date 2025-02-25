@@ -21,8 +21,6 @@ const EditButton = dynamic(() => import("@/components/EditButton"), {
   ssr: false,
 });
 
-// Configure neon to use fetch
-neonConfig.fetchConnectionCache = true;
 
 // Initialize Prisma client with Neon adapter
 const sql = neon(process.env.DATABASE_URL!);
@@ -41,6 +39,7 @@ interface PageProps {
   slug: string;
   error?: string;
   isOwner: boolean;
+  ogImageUrl: string;
 }
 
 const PRIVY_APP_ID = process.env.NEXT_PUBLIC_PRIVY_APP_ID;
@@ -144,12 +143,18 @@ export const getServerSideProps: GetServerSideProps<PageProps> = async ({
           items: [],
         };
 
+        // Generate OG image URL for default page
+        const ogImageUrl = new URL(`/api/og-image`, process.env.NEXT_PUBLIC_BASE_URL || 'https://page.fun');
+        ogImageUrl.searchParams.append('title', slug);
+        ogImageUrl.searchParams.append('description', 'Page not found');
+
         return {
           props: {
             slug,
             pageData: defaultPageData,
             isOwner: false,
             error: "Page not found",
+            ogImageUrl: ogImageUrl.toString(),
           },
         };
       }
@@ -224,6 +229,37 @@ export const getServerSideProps: GetServerSideProps<PageProps> = async ({
         }));
       }
 
+      // Generate OG image URL
+      const ogImageUrl = new URL(`/api/og-image`, process.env.NEXT_PUBLIC_BASE_URL || 'https://page.fun');
+      ogImageUrl.searchParams.append('title', processedData.title || processedData.slug);
+      if (processedData.description) {
+        ogImageUrl.searchParams.append('description', processedData.description);
+      }
+      if (processedData.image) {
+        ogImageUrl.searchParams.append('image', processedData.image);
+      }
+      
+      // Add theme to OG image URL
+      if (processedData.theme) {
+        ogImageUrl.searchParams.append('theme', processedData.theme);
+      }
+      
+      // Add theme colors to OG image URL if available
+      if (processedData.themeColors) {
+        if (processedData.themeColors.primary) {
+          ogImageUrl.searchParams.append('primaryColor', processedData.themeColors.primary);
+        }
+        if (processedData.themeColors.secondary) {
+          ogImageUrl.searchParams.append('secondaryColor', processedData.themeColors.secondary);
+        }
+        if (processedData.themeColors.background) {
+          ogImageUrl.searchParams.append('backgroundColor', processedData.themeColors.background);
+        }
+        if (processedData.themeColors.text) {
+          ogImageUrl.searchParams.append('textColor', processedData.themeColors.text);
+        }
+      }
+
       // Cache the processed data if not owner
       if (!isOwner) {
         try {
@@ -238,8 +274,40 @@ export const getServerSideProps: GetServerSideProps<PageProps> = async ({
           slug,
           pageData: processedData,
           isOwner,
+          ogImageUrl: ogImageUrl.toString(),
         },
       };
+    }
+
+    // Generate OG image URL for cached data
+    const ogImageUrl = new URL(`/api/og-image`, process.env.NEXT_PUBLIC_BASE_URL || 'https://page.fun');
+    ogImageUrl.searchParams.append('title', cachedPageData.title || cachedPageData.slug);
+    if (cachedPageData.description) {
+      ogImageUrl.searchParams.append('description', cachedPageData.description);
+    }
+    if (cachedPageData.image) {
+      ogImageUrl.searchParams.append('image', cachedPageData.image);
+    }
+    
+    // Add theme to OG image URL
+    if (cachedPageData.theme) {
+      ogImageUrl.searchParams.append('theme', cachedPageData.theme);
+    }
+    
+    // Add theme colors to OG image URL if available
+    if (cachedPageData.themeColors) {
+      if (cachedPageData.themeColors.primary) {
+        ogImageUrl.searchParams.append('primaryColor', cachedPageData.themeColors.primary);
+      }
+      if (cachedPageData.themeColors.secondary) {
+        ogImageUrl.searchParams.append('secondaryColor', cachedPageData.themeColors.secondary);
+      }
+      if (cachedPageData.themeColors.background) {
+        ogImageUrl.searchParams.append('backgroundColor', cachedPageData.themeColors.background);
+      }
+      if (cachedPageData.themeColors.text) {
+        ogImageUrl.searchParams.append('textColor', cachedPageData.themeColors.text);
+      }
     }
 
     // Return cached data if available and user is not owner
@@ -248,6 +316,7 @@ export const getServerSideProps: GetServerSideProps<PageProps> = async ({
         slug,
         pageData: cachedPageData,
         isOwner,
+        ogImageUrl: ogImageUrl.toString(),
       },
     };
 
@@ -274,18 +343,25 @@ export const getServerSideProps: GetServerSideProps<PageProps> = async ({
       items: [],
     };
 
+    // Generate OG image URL for error page
+    const ogImageUrl = new URL(`/api/og-image`, process.env.NEXT_PUBLIC_BASE_URL || 'https://page.fun');
+    ogImageUrl.searchParams.append('title', slug);
+    ogImageUrl.searchParams.append('description', 'Failed to fetch page data');
+    ogImageUrl.searchParams.append('theme', defaultPageData.theme || 'default');
+
     return {
       props: {
         slug,
         pageData: defaultPageData,
         isOwner: false,
         error: "Failed to fetch page data",
+        ogImageUrl: ogImageUrl.toString(),
       },
     };
   }
 };
 
-export default function Page({ pageData, slug, error, isOwner }: PageProps) {
+export default function Page({ pageData, slug, error, isOwner, ogImageUrl }: PageProps) {
   const router = useRouter();
   const { cssVariables, googleFontsUrl, themeConfig } = useThemeStyles(pageData);
 
@@ -348,6 +424,25 @@ export default function Page({ pageData, slug, error, isOwner }: PageProps) {
         {pageData?.description && (
           <meta name="description" content={pageData.description} />
         )}
+
+        {/* Open Graph / Social Media Meta Tags */}
+        <meta property="og:title" content={pageData?.title || slug} />
+        {pageData?.description && (
+          <meta property="og:description" content={pageData.description} />
+        )}
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content={`https://page.fun/${slug}`} />
+        <meta property="og:image" content={ogImageUrl} />
+        <meta property="og:image:width" content="1200" />
+        <meta property="og:image:height" content="630" />
+        
+        {/* Twitter Card Meta Tags */}
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content={pageData?.title || slug} />
+        {pageData?.description && (
+          <meta name="twitter:description" content={pageData.description} />
+        )}
+        <meta name="twitter:image" content={ogImageUrl} />
 
         {googleFontsUrl && (
           <>
