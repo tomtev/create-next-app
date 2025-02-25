@@ -9,6 +9,7 @@ import { useThemeStyles } from '@/hooks/use-theme-styles';
 import { PrismaClient } from '@prisma/client';
 import { PrismaNeonHTTP } from '@prisma/adapter-neon';
 import { neon, neonConfig } from '@neondatabase/serverless';
+import { getCachedPageData, cachePageData } from '@/lib/redis';
 
 // Dynamically import components to reduce initial JS bundle
 const PageContent = dynamic(() => import("../components/PageContent"), {
@@ -74,44 +75,14 @@ export const getServerSideProps: GetServerSideProps<PageProps> = async ({
   const slug = params?.page as string;
 
   try {
-    // Get page data from Prisma
-    const pageData = await prisma.page.findUnique({
-      where: { slug },
-      include: {
-        items: true,
-      },
-    });
-
-    if (!pageData) {
-      const defaultPageData: PageData = {
-        walletAddress: "",
-        slug,
-        createdAt: new Date().toISOString(),
-        pageType: "personal",
-        theme: "default",
-        themeFonts: {
-          global: null,
-          heading: null,
-          paragraph: null,
-          links: null,
-        },
-        themeColors: {
-          primary: null,
-          secondary: null,
-          background: null,
-          text: null,
-        },
-        items: [],
-      };
-
-      return {
-        props: {
-          slug,
-          pageData: defaultPageData,
-          isOwner: false,
-          error: "Page not found",
-        },
-      };
+    // Try to get page data from cache first
+    let cachedPageData = null;
+    try {
+      cachedPageData = await getCachedPageData(slug);
+      console.log('Cache status:', slug, cachedPageData ? 'HIT' : 'MISS');
+    } catch (cacheError) {
+      console.error('Cache error:', cacheError);
+      // Continue without cache if there's an error
     }
 
     // Check ownership if we have an identity token
@@ -121,82 +92,167 @@ export const getServerSideProps: GetServerSideProps<PageProps> = async ({
     if (idToken) {
       try {
         const user = await privyClient.getUser({ idToken });
-
-        // Check if the wallet is in user's linked accounts
-        for (const account of user.linkedAccounts) {
-          if (account.type === "wallet" && account.chainType === "solana") {
-            const walletAccount = account as { address?: string };
-            if (
-              walletAccount.address?.toLowerCase() ===
-              pageData.walletAddress.toLowerCase()
-            ) {
-              isOwner = true;
-              break;
+        if (cachedPageData) {
+          // Check ownership against cached data
+          for (const account of user.linkedAccounts) {
+            if (account.type === "wallet" && account.chainType === "solana") {
+              const walletAccount = account as { address?: string };
+              if (
+                walletAccount.address?.toLowerCase() ===
+                cachedPageData.walletAddress.toLowerCase()
+              ) {
+                isOwner = true;
+                break;
+              }
             }
           }
         }
       } catch (error) {
-        console.log("User does not own page:", error);
+        console.log("User verification error:", error);
       }
     }
 
-    // Process the page data to match our PageData interface
-    const processedData: PageData = {
-      id: pageData.id,
-      walletAddress: pageData.walletAddress,
-      slug: pageData.slug,
-      connectedToken: pageData.connectedToken || null,
-      tokenSymbol: pageData.tokenSymbol || null,
-      title: pageData.title || null,
-      description: pageData.description || null,
-      image: pageData.image || null,
-      pageType: pageData.pageType || "personal",
-      theme: pageData.theme || "default",
-      themeFonts: pageData.themeFonts ? JSON.parse(pageData.themeFonts as string) : {
-        global: null,
-        heading: null,
-        paragraph: null,
-        links: null,
-      },
-      themeColors: pageData.themeColors ? JSON.parse(pageData.themeColors as string) : {
-        primary: null,
-        secondary: null,
-        background: null,
-        text: null,
-      },
-      items: pageData.items.map(item => ({
-        id: item.id,
-        pageId: item.pageId,
-        presetId: item.presetId,
-        title: item.title,
-        url: item.url || null,
-        order: item.order || 0,
-        tokenGated: item.tokenGated,
-        requiredTokens: item.requiredTokens,
-      })),
-      createdAt: pageData.createdAt.toISOString(),
-      updatedAt: pageData.updatedAt.toISOString(),
-    };
+    // If owner or no cache, get fresh data from database
+    if (isOwner || !cachedPageData) {
+      const pageData = await prisma.page.findUnique({
+        where: { slug },
+        include: {
+          items: true,
+        },
+      });
 
-    // Process token replacements server-side to avoid client-side processing
-    if (processedData.items && processedData.connectedToken) {
-      processedData.items = processedData.items.map((item) => ({
-        ...item,
-        url: item.url 
-          ? item.url.replace("[token]", processedData.connectedToken || "") 
-          : null,
-      }));
+      if (!pageData) {
+        console.log('Page not found in database:', slug);
+        const defaultPageData: PageData = {
+          walletAddress: "",
+          slug,
+          createdAt: new Date().toISOString(),
+          pageType: "personal",
+          theme: "default",
+          themeFonts: {
+            global: null,
+            heading: null,
+            paragraph: null,
+            links: null,
+          },
+          themeColors: {
+            primary: null,
+            secondary: null,
+            background: null,
+            text: null,
+          },
+          items: [],
+        };
+
+        return {
+          props: {
+            slug,
+            pageData: defaultPageData,
+            isOwner: false,
+            error: "Page not found",
+          },
+        };
+      }
+
+      // Recheck ownership with fresh data if needed
+      if (!isOwner && idToken) {
+        try {
+          const user = await privyClient.getUser({ idToken });
+          for (const account of user.linkedAccounts) {
+            if (account.type === "wallet" && account.chainType === "solana") {
+              const walletAccount = account as { address?: string };
+              if (
+                walletAccount.address?.toLowerCase() ===
+                pageData.walletAddress.toLowerCase()
+              ) {
+                isOwner = true;
+                break;
+              }
+            }
+          }
+        } catch (error) {
+          console.log("User does not own page:", error);
+        }
+      }
+
+      // Process the page data
+      const processedData: PageData = {
+        id: pageData.id,
+        walletAddress: pageData.walletAddress,
+        slug: pageData.slug,
+        connectedToken: pageData.connectedToken || null,
+        tokenSymbol: pageData.tokenSymbol || null,
+        title: pageData.title || null,
+        description: pageData.description || null,
+        image: pageData.image || null,
+        pageType: pageData.pageType || "personal",
+        theme: pageData.theme || "default",
+        themeFonts: pageData.themeFonts ? JSON.parse(pageData.themeFonts as string) : {
+          global: null,
+          heading: null,
+          paragraph: null,
+          links: null,
+        },
+        themeColors: pageData.themeColors ? JSON.parse(pageData.themeColors as string) : {
+          primary: null,
+          secondary: null,
+          background: null,
+          text: null,
+        },
+        items: pageData.items.map(item => ({
+          id: item.id,
+          pageId: item.pageId,
+          presetId: item.presetId,
+          title: item.title,
+          url: item.url || null,
+          order: item.order || 0,
+          tokenGated: item.tokenGated,
+          requiredTokens: item.requiredTokens,
+          customIcon: item.customIcon || null,
+        })),
+        createdAt: pageData.createdAt.toISOString(),
+        updatedAt: pageData.updatedAt.toISOString(),
+      };
+
+      // Process token replacements
+      if (processedData.items && processedData.connectedToken) {
+        processedData.items = processedData.items.map((item) => ({
+          ...item,
+          url: item.url 
+            ? item.url.replace("[token]", processedData.connectedToken || "") 
+            : null,
+        }));
+      }
+
+      // Cache the processed data if not owner
+      if (!isOwner) {
+        try {
+          await cachePageData(slug, processedData);
+        } catch (cacheError) {
+          console.error('Failed to cache page data:', cacheError);
+        }
+      }
+
+      return {
+        props: {
+          slug,
+          pageData: processedData,
+          isOwner,
+        },
+      };
     }
 
+    // Return cached data if available and user is not owner
     return {
       props: {
         slug,
-        pageData: processedData,
+        pageData: cachedPageData,
         isOwner,
       },
     };
+
   } catch (error) {
-    console.error("Error fetching page data:", error);
+    console.error("Error in getServerSideProps:", error);
     const defaultPageData: PageData = {
       walletAddress: "",
       slug,

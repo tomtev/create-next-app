@@ -1,19 +1,20 @@
+import { useState, useRef } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import TokenSelector from "@/components/TokenSelector";
-import { PageData } from "@/types";
-import { useRef, useEffect, useState } from "react";
 import { Upload } from "lucide-react";
 import type { PutBlobResult } from '@vercel/blob';
 import Loader from "@/components/ui/loader";
 
-interface GeneralSettingsTabProps {
-  pageDetails: PageData | null;
-  setPageDetails: (
-    data: PageData | ((prev: PageData | null) => PageData | null)
-  ) => void;
-  focusField?: 'title' | 'description' | 'image';
+interface ImageUploaderProps {
+  imageUrl: string | null | undefined;
+  onImageChange: (url: string) => void;
+  placeholder?: string;
+  className?: string;
+  showPreview?: boolean;
+  previewSize?: number;
+  buttonText?: string;
+  label?: string;
+  helpText?: string;
 }
 
 // Helper function to resize image to a square
@@ -86,35 +87,24 @@ const resizeImage = (file: File, size: number, quality: number = 0.8): Promise<F
   });
 };
 
-export function GeneralSettingsTab({
-  pageDetails,
-  setPageDetails,
-  focusField,
-}: GeneralSettingsTabProps) {
-  const titleInputRef = useRef<HTMLInputElement>(null);
-  const descriptionInputRef = useRef<HTMLTextAreaElement>(null);
-  const imageInputRef = useRef<HTMLInputElement>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+export function ImageUploader({
+  imageUrl,
+  onImageChange,
+  placeholder = "Enter image URL",
+  className = "",
+  showPreview = true,
+  previewSize = 64,
+  buttonText = "Upload",
+  label,
+  helpText = "Images will be cropped to a 200x200px square"
+}: ImageUploaderProps) {
   const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const imageInputRef = useRef<HTMLInputElement>(null);
   const [resizeOptions, setResizeOptions] = useState({
     size: 200,
     quality: 0.8,
   });
-
-  // Focus the correct field when the component mounts
-  useEffect(() => {
-    if (!focusField) return;
-
-    setTimeout(() => {
-      if (focusField === 'title' && titleInputRef.current) {
-        titleInputRef.current.focus();
-      } else if (focusField === 'description' && descriptionInputRef.current) {
-        descriptionInputRef.current.focus();
-      } else if (focusField === 'image' && imageInputRef.current) {
-        imageInputRef.current.focus();
-      }
-    }, 100); // Small delay to ensure drawer is fully open
-  }, [focusField]);
 
   const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     if (!event.target.files || event.target.files.length === 0) {
@@ -232,15 +222,8 @@ export function GeneralSettingsTab({
 
       const blob = await response.json() as PutBlobResult;
       
-      // Update the image URL in the page details
-      setPageDetails((prev) =>
-        prev
-          ? {
-              ...prev,
-              image: blob.url,
-            }
-          : null
-      );
+      // Update the image URL
+      onImageChange(blob.url);
     } catch (error) {
       console.error('Error uploading image:', error);
       
@@ -258,121 +241,22 @@ export function GeneralSettingsTab({
   };
 
   return (
-    <div className="space-y-4">
-      <div>
+    <div className={`space-y-2 ${className}`}>
+      {label && (
         <label className="block text-sm font-medium text-gray-700 mb-1">
-          Solana Token
+          {label}
         </label>
-        {pageDetails && (
-          <div className="space-y-4">
-            {pageDetails.connectedToken ? (
-              <div className="space-y-4">
-                <div>
-                  <div className="flex items-center gap-2">
-                    <Input
-                      type="text"
-                      value={pageDetails.connectedToken}
-                      readOnly
-                    />
-                    <Button
-                      variant="outline"
-                      onClick={() => {
-                        setPageDetails((prev) =>
-                          prev
-                            ? {
-                                ...prev,
-                                connectedToken: null,
-                                tokenSymbol: null,
-                              }
-                            : null
-                        );
-                      }}>
-                      Unlink
-                    </Button>
-                  </div>
-                  {pageDetails.tokenSymbol && (
-                    <p className="mt-1 text-sm text-gray-500">
-                      ${pageDetails.tokenSymbol}
-                    </p>
-                  )}
-                </div>
-              </div>
-            ) : (
-              <TokenSelector
-                selectedToken={null}
-                onTokenSelect={(tokenAddress) => {
-                  if (!tokenAddress) {
-                    setPageDetails((prev) =>
-                      prev
-                        ? {
-                            ...prev,
-                            connectedToken: null,
-                            tokenSymbol: null,
-                          }
-                        : null
-                    );
-                    return;
-                  }
-                  setPageDetails((prev) =>
-                    prev
-                      ? {
-                          ...prev,
-                          connectedToken: tokenAddress,
-                        }
-                      : null
-                  );
-                }}
-                onMetadataLoad={(metadata) => {
-                  if (!metadata) {
-                    setPageDetails((prev) =>
-                      prev
-                        ? {
-                            ...prev,
-                            tokenSymbol: null,
-                          }
-                        : null
-                    );
-                    return;
-                  }
-                  setPageDetails((prev) =>
-                    prev
-                      ? {
-                          ...prev,
-                          title: metadata.name,
-                          description: metadata.description || "",
-                          image: metadata.image || "",
-                          tokenSymbol: metadata.symbol || null,
-                        }
-                      : null
-                  );
-                }}
-              />
-            )}
-          </div>
-        )}
-      </div>
-
+      )}
       <div className="flex gap-2">
         <div className="flex-1">
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Image
-          </label>
           <div className="flex gap-2">
             <Input
               ref={imageInputRef}
               type="text"
-              value={pageDetails?.image || ""}
-              onChange={(e) =>
-                setPageDetails((prev) =>
-                  prev
-                    ? {
-                        ...prev,
-                        image: e.target.value,
-                      }
-                    : null
-                )
-              }
-              placeholder="Enter image URL"
+              value={imageUrl || ""}
+              onChange={(e) => onImageChange(e.target.value)}
+              placeholder={placeholder}
+              className="flex-1"
             />
             <input
               type="file"
@@ -392,21 +276,23 @@ export function GeneralSettingsTab({
                 </span>
               ) : (
                 <span className="flex items-center gap-1">
-                  <Upload className="h-4 w-4" /> Upload
+                  <Upload className="h-4 w-4" /> {buttonText}
                 </span>
               )}
             </Button>
           </div>
-          <p className="mt-1 text-xs text-gray-500">
-            Images will be cropped to a {resizeOptions.size}x{resizeOptions.size}px square
-          </p>
+          {helpText && (
+            <p className="mt-1 text-xs text-gray-500">
+              {helpText}
+            </p>
+          )}
         </div>
-        {pageDetails?.image && (
-          <div className="relative w-16 h-16">
+        {showPreview && imageUrl && (
+          <div className="relative" style={{ width: `${previewSize}px`, height: `${previewSize}px` }}>
             <img
-              src={pageDetails.image || ''}
-              alt={pageDetails.title || 'Image preview'}
-              className="object-cover w-full h-full"
+              src={imageUrl}
+              alt="Preview"
+              className="object-cover w-full h-full rounded-md"
               onError={(e) => {
                 (e.target as HTMLImageElement).style.display = "none";
               }}
@@ -414,50 +300,6 @@ export function GeneralSettingsTab({
           </div>
         )}
       </div>
-
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
-          Title
-        </label>
-        <Input
-          ref={titleInputRef}
-          type="text"
-          value={pageDetails?.title || ""}
-          onChange={(e) =>
-            setPageDetails((prev) =>
-              prev
-                ? {
-                    ...prev,
-                    title: e.target.value,
-                  }
-                : null
-            )
-          }
-          maxLength={100}
-        />
-      </div>
-
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
-          Description
-        </label>
-        <Textarea
-          ref={descriptionInputRef}
-          value={pageDetails?.description || ""}
-          onChange={(e) =>
-            setPageDetails((prev) =>
-              prev
-                ? {
-                    ...prev,
-                    description: e.target.value,
-                  }
-                : null
-            )
-          }
-          rows={3}
-          maxLength={500}
-        />
-      </div>
     </div>
   );
-}
+} 

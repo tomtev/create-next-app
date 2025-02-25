@@ -3,6 +3,7 @@ import { X } from "lucide-react";
 import { useRouter } from "next/router";
 import Link from "next/link";
 import Loader from "@/components/ui/loader";
+import { useState } from "react";
 
 interface PublishBarProps {
   isSaving: boolean;
@@ -11,6 +12,12 @@ interface PublishBarProps {
 
 export function PublishBar({ isSaving, onSave }: PublishBarProps) {
   const router = useRouter();
+  const [isExiting, setIsExiting] = useState(false);
+
+  const handleExit = async () => {
+    setIsExiting(true);
+    await router.push(`/${router.query.page}`);
+  };
 
   return (
     <>
@@ -27,11 +34,9 @@ export function PublishBar({ isSaving, onSave }: PublishBarProps) {
               "Publish"
             )}
           </Button>
-          <Link href={`/${router.query.page}`}>
-            <Button variant="outline" size={"icon"}>
-              <X />
-            </Button>
-          </Link>
+          <Button variant="outline" size={"icon"} onClick={handleExit} disabled={isExiting}>
+            {isExiting ? <Loader className="h-4 w-4" /> : <X />}
+          </Button>
         </div>
       </div>
     </>

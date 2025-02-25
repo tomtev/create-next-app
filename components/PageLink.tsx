@@ -118,6 +118,20 @@ export default function PageLink({
           <div className="pf-link__icon">
             {isLoading ? (
               <Loader className="h-4 w-4" />
+            ) : item.customIcon ? (
+              <>
+                <img 
+                  src={item.customIcon} 
+                  alt={item.title || preset.title} 
+                  className="pf-link__custom-icon"
+                  onError={(e) => {
+                    // Fallback to preset icon if custom icon fails to load
+                    (e.target as HTMLImageElement).style.display = "none";
+                    (e.target as HTMLImageElement).nextElementSibling?.classList.remove("hidden");
+                  }}
+                />
+                <preset.icon className="pf-link__icon hidden" aria-hidden="true" />
+              </>
             ) : (
               <preset.icon className="pf-link__icon" aria-hidden="true" />
             )}

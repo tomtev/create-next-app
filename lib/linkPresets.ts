@@ -9,6 +9,7 @@ import {
   GitHubIcon,
   InstagramIcon,
 } from "./icons";
+import { Link } from "lucide-react";
 
 export interface LinkPreset {
   id: string;
@@ -34,20 +35,20 @@ export const LINK_PRESETS: Record<string, LinkPreset> = {
       canBeTokenGated: true,
     },
   }, */
-  jupiter: {
-    id: "jupiter",
-    title: "Buy on Jupiter",
-    defaultUrl: "https://jup.ag/tokens/[token]",
-    icon: JupiterIcon,
+  custom: {
+    id: "custom",
+    title: "Custom Link",
+    defaultUrl: "https://",
+    icon: Link,
     options: {
       requiresUrl: true,
-      canBeTokenGated: false,
+      canBeTokenGated: true,
     },
   },
   twitter: {
     id: "twitter",
-    title: "Follow on Twitter",
-    defaultUrl: "https://twitter.com/",
+    title: "Follow on X",
+    defaultUrl: "https://x.com/",
     icon: TwitterIcon,
     options: {
       requiresUrl: true,
@@ -62,16 +63,6 @@ export const LINK_PRESETS: Record<string, LinkPreset> = {
     options: {
       requiresUrl: true,
       canBeTokenGated: true,
-    },
-  },
-  dexscreener: {
-    id: "dexscreener",
-    title: "View on DexScreener",
-    defaultUrl: "https://dexscreener.com/solana/[token]",
-    icon: DexScreenerIcon,
-    options: {
-      requiresUrl: true,
-      canBeTokenGated: false,
     },
   },
   tiktok: {
@@ -122,6 +113,26 @@ export const LINK_PRESETS: Record<string, LinkPreset> = {
     options: {
       requiresUrl: true,
       canBeTokenGated: true,
+    },
+  },
+  jupiter: {
+    id: "jupiter",
+    title: "Buy on Jupiter",
+    defaultUrl: "https://jup.ag/tokens/[token]",
+    icon: JupiterIcon,
+    options: {
+      requiresUrl: true,
+      canBeTokenGated: false,
+    },
+  },
+  dexscreener: {
+    id: "dexscreener",
+    title: "View on DexScreener",
+    defaultUrl: "https://dexscreener.com/solana/[token]",
+    icon: DexScreenerIcon,
+    options: {
+      requiresUrl: true,
+      canBeTokenGated: false,
     },
   },
   /*

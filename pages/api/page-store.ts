@@ -6,6 +6,7 @@ import { PrismaClient } from '@prisma/client';
 import { PrismaNeonHTTP } from '@prisma/adapter-neon';
 import { neon } from '@neondatabase/serverless';
 import { encryptUrl, decryptUrl } from '@/lib/encryption';
+import { invalidatePageCache } from '@/lib/redis';
 
 // Initialize Prisma client with Neon adapter - using edge-compatible initialization
 const sql = neon(process.env.DATABASE_URL!);
@@ -87,6 +88,7 @@ const PageItemSchema = z
     order: z.number().int().min(0),
     tokenGated: z.boolean().optional(),
     requiredTokens: z.array(z.string()).optional(),
+    customIcon: z.string().optional().nullable(),
   })
   .refine(
     (data) => {
@@ -161,6 +163,7 @@ type PageItem = {
   isPlugin: boolean;
   tokenGated: boolean;
   requiredTokens: string[];
+  customIcon: string | null;
 };
 
 type PageData = {
@@ -478,6 +481,10 @@ export default async function handler(
             walletAddress,
           },
         });
+        
+        // Invalidate cache for this slug
+        await invalidatePageCache(slug);
+        
         return res.status(200).json({ success: true });
       }
 
@@ -520,10 +527,14 @@ export default async function handler(
                   order: item.order,
                   tokenGated: item.tokenGated || false,
                   requiredTokens: item.requiredTokens || [],
+                  customIcon: item.customIcon || null,
                 }
               });
             }
           }
+          
+          // Invalidate cache after update
+          await invalidatePageCache(slug);
         } else {
           // Create the main page first
           page = await prisma.page.create({
@@ -542,10 +553,14 @@ export default async function handler(
                   order: item.order,
                   tokenGated: item.tokenGated || false,
                   requiredTokens: item.requiredTokens || [],
+                  customIcon: item.customIcon || null,
                 }
               });
             }
           }
+          
+          // Invalidate cache for new page
+          await invalidatePageCache(slug);
         }
 
         return res.status(200).json({ success: true });
@@ -606,6 +621,9 @@ export default async function handler(
       await prisma.page.delete({
         where: { slug },
       });
+      
+      // Invalidate cache after deletion
+      await invalidatePageCache(slug);
 
       return res.status(200).json({ success: true });
     } catch (error) {
@@ -680,6 +698,7 @@ export default async function handler(
                     order: item.order,
                     tokenGated: item.tokenGated || false,
                     requiredTokens: item.requiredTokens || [],
+                    customIcon: item.customIcon || null,
                   }
                 });
               } catch (itemError) {
@@ -689,6 +708,9 @@ export default async function handler(
             }));
           }
         }
+        
+        // Invalidate cache after update
+        await invalidatePageCache(slug);
 
         return res.status(200).json({ success: true });
       } catch (error) {

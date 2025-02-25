@@ -8,7 +8,9 @@ import { Link } from "lucide-react";
 
 interface LinksDrawerProps {
   pageDetails: PageData | null;
-  setPageDetails: (data: PageData | ((prev: PageData | null) => PageData | null)) => void;
+  setPageDetails: (
+    data: PageData | ((prev: PageData | null) => PageData | null)
+  ) => void;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onLinkAdd?: (linkId: string) => void;
@@ -31,27 +33,27 @@ export function LinksDrawer({
   const validateItems = (items: PageItem[]) => {
     const newErrors: { [key: string]: string } = {};
     items.forEach((item) => {
-      console.log('Validating item:', {
+      console.log("Validating item:", {
         id: item.id,
         presetId: item.presetId,
-        url: item.url
+        url: item.url,
       });
-      
+
       const preset = LINK_PRESETS[item.presetId];
       if (preset?.options?.requiresUrl) {
         if (!item.url) {
           newErrors[item.id] = `${preset.title} URL is required`;
         } else if (!validateLinkUrl(item.url, item.presetId)) {
-          console.log('URL validation failed:', {
+          console.log("URL validation failed:", {
             id: item.id,
             url: item.url,
-            presetId: item.presetId
+            presetId: item.presetId,
           });
           newErrors[item.id] = `Invalid ${preset.title} URL format`;
         }
       }
     });
-    console.log('Setting validation errors:', newErrors);
+    console.log("Setting validation errors:", newErrors);
     setErrors(newErrors);
     return newErrors;
   };
@@ -65,7 +67,11 @@ export function LinksDrawer({
       pageId: pageDetails?.id || "",
       presetId,
       title: preset.title,
-      url: preset.defaultUrl?.replace('[connectedToken]', pageDetails?.connectedToken || '') || "",
+      url:
+        preset.defaultUrl?.replace(
+          "[connectedToken]",
+          pageDetails?.connectedToken || ""
+        ) || "",
       order: pageDetails?.items?.length || 0,
       tokenGated: false,
       requiredTokens: [],
@@ -86,38 +92,36 @@ export function LinksDrawer({
     setTimeout(() => {
       window.scrollTo({
         top: document.documentElement.scrollHeight,
-        behavior: 'smooth'
+        behavior: "smooth",
       });
     }, 100);
   };
 
   return (
-    <Drawer 
-      open={open} 
+    <Drawer
+      open={open}
       onOpenChange={onOpenChange}
       hasContainer
       title="Add Link"
       icon={<Link className="h-5 w-5" />}
       closeButton>
-      <div className="py-3">
-        <div className="grid gap-4 grid-cols-2 sm:grid-cols-3">
-          {Object.entries(LINK_PRESETS).map(([id, preset]) => {
-            const Icon = preset.icon;
-            return (
-              <Button
-                key={id}
-                variant="outline"
-                className="justify-start gap-2 h-auto py-3"
-                onClick={() => handleAddLink(id)}>
-                <Icon className="h-5 w-5" />
-                <div className="text-left">
-                  <div className="font-medium">{preset.title}</div>
-                </div>
-              </Button>
-            );
-          })}
-        </div>
+      <div className="grid gap-4 grid-cols-2 sm:grid-cols-2">
+        {Object.entries(LINK_PRESETS).map(([id, preset]) => {
+          const Icon = preset.icon;
+          return (
+            <Button
+              key={id}
+              variant="outline"
+              className="justify-start gap-2 h-auto py-3"
+              onClick={() => handleAddLink(id)}>
+              <Icon className="h-5 w-5" />
+              <div className="text-left">
+                <div className="font-medium">{preset.title}</div>
+              </div>
+            </Button>
+          );
+        })}
       </div>
     </Drawer>
   );
-} 
+}

@@ -50,7 +50,24 @@ export default function EditPageLink({
     <div className="pf-link__inner">
       <div className="pf-link__icon-container">
         <div className="pf-link__icon">
-          <Icon className="pf-link__icon" aria-hidden="true" />
+          {item.customIcon ? (
+            <>
+              <img 
+                src={item.customIcon} 
+                alt={item.title || preset.title} 
+                className="pf-link__custom-icon"
+                key={`custom-icon-${item.customIcon}-${Date.now()}`}
+                onError={(e) => {
+                  // Fallback to preset icon if custom icon fails to load
+                  (e.target as HTMLImageElement).style.display = "none";
+                  (e.target as HTMLImageElement).nextElementSibling?.classList.remove("hidden");
+                }}
+              />
+              <Icon className="pf-link__icon hidden" aria-hidden="true" />
+            </>
+          ) : (
+            <Icon className="pf-link__icon" aria-hidden="true" />
+          )}
         </div>
       </div>
       <div className="pf-link__title">

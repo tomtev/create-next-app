@@ -7,6 +7,7 @@ export interface PageItem {
   order: number;
   tokenGated: boolean;
   requiredTokens: string[];
+  customIcon?: string | null;
 }
 
 export interface ThemeFonts {

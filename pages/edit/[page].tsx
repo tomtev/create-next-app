@@ -156,6 +156,7 @@ export const getServerSideProps: GetServerSideProps<PageProps> = async ({
             order: item.order || 0,
             tokenGated: item.tokenGated,
             requiredTokens: item.requiredTokens,
+            customIcon: item.customIcon || null,
           };
         }),
         createdAt: pageData.createdAt.toISOString(),
@@ -300,6 +301,14 @@ export default function EditPage({ slug, pageData, error }: PageProps) {
         links: themePreset?.fonts?.links || 'Inter',
       };
 
+      console.log('PageDetails updated, checking for custom icons:', 
+        pageDetails.items?.map(item => ({
+          id: item.id,
+          title: item.title,
+          customIcon: item.customIcon
+        }))
+      );
+
       setPreviewData({
         ...pageDetails,
         theme: currentTheme,
@@ -413,6 +422,7 @@ export default function EditPage({ slug, pageData, error }: PageProps) {
           order: typeof item.order === 'number' ? item.order : index,
           tokenGated: !!item.tokenGated,
           requiredTokens: item.requiredTokens || [],
+          customIcon: item.customIcon || null,
         };
 
         // Log each mapped item

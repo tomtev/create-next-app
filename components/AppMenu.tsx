@@ -64,10 +64,7 @@ const PageSkeleton = () => {
   );
 };
 
-export default function AppMenu({
-  className,
-  showLogoName = false,
-}: AppMenuProps) {
+export default function AppMenu({ className }: AppMenuProps) {
   const { ready, authenticated, linkWallet, user, logout, unlinkWallet } =
     usePrivy();
   const { login } = useLogin({
@@ -90,22 +87,6 @@ export default function AppMenu({
 
   const { exportWallet } = useSolanaWallets();
 
-  // Close sheet only when not loading and route changes
-  useEffect(() => {
-    const handleRouteChange = () => {
-      if (!isLoadingPages && !isLoading) {
-        setOpen(false);
-        setWalletDrawerOpen(false);
-      }
-    };
-
-    router.events.on("routeChangeStart", handleRouteChange);
-
-    return () => {
-      router.events.off("routeChangeStart", handleRouteChange);
-    };
-  }, [router, isLoadingPages, isLoading]);
-
   useEffect(() => {
     const handleOpenMenu = () => {
       setOpen(true);
@@ -117,27 +98,14 @@ export default function AppMenu({
     };
   }, []);
 
-  // Add loading state tracking
-  useEffect(() => {
-    const handleStart = () => setIsLoading(true);
-    const handleComplete = () => setIsLoading(false);
-
-    router.events.on("routeChangeStart", handleStart);
-    router.events.on("routeChangeComplete", handleComplete);
-    router.events.on("routeChangeError", handleComplete);
-
-    return () => {
-      router.events.off("routeChangeStart", handleStart);
-      router.events.off("routeChangeComplete", handleComplete);
-      router.events.off("routeChangeError", handleComplete);
-    };
-  }, [router]);
-
   return (
     <div className={className}>
       {/* Menu Trigger Button */}
-      <Button variant="theme" className={cn("px-2")} onClick={() => setOpen(true)}>
-        {isLoading ? <Spinner /> : <Menu className="h-5 w-5" />}
+      <Button
+        variant="theme"
+        className={cn("px-2")}
+        onClick={() => setOpen(true)}>
+        <Menu className="h-5 w-5" />
       </Button>
 
       {/* Main Menu Drawer */}
@@ -351,9 +319,7 @@ export default function AppMenu({
                               <div className="text-muted-foreground truncate pr-4 flex-1">
                                 {token.tokenAddress}
                               </div>
-                              <div className="font-medium">
-                                {token.balance}
-                              </div>
+                              <div className="font-medium">{token.balance}</div>
                             </div>
                           ))}
 
@@ -364,9 +330,7 @@ export default function AppMenu({
                           size="sm"
                           onClick={() => setShowAllTokens(!showAllTokens)}
                           className="w-full mt-2 text-xs">
-                          {showAllTokens
-                            ? "Show Less"
-                            : "Show All Tokens"}
+                          {showAllTokens ? "Show Less" : "Show All Tokens"}
                         </Button>
                       )}
                     </div>

@@ -7,10 +7,18 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { PageData, PageItem } from "@/types";
 import { validateLinkUrl } from "@/lib/links";
 import { LINK_PRESETS } from "@/lib/linkPresets";
-import { HelpCircle, AlertCircle, Lock } from "lucide-react";
+import { HelpCircle, AlertCircle, Lock, ChevronDown, Image } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -23,7 +31,8 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Drawer } from "@/components/ui/drawer";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
+import { ImageUploader } from "@/components/ui/ImageUploader";
 
 interface LinkSettingsDrawerProps {
   item?: PageItem;
@@ -56,6 +65,7 @@ export function LinkSettingsDrawer({
 }: LinkSettingsDrawerProps) {
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const titleInputRef = useRef<HTMLInputElement>(null);
+  const [iconDialogOpen, setIconDialogOpen] = useState(false);
 
   const isMobileDevice = () => {
     return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
@@ -169,12 +179,115 @@ export function LinkSettingsDrawer({
     });
   };
 
+  const handleCustomIconChange = (url: string) => {
+    console.log("Setting custom icon to:", url);
+    
+    // First update the item directly for immediate feedback
+    if (item) {
+      const updatedItem = { ...item, customIcon: url };
+      console.log("Updated item:", updatedItem);
+      
+      // Then update the state through the parent component
+      setPageDetails((prev) => {
+        if (!prev?.items) return prev;
+        
+        const updatedItems = prev.items.map((i) =>
+          i.id === item.id ? updatedItem : i
+        );
+        
+        console.log("Updated items in state:", updatedItems);
+        
+        // Force a refresh by creating a new object reference
+        const newState = {
+          ...prev,
+          items: [...updatedItems],
+          _forceRefresh: Date.now() // Add a timestamp to force React to detect the change
+        };
+        
+        console.log("New state with force refresh:", newState);
+        return newState;
+      });
+    }
+  };
+
   return (
     <Drawer 
       open={open} 
       onOpenChange={onOpenChange}
       title={`${preset.title} Settings`}
-      icon={<Icon className="h-5 w-5" />}
+      icon={
+        <Dialog open={iconDialogOpen} onOpenChange={setIconDialogOpen}>
+          <DialogTrigger asChild>
+            <Button title="Add Custom Icon" variant="outline" className="flex items-center gap-1 p-1">
+              {item.customIcon ? (
+                <img 
+                  src={item.customIcon} 
+                  alt={item.title || preset.title} 
+                  className="h-7 w-7 rounded-sm"
+                  onError={(e) => {
+                    // Fallback to preset icon if custom icon fails to load
+                    (e.target as HTMLImageElement).style.display = "none";
+                    (e.target as HTMLImageElement).nextElementSibling?.classList.remove("hidden");
+                  }}
+                />
+              ) : (
+                <Icon className="h-5 w-5" />
+              )}
+              <ChevronDown className="h-3 w-3" />
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Custom Icon</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <ImageUploader
+                imageUrl={item.customIcon || ""}
+                onImageChange={(url) => {
+                  // Apply the change immediately
+                  handleCustomIconChange(url);
+                  
+                  // Force a re-render by closing the dialog after a short delay
+                  setTimeout(() => {
+                    setIconDialogOpen(false);
+                  }, 100);
+                }}
+                placeholder="Enter icon URL"
+                buttonText="Upload"
+                helpText="Custom icon will be cropped to a square"
+                showPreview={true}
+                previewSize={64}
+              />
+            </div>
+            <DialogFooter>
+              <Button 
+                variant="outline" 
+                onClick={() => setIconDialogOpen(false)}
+                className="w-full sm:w-auto"
+              >
+                Close
+              </Button>
+              {item.customIcon && (
+                <Button 
+                  variant="destructive" 
+                  onClick={() => {
+                    // Apply the change immediately
+                    handleCustomIconChange("");
+                    
+                    // Force a re-render by closing the dialog after a short delay
+                    setTimeout(() => {
+                      setIconDialogOpen(false);
+                    }, 100);
+                  }}
+                  className="w-full sm:w-auto"
+                >
+                  Remove Icon
+                </Button>
+              )}
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      }
       backButton={!!onBack}
       hasContainer
       onBack={onBack}

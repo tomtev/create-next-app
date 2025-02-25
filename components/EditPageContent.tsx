@@ -101,10 +101,11 @@ export default function EditPageContent({
             <DragDropProvider onDragEnd={handleDragEnd}>
               <div className="pf-links__grid">
                 {items
+                  .filter((item): item is PageItem => !!item)
                   .sort((a, b) => a.order - b.order)
                   .map((item, index) => (
                     <EditPageLink
-                      key={item.id}
+                      key={`${item.id}-${String(item.customIcon || 'default')}`}
                       item={item}
                       index={index}
                       pageData={pageData}

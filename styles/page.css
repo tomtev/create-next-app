@@ -2,7 +2,7 @@
   /* Colors */
   --pf-page-bg: #ececec;
   --pf-page-text-color: #111;
-  --pf-container-width: 600px;
+  --pf-container-width: 560px;
 
   /* Font families */
   --pf-font-family-default: 'Inter', sans-serif;
@@ -48,12 +48,13 @@
   --pf-link-title-font-weight: 500;
   --pf-link-url-font-size: 0.875rem;
   --pf-link-url-font-weight: 400;
-  --pf-link-padding: 1rem;
+  --pf-link-padding: .75rem;
   --pf-link-min-height: 3rem;
   --pf-link-border-radius: .5rem;
   --pf-link-border-width: 1px;
   --pf-link-border-style: solid;
   --pf-link-border-color: var(--pf-page-text-color);
+  --pf-link-custom-icon-padding: 4px;
   --pf-link-color: var(--pf-page-text-color);
   --pf-link-background: var(--pf-page-bg);
   --pf-link-transition: background 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease, color 0.2s ease;
@@ -63,7 +64,7 @@
 
   /* Grid variables */
   --pf-links-grid-cols: 1;
-  --pf-links-grid-gap: 1.25rem;
+  --pf-links-grid-gap: 1rem;
 }
 
 .pf-page {
@@ -181,12 +182,28 @@
 .pf-link__icon {
   width: 1.5rem;
   height: 1.5rem;
+  position: relative;
 }
 
 .pf-link__icon-lock {
   width: 1.25rem;
   height: 1.25rem;
   opacity: 0.75;
+}
+
+/* Custom icon styles */
+.pf-link__custom-icon {
+  --size: calc(var(--pf-link-min-height) - calc(var(--pf-link-custom-icon-padding) * 2));
+  position: absolute;
+  left: calc(var(--pf-link-padding) * -1 + var(--pf-link-custom-icon-padding));
+  bottom: 50%;
+  transform: translateY(50%);
+  min-width: var(--size);
+  min-height: var(--size);
+  width: var(--size);
+  height: var(--size);
+  object-fit: cover;
+  border-radius: calc(var(--pf-link-border-radius) / 1.25);
 }
 
 .pf-link__title {
