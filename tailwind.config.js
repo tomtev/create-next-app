@@ -51,11 +51,26 @@ module.exports = {
         },
         rotate3d: {
           "0%": { transform: "rotateY(0deg)" },
+          "25%": { transform: "rotateY(90deg)" },
+          "50%": { transform: "rotateY(180deg)" },
+          "75%": { transform: "rotateY(270deg)" },
           "100%": { transform: "rotateY(360deg)" },
         },
         shimmer: {
           "100%": {
             transform: "translateX(100%)",
+          },
+        },
+        shine: {
+          "0%": { 
+            opacity: "0",
+            backgroundPosition: "200% 0" 
+          },
+          "20%": { opacity: "1" },
+          "80%": { opacity: "1" },
+          "100%": { 
+            opacity: "0",
+            backgroundPosition: "-200% 0" 
           },
         },
       },
@@ -69,6 +84,9 @@ module.exports = {
         marquee: "marquee var(--marquee-duration, 10s) linear infinite",
         marquee2: "marquee2 var(--marquee-duration, 10s) linear infinite",
         rotate3d: "rotate3d 3s linear infinite",
+        "rotate3d-slow": "rotate3d 5s linear infinite",
+        "rotate3d-fast": "rotate3d 1.5s linear infinite",
+        shine: "shine 3s ease-in-out infinite",
       },
       boxShadow: {
         brutalist: "3px 3px 0px 0 rgba(0,0,0,1)",

@@ -10,7 +10,8 @@ import { JupiterLogo } from "@/components/icons/JupiterLogo";
 import { useState } from "react";
 import { PrivyClient } from "@privy-io/server-auth";
 import { useToast } from "@/hooks/use-toast";
-import { RequiredTokenMessage } from "@/components/RequiredTokenMessage";
+import { RotatingCoin } from "@/components/ui/RotatingCoin";
+import { RequiredTokenMessage } from "@/components/ui/RequiredTokenMessage";
 
 const PRIVY_APP_ID = process.env.NEXT_PUBLIC_PRIVY_APP_ID;
 const PRIVY_APP_SECRET = process.env.PRIVY_APP_SECRET;
@@ -203,7 +204,6 @@ export default function GatedLinkPage(props: GatedLinkPageProps) {
   const [isChecking, setIsChecking] = useState(false);
   const [hasAccess, setHasAccess] = useState(props.hasAccess);
   const [gatedUrl, setGatedUrl] = useState(props.gatedUrl);
-  const [tokenBalance, setTokenBalance] = useState<string | null>(null);
   const { toast } = useToast();
   const [isClosing, setIsClosing] = useState(false);
 
@@ -357,6 +357,7 @@ export default function GatedLinkPage(props: GatedLinkPageProps) {
 
       <Drawer
         open={!isClosing}
+        hasContainer
         onOpenChange={(open) => {
           if (!open) {
             setIsClosing(true);
@@ -365,22 +366,26 @@ export default function GatedLinkPage(props: GatedLinkPageProps) {
             });
           }
         }}>
-        <div className="space-y-6 p-6">
+        <div className="flex flex-col gap-4 p-3">
           {props.pageData.image && (
             <div className="flex justify-center">
-              <img
+              <RotatingCoin
                 src={props.pageData.image}
                 alt={`${props.pageData.tokenSymbol} token`}
-                className="w-12 h-12 rounded-full animate-rotate3d"
+                size="md"
+                rotationSpeed="normal"
+                shineEffect={true}
+                depth="medium"
+                coinColor="#f59e0b" // Amber/gold color for the coin edge
               />
             </div>
           )}
           {!authenticated ? (
             <>
-              <div className="inline-flex items-center justify-center gap-2 text-sm text-orange-700 px-3 py-1.5 rounded-full mx-auto">
-                You need {props.linkItem.requiredTokens?.[0] || "0"} $
-                {props.pageData.tokenSymbol} to access this link.
-              </div>
+              <RequiredTokenMessage 
+                amount={props.linkItem?.requiredTokens?.[0] || "0"} 
+                symbol={props.pageData.tokenSymbol} 
+              />
               <Button onClick={login} className="w-full">
                 Connect Wallet
               </Button>
@@ -411,10 +416,10 @@ export default function GatedLinkPage(props: GatedLinkPageProps) {
             </>
           ) : (
             <>
-              <div className="inline-flex items-center justify-center gap-2 text-sm text-orange-700 px-3 py-1.5 rounded-full mx-auto">
-                You need {props.linkItem.requiredTokens?.[0] || "0"} $
-                {props.pageData.tokenSymbol} to access this link.
-              </div>
+              <RequiredTokenMessage 
+                amount={props.linkItem?.requiredTokens?.[0] || "0"} 
+                symbol={props.pageData.tokenSymbol} 
+              />
               <Button variant="outline" asChild className="w-full">
                 <a
                   href={`https://jup.ag/swap/SOL-${props.pageData.connectedToken}`}
