@@ -194,24 +194,25 @@ const PRIVY_APP_ID = process.env.NEXT_PUBLIC_PRIVY_APP_ID;
 const PRIVY_APP_SECRET = process.env.PRIVY_APP_SECRET;
 const client = new PrivyClient(PRIVY_APP_ID!, PRIVY_APP_SECRET!);
 
-// Helper function to get cookies
-function getCookie(req: NextApiRequest, name: string): string | undefined {
-  return req.cookies[name];
-}
-
 // Update verifyWalletOwnership to use NextApiRequest
 async function verifyWalletOwnership(
   req: NextApiRequest,
   walletAddress: string,
 ) {
-  const idToken = getCookie(req, "privy-id-token");
+  const headerAuthToken = req.headers.authorization?.replace(/^Bearer /, "");
+  const cookieAuthToken = req.cookies["privy-token"];
 
-  if (!idToken) {
-    throw new Error("Missing identity token");
+  const authToken = cookieAuthToken || headerAuthToken;
+  if (!authToken) {
+    throw new Error("Missing auth token");
   }
 
   try {
-    const user = await client.getUser({ idToken });
+    // Verify the auth token
+    const claims = await client.verifyAuthToken(authToken);
+    
+    // Get the user details to check wallet ownership
+    const user = await client.getUser(claims.userId);
 
     // Check if the wallet address is in the user's linked accounts
     const hasWallet = user.linkedAccounts.some((account) => {
@@ -232,14 +233,9 @@ async function verifyWalletOwnership(
   }
 }
 
-// Update getPagesForWallet to use NextRequest
+// Update getPagesForWallet to use the updated verifyWalletOwnership
 async function getPagesForWallet(walletAddress: string, req: NextApiRequest) {
   try {
-    const idToken = getCookie(req, "privy-id-token");
-    if (!idToken) {
-      throw new Error("Missing identity token");
-    }
-
     await verifyWalletOwnership(req, walletAddress);
 
     const pages = await prisma.page.findMany({
@@ -365,7 +361,7 @@ export default async function handler(
 
     try {
       if (walletAddress) {
-        const result = await getPagesForWallet(walletAddress as string, req as any);
+        const result = await getPagesForWallet(walletAddress as string, req);
         return res.status(200).json({ pages: result.pages });
       }
 
@@ -380,11 +376,8 @@ export default async function handler(
         let isOwner = false;
         if (pageData) {
           try {
-            const idToken = req.cookies["privy-id-token"];
-            if (idToken) {
-              await verifyWalletOwnership(req as any, pageData.walletAddress);
-              isOwner = true;
-            }
+            await verifyWalletOwnership(req, pageData.walletAddress);
+            isOwner = true;
           } catch (error) {
             // Ignore verification errors
           }
@@ -629,12 +622,6 @@ export default async function handler(
         return res.status(400).json({ error: "Slug is required" });
       }
 
-      // Verify authentication
-      const idToken = req.cookies["privy-id-token"];
-      if (!idToken) {
-        return res.status(401).json({ error: "Authentication required" });
-      }
-
       // Get the current page
       const currentPage = await prisma.page.findUnique({
         where: { slug },
@@ -649,25 +636,8 @@ export default async function handler(
 
       // Verify wallet ownership
       try {
-        const user = await client.getUser({ idToken });
-        
-        // Check if the wallet is in user's linked accounts
-        let isOwner = false;
-        for (const account of user.linkedAccounts) {
-          if (account.type === "wallet" && account.chainType === "solana") {
-            const walletAccount = account as { address?: string };
-            if (walletAccount.address?.toLowerCase() === currentPage.walletAddress.toLowerCase()) {
-              isOwner = true;
-              break;
-            }
-          }
-        }
-
-        if (!isOwner) {
-          return res.status(401).json({ error: "You don't have permission to edit this page" });
-        }
+        await verifyWalletOwnership(req, currentPage.walletAddress);
       } catch (error) {
-        console.error("Auth verification error:", error);
         return res.status(401).json({ 
           error: "Authentication failed",
           details: error instanceof Error ? error.message : "Failed to verify ownership"
