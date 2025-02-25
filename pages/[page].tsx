@@ -1,17 +1,24 @@
 import { GetServerSideProps } from "next";
 import Head from "next/head";
 import { useEffect, useState } from "react";
-import PageContent from "../components/PageContent";
+import dynamic from "next/dynamic";
 import { PageData } from "@/types";
 import { useRouter } from "next/router";
-import { Button } from "@/components/ui/button";
-import { Pencil } from "lucide-react";
 import { PrivyClient } from "@privy-io/server-auth";
-import Loader from "@/components/ui/loader";
 import { useThemeStyles } from '@/hooks/use-theme-styles';
 import { PrismaClient } from '@prisma/client';
 import { PrismaNeonHTTP } from '@prisma/adapter-neon';
 import { neon, neonConfig } from '@neondatabase/serverless';
+
+// Dynamically import components to reduce initial JS bundle
+const PageContent = dynamic(() => import("../components/PageContent"), {
+  ssr: true,
+  loading: () => <div className="pf-page__loading">Loading...</div>
+});
+
+const EditButton = dynamic(() => import("@/components/EditButton"), {
+  ssr: false,
+});
 
 // Configure neon to use fetch
 neonConfig.fetchConnectionCache = true;
@@ -27,8 +34,6 @@ const prisma = new PrismaClient({ adapter }).$extends({
     },
   },
 });
-
-
 
 interface PageProps {
   pageData: PageData;
@@ -50,7 +55,7 @@ function generateVisitorId() {
   });
 }
 
-// Helper to get or create visitor ID
+// Helper to get or create visitor ID - moved to a separate function that will be loaded only on client
 function getVisitorId() {
   if (typeof window === "undefined") return null;
 
@@ -173,6 +178,16 @@ export const getServerSideProps: GetServerSideProps<PageProps> = async ({
       updatedAt: pageData.updatedAt.toISOString(),
     };
 
+    // Process token replacements server-side to avoid client-side processing
+    if (processedData.items && processedData.connectedToken) {
+      processedData.items = processedData.items.map((item) => ({
+        ...item,
+        url: item.url 
+          ? item.url.replace("[token]", processedData.connectedToken || "") 
+          : null,
+      }));
+    }
+
     return {
       props: {
         slug,
@@ -216,10 +231,11 @@ export const getServerSideProps: GetServerSideProps<PageProps> = async ({
 
 export default function Page({ pageData, slug, error, isOwner }: PageProps) {
   const router = useRouter();
-  const [isLoading, setIsLoading] = useState(false);
+  const { cssVariables, googleFontsUrl, themeConfig } = useThemeStyles(pageData);
 
-  // Track page visit
+  // Track page visit - using useEffect to ensure this only runs on client
   useEffect(() => {
+    // Defer analytics to after page load
     const trackVisit = async () => {
       const visitorId = getVisitorId();
       if (!visitorId) return;
@@ -240,21 +256,15 @@ export default function Page({ pageData, slug, error, isOwner }: PageProps) {
       }
     };
 
-    trackVisit();
+    // Use requestIdleCallback or setTimeout to defer non-critical operations
+    if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
+      (window as any).requestIdleCallback(() => {
+        trackVisit();
+      });
+    } else {
+      setTimeout(trackVisit, 1000);
+    }
   }, [slug]);
-
-  // Process page data with token replacements
-  const processedPageData: PageData = {
-    ...pageData,
-    items: pageData.items?.map((item) => ({
-      ...item,
-      url: item.url 
-        ? item.url.replace("[token]", pageData.connectedToken || "") 
-        : null,
-    })),
-  };
-
-  const { cssVariables, googleFontsUrl, themeConfig } = useThemeStyles(processedPageData);
 
   if (error) {
     return (
@@ -264,9 +274,12 @@ export default function Page({ pageData, slug, error, isOwner }: PageProps) {
           <p className="mt-2 text-gray-600">
             The page &quot;{slug}&quot; could not be found.
           </p>
-          <Button className="mt-4" onClick={() => router.push("/dashboard")}>
+          <button 
+            className="mt-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600" 
+            onClick={() => router.push("/dashboard")}
+          >
             Back to Dashboard
-          </Button>
+          </button>
         </div>
       </div>
     );
@@ -275,9 +288,9 @@ export default function Page({ pageData, slug, error, isOwner }: PageProps) {
   return (
     <>
       <Head>
-        <title>{processedPageData?.title || slug} - Page.fun</title>
-        {processedPageData?.description && (
-          <meta name="description" content={processedPageData.description} />
+        <title>{pageData?.title || slug} - Page.fun</title>
+        {pageData?.description && (
+          <meta name="description" content={pageData.description} />
         )}
 
         {googleFontsUrl && (
@@ -296,29 +309,13 @@ export default function Page({ pageData, slug, error, isOwner }: PageProps) {
 
       <div className="pf-page">
         <PageContent
-          pageData={processedPageData}
-          items={processedPageData.items}
+          pageData={pageData}
+          items={pageData.items}
           themeStyle={themeConfig}
         />
       </div>
 
-      {isOwner && (
-        <Button
-          size="icon"
-          variant="theme"
-          className="fixed top-2 right-2"
-          onClick={async () => {
-            setIsLoading(true);
-            await router.push(`/edit/${slug}`);
-          }}
-          disabled={isLoading}>
-          {isLoading ? (
-            <Loader className="h-4 w-4" />
-          ) : (
-            <Pencil className="h-4 w-4" />
-          )}
-        </Button>
-      )}
+      {isOwner && <EditButton slug={slug} />}
     </>
   );
 }

@@ -1,11 +1,13 @@
 import { useRef, useEffect } from "react";
 import Link from 'next/link';
 import { useRouter } from 'next/router';
-import Loader from "@/components/ui/loader";
+import dynamic from 'next/dynamic';
 import { PageItem, PageData } from "@/types";
 import { LINK_PRESETS } from "@/lib/linkPresets";
 import { ThemeConfig } from "@/lib/themes";
-import { createMagnetEffect } from "@/lib/magnetEffect";
+
+// Dynamically import non-critical components
+const Loader = dynamic(() => import("@/components/ui/loader"), { ssr: false });
 
 interface PageLinkProps {
   item: PageItem;
@@ -21,6 +23,7 @@ interface PageLinkProps {
   tokenGatedUrls?: Map<string, string>;
   onTokenGatedClick?: (item: PageItem) => void;
   onVerifyAccess?: (itemId: string, tokenAddress: string, requiredAmount: string) => void;
+  enableLuminance?: boolean;
 }
 
 // Helper to track link clicks
@@ -56,18 +59,40 @@ export default function PageLink({
   tokenGatedUrls,
   onTokenGatedClick,
   onVerifyAccess,
+  enableLuminance = false,
 }: PageLinkProps) {
   const router = useRouter();
   const linkRef = useRef<HTMLDivElement>(null);
   const { page } = router.query;
 
+  // Defer luminance effect initialization
   useEffect(() => {
-    const cleanup = createMagnetEffect(
-      linkRef.current,
-      themeStyle?.effects?.linkMagnet
-    );
+    // Skip effect if luminance is disabled in theme or not enabled for this link
+    if (!themeStyle?.effects?.luminance || !enableLuminance) return;
+
+    // Dynamically import the luminance effect only when needed
+    let cleanup: (() => void) | undefined;
+    
+    const loadLuminanceEffect = async () => {
+      try {
+        const { createLuminanceEffect } = await import('@/lib/luminanceEffect');
+        cleanup = createLuminanceEffect(linkRef.current, true);
+      } catch (error) {
+        console.error('Failed to load luminance effect:', error);
+      }
+    };
+    
+    // Use requestIdleCallback or setTimeout to defer non-critical operations
+    if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
+      (window as any).requestIdleCallback(() => {
+        loadLuminanceEffect();
+      });
+    } else {
+      setTimeout(loadLuminanceEffect, 1000);
+    }
+    
     return () => cleanup?.();
-  }, [themeStyle?.effects?.linkMagnet]);
+  }, [themeStyle?.effects?.luminance, enableLuminance]);
 
   const preset = LINK_PRESETS[item.presetId];
   if (!preset) return null;
@@ -119,7 +144,7 @@ export default function PageLink({
           )}
         </div>
       </div>
-      {themeStyle?.effects?.linkGradientBorder && (
+      {themeStyle?.effects?.linkGradientBorder && enableLuminance && (
         <div
           className="pf-gradient-border pointer-events-none absolute inset-0 rounded-[inherit]"
           style={{

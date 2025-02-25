@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { PageData, PageItem } from "@/types";
 import Link from "next/link";
 import PageLink from "./PageLink";
@@ -26,6 +26,72 @@ export default function PageContent({
   const [tokenGatedUrls, setTokenGatedUrls] = useState<Map<string, string>>(
     new Map()
   );
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [isTouchDevice, setIsTouchDevice] = useState(false);
+
+  // Detect touch device on mount
+  useEffect(() => {
+    const detectTouchDevice = () => {
+      return 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+    };
+    
+    setIsTouchDevice(detectTouchDevice());
+  }, []);
+
+  // Apply luminance effect to the page container when enabled
+  useEffect(() => {
+    if (!themeStyle?.effects?.luminance) return;
+    
+    // Only load the effect if needed
+    const loadLuminanceEffect = async () => {
+      try {
+        // Dynamically import the luminance effect
+        const { createLuminanceEffect } = await import('@/lib/luminanceEffect');
+        
+        // Apply to container only on touch devices
+        if (isTouchDevice && containerRef.current) {
+          return createLuminanceEffect(containerRef.current, true);
+        }
+      } catch (error) {
+        console.error('Failed to load luminance effect:', error);
+      }
+    };
+    
+    // Use requestIdleCallback or setTimeout to defer non-critical operations
+    if (typeof window !== 'undefined') {
+      if ('requestIdleCallback' in window) {
+        (window as any).requestIdleCallback(() => {
+          loadLuminanceEffect();
+        });
+      } else {
+        setTimeout(loadLuminanceEffect, 1000);
+      }
+    }
+  }, [themeStyle?.effects?.luminance, isTouchDevice]);
+
+  // Request device orientation permission on page load for iOS devices
+  useEffect(() => {
+    if (!themeStyle?.effects?.luminance) return;
+    
+    const requestOrientationPermission = async () => {
+      try {
+        if (typeof DeviceOrientationEvent !== 'undefined' && 
+            typeof (DeviceOrientationEvent as any).requestPermission === 'function') {
+          const permission = await (DeviceOrientationEvent as any).requestPermission();
+          console.log('Device orientation permission:', permission);
+        }
+      } catch (error) {
+        console.error('Error requesting device orientation permission:', error);
+      }
+    };
+    
+    if (typeof window !== 'undefined' && isTouchDevice) {
+      // Request permission after a short delay to ensure the page has loaded
+      setTimeout(() => {
+        requestOrientationPermission();
+      }, 1000);
+    }
+  }, [themeStyle?.effects?.luminance, isTouchDevice]);
 
   const fetchTokenGatedContent = async (itemId: string) => {
     try {
@@ -106,7 +172,7 @@ export default function PageContent({
   };
 
   return (
-    <div className="pf-page__container">
+    <div className="pf-page__container" ref={containerRef}>
       {/* Page Header */}
       <div className="pf-page__header">
         <div className="pf-page__header-inner">
@@ -114,7 +180,7 @@ export default function PageContent({
             <img
               className="pf-page__image"
               src={pageData.image}
-              alt={pageData.title}
+              alt={pageData.title || "Page image"}
               onError={(e) => {
                 (e.target as HTMLImageElement).style.display = "none";
               }}
@@ -161,6 +227,7 @@ export default function PageContent({
                   onTokenGatedClick={handleTokenGatedClick}
                   onVerifyAccess={verifyAccess}
                   themeStyle={themeStyle}
+                  enableLuminance={themeStyle?.effects?.luminance && !isTouchDevice}
                 />
               ))}
           </div>

@@ -5,7 +5,7 @@ import { GripVertical } from "lucide-react";
 import { useSortable } from "@dnd-kit/react/sortable";
 import { motion } from "framer-motion";
 import { ThemeConfig } from "@/lib/themes";
-import { createMagnetEffect } from "@/lib/magnetEffect";
+import { createLuminanceEffect } from "@/lib/luminanceEffect";
 
 interface EditPageLinkProps {
   item: PageItem;
@@ -27,12 +27,12 @@ export default function EditPageLink({
   const linkRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const cleanup = createMagnetEffect(
+    const cleanup = createLuminanceEffect(
       linkRef.current,
-      themeStyle?.effects?.linkMagnet
+      themeStyle?.effects?.luminance
     );
     return () => cleanup?.();
-  }, [themeStyle?.effects?.linkMagnet]);
+  }, [themeStyle?.effects?.luminance]);
 
   const preset = LINK_PRESETS[item.presetId];
   if (!preset) return null;
@@ -87,7 +87,7 @@ export default function EditPageLink({
         <GripVertical className="h-5 w-5 text-gray-400" />
       </div>
       <motion.div
-        initial={item.isNew ? { opacity: 0, scale: 0.5 } : false}
+        initial={(item as any).isNew ? { opacity: 0, scale: 0.5 } : false}
         animate={{ opacity: 1, scale: 1 }}
         transition={{
           duration: 0.3,

@@ -13,8 +13,7 @@ export interface ThemeConfig {
     linkGradientBorder?: boolean;
     titleGradientBackground?: boolean;
     descriptionGradientBackground?: boolean;
-    linkMagnet?: boolean;
-    pageMagnet?: boolean;
+    luminance?: boolean;
     linkPixelBorder?: boolean;
   };
 }
@@ -81,7 +80,7 @@ export const themes: Themes = {
     effects: {
       linkPixelBorder: true,
       linkGradientBorder: true,
-      linkMagnet: true,
+      luminance: true,
     },
     styles: {
       "--pf-page-bg": "#000",
@@ -104,7 +103,7 @@ export const themes: Themes = {
     title: "Solana",
     effects: {
       linkGradientBorder: true,
-      linkMagnet: true,
+      luminance: true,
       titleGradientBackground: true,
       descriptionGradientBackground: true,
     },
