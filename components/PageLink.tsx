@@ -1,13 +1,15 @@
-import { useRef, useEffect } from "react";
+import { useRef, useEffect, useState } from "react";
 import Link from 'next/link';
 import { useRouter } from 'next/router';
 import dynamic from 'next/dynamic';
 import { PageItem, PageData } from "@/types";
 import { LINK_PRESETS } from "@/lib/linkPresets";
 import { ThemeConfig } from "@/lib/themes";
+import { EllipsisVertical } from "lucide-react";
 
 // Dynamically import non-critical components
 const Loader = dynamic(() => import("@/components/ui/loader"), { ssr: false });
+const ShareDrawer = dynamic(() => import("@/components/ShareDrawer"), { ssr: false });
 
 interface PageLinkProps {
   item: PageItem;
@@ -64,6 +66,7 @@ export default function PageLink({
   const router = useRouter();
   const linkRef = useRef<HTMLDivElement>(null);
   const { page } = router.query;
+  const [shareDrawerOpen, setShareDrawerOpen] = useState(false);
 
   // Defer luminance effect initialization
   useEffect(() => {
@@ -108,6 +111,12 @@ export default function PageLink({
     await trackClick(page as string, item.id, item.tokenGated || false);
   };
 
+  const handleShareClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setShareDrawerOpen(true);
+  };
+
   // Check if token gating should be shown
   const showTokenGating = item.tokenGated && pageData.connectedToken;
 
@@ -142,13 +151,13 @@ export default function PageLink({
             {item.title || preset.title}
           </span>
         </div>
-        <div className="pf-link__icon-container">
+        <div className="pf-link__icon-container flex items-center justify-end">
           {showTokenGating && !isLoading && (
             <svg
               xmlns="http://www.w3.org/2000/svg"
               viewBox="0 0 16 16"
               fill="currentColor"
-              className="pf-link__icon-lock">
+              className="pf-link__icon-lock flex-shrink-0 opacity-75 w-4 h-4">
               <path
                 fillRule="evenodd"
                 d="M8 1a3.5 3.5 0 0 0-3.5 3.5V7A1.5 1.5 0 0 0 3 8.5v5A1.5 1.5 0 0 0 4.5 15h7a1.5 1.5 0 0 0 1.5-1.5v-5A1.5 1.5 0 0 0 11.5 7V4.5A3.5 3.5 0 0 0 8 1Zm2 6V4.5a2 2 0 1 0-4 0V7h4Z"
@@ -156,6 +165,13 @@ export default function PageLink({
               />
             </svg>
           )}
+          <button 
+            onClick={handleShareClick}
+            className="pf-link__share-button flex-shrink-0 flex items-center justify-center w-6 h-6 rounded-full hover:bg-[var(--pf-link-background)] transition opacity-75 hover:opacity-100"
+            aria-label="Share"
+          >
+            <EllipsisVertical className="h-3 w-3" />
+          </button>
         </div>
       </div>
       {themeStyle?.effects?.linkGradientBorder && enableLuminance && (
@@ -183,6 +199,13 @@ export default function PageLink({
           }}
         />
       )}
+      
+      <ShareDrawer 
+        item={item} 
+        open={shareDrawerOpen} 
+        onOpenChange={setShareDrawerOpen} 
+        pageSlug={page as string} 
+      />
     </div>
   );
 

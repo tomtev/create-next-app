@@ -19,6 +19,7 @@ interface EditPageLinkProps {
 export default function EditPageLink({
   item,
   index,
+  pageData,
   onLinkClick,
   error,
   themeStyle,
