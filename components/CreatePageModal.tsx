@@ -389,7 +389,7 @@ export default function CreatePageModal({
           slug,
           walletAddress,
           title: tokenMetadata?.name || "My Page",
-          description: tokenMetadata?.description || "A page for my community",
+          description: tokenMetadata?.description || "Some description about my page",
           image: tokenMetadata?.image || null,
           designStyle: "default",
           connectedToken: selectedToken || null,
