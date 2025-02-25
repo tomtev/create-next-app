@@ -67,6 +67,7 @@ export default function PageLink({
   const linkRef = useRef<HTMLDivElement>(null);
   const { page } = router.query;
   const [shareDrawerOpen, setShareDrawerOpen] = useState(false);
+  const [isGatedLinkLoading, setIsGatedLinkLoading] = useState(false);
 
   // Defer luminance effect initialization
   useEffect(() => {
@@ -97,6 +98,20 @@ export default function PageLink({
     return () => cleanup?.();
   }, [themeStyle?.effects?.luminance, enableLuminance]);
 
+  // Reset loading state when navigating away
+  useEffect(() => {
+    // Listen for route changes to reset loading state
+    const handleRouteChange = () => {
+      setIsGatedLinkLoading(false);
+    };
+
+    router.events.on('routeChangeComplete', handleRouteChange);
+    
+    return () => {
+      router.events.off('routeChangeComplete', handleRouteChange);
+    };
+  }, [router.events]);
+
   const preset = LINK_PRESETS[item.presetId];
   if (!preset) return null;
 
@@ -105,6 +120,11 @@ export default function PageLink({
       e.preventDefault();
       onLinkClick(item.id);
       return;
+    }
+
+    // Set loading state for gated links
+    if (item.tokenGated && pageData.connectedToken) {
+      setIsGatedLinkLoading(true);
     }
 
     // Track click
@@ -147,8 +167,11 @@ export default function PageLink({
           </div>
         </div>
         <div className="pf-link__title">
-          <span className="pf-link__title-text">
+          <span className="pf-link__title-text flex items-center">
             {item.title || preset.title}
+            {isGatedLinkLoading && showTokenGating && (
+              <Loader className="ml-2 h-4 w-4" />
+            )}
           </span>
         </div>
         <div className="pf-link__icon-container flex items-center justify-end">
@@ -157,7 +180,7 @@ export default function PageLink({
               xmlns="http://www.w3.org/2000/svg"
               viewBox="0 0 16 16"
               fill="currentColor"
-              className="pf-link__icon-lock flex-shrink-0 opacity-75 w-4 h-4">
+              className="pf-link__icon-lock flex-shrink-0 opacity-75 w-5 h-5">
               <path
                 fillRule="evenodd"
                 d="M8 1a3.5 3.5 0 0 0-3.5 3.5V7A1.5 1.5 0 0 0 3 8.5v5A1.5 1.5 0 0 0 4.5 15h7a1.5 1.5 0 0 0 1.5-1.5v-5A1.5 1.5 0 0 0 11.5 7V4.5A3.5 3.5 0 0 0 8 1Zm2 6V4.5a2 2 0 1 0-4 0V7h4Z"

@@ -2,7 +2,7 @@ import { useRouter } from "next/router";
 import { usePrivy, useLogin, useSolanaWallets } from "@privy-io/react-auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Plus, Menu, ArrowLeft, WalletMinimal } from "lucide-react";
+import { Plus, Menu, WalletMinimal } from "lucide-react";
 import Link from "next/link";
 import { Drawer } from "@/components/ui/drawer";
 import { PageData } from "@/types";
@@ -12,7 +12,6 @@ import { isSolanaWallet, truncateWalletAddress } from "@/utils/wallet";
 import { cn } from "@/lib/utils";
 import CreatePageModal from "./CreatePageModal";
 import { useGlobalContext } from "@/lib/context";
-import Spinner from "./Spinner";
 import { Skeleton } from "./ui/skeleton";
 import Image from "next/image";
 
@@ -97,6 +96,22 @@ export default function AppMenu({ className }: AppMenuProps) {
       window.removeEventListener("openAppMenu", handleOpenMenu);
     };
   }, []);
+
+  // Close menu when route changes
+  useEffect(() => {
+    const handleRouteChange = () => {
+      if (ready) {
+        setOpen(false);
+        setWalletDrawerOpen(false);
+      }
+    };
+
+    router.events.on('routeChangeStart', handleRouteChange);
+    
+    return () => {
+      router.events.off('routeChangeStart', handleRouteChange);
+    };
+  }, [router, ready]);
 
   return (
     <div className={className}>
