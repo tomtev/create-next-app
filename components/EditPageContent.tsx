@@ -1,10 +1,9 @@
-import { useState } from "react";
 import { PageData, PageItem } from "@/types";
 import EditPageLink from "./EditPageLink";
-import { Button } from "@/components/ui/button";
 import { DragDropProvider } from "@dnd-kit/react";
-import { Plus } from "lucide-react";
 import { ThemeConfig } from "@/lib/themes";
+import Link from "next/link";
+import { Logo } from "@/components/logo";
 
 interface EditPageContentProps {
   pageData: PageData;
@@ -105,7 +104,7 @@ export default function EditPageContent({
                   .sort((a, b) => a.order - b.order)
                   .map((item, index) => (
                     <EditPageLink
-                      key={`${item.id}-${String(item.customIcon || 'default')}`}
+                      key={`${item.id}-${String(item.customIcon || "default")}`}
                       item={item}
                       index={index}
                       pageData={pageData}
@@ -118,6 +117,13 @@ export default function EditPageContent({
             </DragDropProvider>
           </div>
         )}
+        <div className="flex mt-10 items-center justify-center gap-1 text-sm opacity-50 hover:opacity-100 transition-opacity">
+          <div className="flex items-center gap-0.5">
+            <span>page.fun</span>
+            <span className="opacity-50"> / </span>
+            <span>{pageData.slug}</span>
+          </div>
+        </div>
       </div>
     </>
   );

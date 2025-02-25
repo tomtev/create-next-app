@@ -4,7 +4,6 @@ import { useState, useRef, useEffect } from "react";
 import { PageData, PageItem } from "@/types";
 import Link from "next/link";
 import PageLink from "./PageLink";
-import { Logo } from "./logo";
 import { ThemeConfig } from "@/lib/themes";
 
 interface PageContentProps {
@@ -235,7 +234,6 @@ export default function PageContent({
       )}
       <div className="flex mt-10 items-center justify-center gap-1 text-sm opacity-50 hover:opacity-100 transition-opacity">
         <Link href="/" className="flex items-center gap-0.5">
-          <Logo className="w-4 h-4 mr-0.5" />
           <span>page.fun</span>
           <span className="opacity-50"> / </span>
           <span>{pageData.slug}</span>
