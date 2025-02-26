@@ -20,6 +20,7 @@ export interface LinkPreset {
   options?: {
     requiresUrl?: boolean;
     canBeTokenGated?: boolean;
+    requireToken?: boolean;
   };
 }
 
@@ -38,7 +39,7 @@ export const LINK_PRESETS: Record<string, LinkPreset> = {
   custom: {
     id: "custom",
     title: "Custom Link",
-    defaultUrl: "https://",
+    defaultUrl: "https://myurl.com",
     icon: Link,
     options: {
       requiresUrl: true,
@@ -123,6 +124,7 @@ export const LINK_PRESETS: Record<string, LinkPreset> = {
     options: {
       requiresUrl: true,
       canBeTokenGated: false,
+      requireToken: true,
     },
   },
   dexscreener: {
@@ -133,6 +135,7 @@ export const LINK_PRESETS: Record<string, LinkPreset> = {
     options: {
       requiresUrl: true,
       canBeTokenGated: false,
+      requireToken: true,
     },
   },
   /*

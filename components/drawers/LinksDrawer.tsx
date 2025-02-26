@@ -69,7 +69,7 @@ export function LinksDrawer({
       title: preset.title,
       url:
         preset.defaultUrl?.replace(
-          "[connectedToken]",
+          "[token]",
           pageDetails?.connectedToken || ""
         ) || "",
       order: pageDetails?.items?.length || 0,
@@ -97,6 +97,15 @@ export function LinksDrawer({
     }, 100);
   };
 
+  // Filter out presets that require a token when no token is connected
+  const filteredPresets = Object.entries(LINK_PRESETS).filter(([_, preset]) => {
+    // If the preset requires a token and there's no connected token, hide it
+    if (preset.options?.requireToken && !pageDetails?.connectedToken) {
+      return false;
+    }
+    return true;
+  });
+
   return (
     <Drawer
       open={open}
@@ -106,7 +115,7 @@ export function LinksDrawer({
       icon={<Link className="h-5 w-5" />}
       closeButton>
       <div className="grid gap-4 grid-cols-2 sm:grid-cols-2">
-        {Object.entries(LINK_PRESETS).map(([id, preset]) => {
+        {filteredPresets.map(([id, preset]) => {
           const Icon = preset.icon;
           return (
             <Button

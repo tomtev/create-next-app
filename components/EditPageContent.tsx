@@ -4,6 +4,7 @@ import { DragDropProvider } from "@dnd-kit/react";
 import { ThemeConfig } from "@/lib/themes";
 import Link from "next/link";
 import { Logo } from "@/components/logo";
+import { LINK_PRESETS } from "@/lib/linkPresets";
 
 interface EditPageContentProps {
   pageData: PageData;
@@ -28,6 +29,7 @@ export default function EditPageContent({
   onImageClick,
   onItemsReorder,
   validationErrors = {},
+  onAddLinkClick,
 }: EditPageContentProps) {
   const handleDragEnd = (event: any) => {
     const { operation, canceled } = event;
@@ -57,6 +59,15 @@ export default function EditPageContent({
       onItemsReorder?.(reorderedItems);
     }
   };
+
+  // Filter out items that require a token when no token is connected
+  const filteredItems = items.filter(item => {
+    const preset = LINK_PRESETS[item.presetId];
+    if (preset?.options?.requireToken && !pageData.connectedToken) {
+      return false;
+    }
+    return true;
+  });
 
   return (
     <>
@@ -99,11 +110,11 @@ export default function EditPageContent({
         </div>
 
         {/* Social Links & Plugins */}
-        {items && items.length > 0 && (
+        {filteredItems.length > 0 ? (
           <div className="pf-links">
             <DragDropProvider onDragEnd={handleDragEnd}>
               <div className="pf-links__grid">
-                {items
+                {filteredItems
                   .filter((item): item is PageItem => !!item)
                   .sort((a, b) => a.order - b.order)
                   .map((item, index) => (
@@ -119,6 +130,18 @@ export default function EditPageContent({
                   ))}
               </div>
             </DragDropProvider>
+          </div>
+        ) : (
+          <div className="flex flex-col items-center justify-center py-10 px-4 text-center">
+            <p className="text-gray-500 mb-4">No links added yet</p>
+            {onAddLinkClick && (
+              <button 
+                onClick={onAddLinkClick}
+                className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors"
+              >
+                Add your first link
+              </button>
+            )}
           </div>
         )}
         <div className="flex mt-10 items-center justify-center gap-1 text-sm opacity-50 hover:opacity-100 transition-opacity">
