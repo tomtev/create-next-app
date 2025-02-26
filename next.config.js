@@ -24,7 +24,7 @@ module.exports = {
         headers: [
           {
             key: 'Content-Security-Policy',
-            value: "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.vercel-insights.com; connect-src 'self' https://*.vercel-insights.com https://*.vercel.app https://*.privy.io https://*.helius-rpc.com; img-src 'self' blob: data: https://*.vercel-storage.com; style-src 'self' 'unsafe-inline'; font-src 'self' data:; frame-src 'self' https://*.privy.io; object-src 'none'; base-uri 'self'; form-action 'self';"
+            value: "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.vercel-insights.com; connect-src 'self' https://*.vercel-insights.com https://*.vercel.app https://*.privy.io https://*.helius-rpc.com wss://*.walletconnect.com wss://*.walletlink.org https://*.amazonaws.com https://*.walletconnect.com https://explorer-api.walletconnect.com; img-src 'self' blob: data: https://*.vercel-storage.com https://*.amazonaws.com https://*.s3.amazonaws.com https://s3.amazonaws.com https://s3-*.amazonaws.com https://*.arweave.net https://*.ipfs.io https://*.cloudfront.net https://yap-prod-app.s3.us-east-1.amazonaws.com https://*.walletconnect.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; frame-src 'self' https://*.privy.io https://*.walletconnect.org https://verify.walletconnect.org https://verify.walletconnect.com; object-src 'none'; base-uri 'self'; form-action 'self';"
           },
           {
             key: 'X-XSS-Protection',

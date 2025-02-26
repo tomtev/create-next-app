@@ -50,7 +50,7 @@ export const LINK_PRESETS: Record<string, LinkPreset> = {
   timefun: {
     id: "timefun",
     title: "Time.fun Profile",
-    defaultUrl: "https://time.fun/",
+    defaultUrl: "https://time.fun/username",
     icon: TimeFunIcon,
     options: {
       requiresUrl: true,
@@ -60,7 +60,7 @@ export const LINK_PRESETS: Record<string, LinkPreset> = {
   twitter: {
     id: "twitter",
     title: "Follow on X",
-    defaultUrl: "https://x.com/",
+    defaultUrl: "https://x.com/username",
     icon: TwitterIcon,
     options: {
       requiresUrl: true,
@@ -70,7 +70,7 @@ export const LINK_PRESETS: Record<string, LinkPreset> = {
   telegram: {
     id: "telegram",
     title: "Join on Telegram",
-    defaultUrl: "https://t.me/",
+    defaultUrl: "https://t.me/username",
     icon: TelegramIcon,
     options: {
       requiresUrl: true,
@@ -100,7 +100,7 @@ export const LINK_PRESETS: Record<string, LinkPreset> = {
   discord: {
     id: "discord",
     title: "Join on Discord",
-    defaultUrl: "https://discord.gg/",
+    defaultUrl: "https://discord.gg/username",
     icon: DiscordIcon,
     options: {
       requiresUrl: true,
@@ -110,7 +110,7 @@ export const LINK_PRESETS: Record<string, LinkPreset> = {
   facebook: {
     id: "facebook",
     title: "Follow on Facebook",
-    defaultUrl: "https://facebook.com/",
+    defaultUrl: "https://facebook.com/username",
     icon: FacebookIcon,
     options: {
       requiresUrl: true,
@@ -120,7 +120,7 @@ export const LINK_PRESETS: Record<string, LinkPreset> = {
   github: {
     id: "github",
     title: "View on GitHub",
-    defaultUrl: "https://github.com/",
+    defaultUrl: "https://github.com/username",
     icon: GitHubIcon,
     options: {
       requiresUrl: true,

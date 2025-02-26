@@ -1,5 +1,4 @@
 import { useState, useRef, forwardRef, ForwardedRef } from "react";
-import { Input } from "@/components/ui/input";
 import { Plus } from "lucide-react";
 import type { PutBlobResult } from '@vercel/blob';
 import Loader from "@/components/ui/loader";
@@ -7,11 +6,9 @@ import Loader from "@/components/ui/loader";
 interface ImageUploaderProps {
   imageUrl: string | null | undefined;
   onImageChange: (url: string) => void;
-  placeholder?: string;
   className?: string;
   showPreview?: boolean;
   previewSize?: number;
-  buttonText?: string;
   label?: string;
   helpText?: string;
 }
@@ -89,17 +86,14 @@ const resizeImage = (file: File, size: number, quality: number = 0.8): Promise<F
 export const ImageUploader = forwardRef(({
   imageUrl,
   onImageChange,
-  placeholder = "Enter image URL",
   className = "",
   showPreview = true,
   previewSize = 64,
-  buttonText = "Upload",
   label,
   helpText = "Images will be cropped to a 200x200px square"
 }: ImageUploaderProps, ref: ForwardedRef<HTMLInputElement>) => {
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const internalImageInputRef = useRef<HTMLInputElement>(null);
   const [resizeOptions] = useState({
     size: 200,
     quality: 0.8,
@@ -240,13 +234,13 @@ export const ImageUploader = forwardRef(({
   };
 
   return (
-    <div className={`space-y-2 ${className}`}>
+    <div className={`${className}`}>
       {label && (
         <label className="block text-sm font-medium text-gray-700 mb-1">
           {label}
         </label>
       )}
-      <div className="flex gap-4 items-center">
+      <div className="flex items-center">
         {/* Image/Upload Button Area */}
         <div 
           onClick={() => fileInputRef.current?.click()}
@@ -258,7 +252,7 @@ export const ImageUploader = forwardRef(({
               <img
                 src={imageUrl}
                 alt="Preview"
-                className="object-cover w-full h-full rounded-md"
+                className="object-cover w-full h-full rounded-md border border-primary shadow-brutalist-sm"
                 onError={(e) => {
                   (e.target as HTMLImageElement).style.display = "none";
                 }}
@@ -279,31 +273,19 @@ export const ImageUploader = forwardRef(({
           )}
         </div>
 
-        {/* Input Area */}
-        <div className="flex-1">
-          <div className="flex gap-2">
-            <Input
-              ref={ref}
-              type="text"
-              value={imageUrl || ""}
-              onChange={(e) => onImageChange(e.target.value)}
-              placeholder={placeholder}
-              className="flex-1"
-            />
-            <input
-              type="file"
-              ref={fileInputRef}
-              className="hidden"
-              accept="image/*"
-              onChange={handleImageUpload}
-            />
-          </div>
-          {helpText && (
-            <p className="mt-1 text-xs text-gray-500">
-              {helpText}
-            </p>
-          )}
-        </div>
+        <input
+          type="file"
+          ref={fileInputRef}
+          className="hidden"
+          accept="image/*"
+          onChange={handleImageUpload}
+        />
+        
+        {helpText && (
+          <p className="ml-2 text-xs text-gray-500">
+            {helpText}
+          </p>
+        )}
       </div>
     </div>
   );
