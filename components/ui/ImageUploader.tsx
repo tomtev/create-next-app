@@ -1,7 +1,6 @@
-import { useState, useRef } from "react";
+import { useState, useRef, forwardRef, ForwardedRef } from "react";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Upload } from "lucide-react";
+import { Plus } from "lucide-react";
 import type { PutBlobResult } from '@vercel/blob';
 import Loader from "@/components/ui/loader";
 
@@ -87,7 +86,7 @@ const resizeImage = (file: File, size: number, quality: number = 0.8): Promise<F
   });
 };
 
-export function ImageUploader({
+export const ImageUploader = forwardRef(({
   imageUrl,
   onImageChange,
   placeholder = "Enter image URL",
@@ -97,11 +96,11 @@ export function ImageUploader({
   buttonText = "Upload",
   label,
   helpText = "Images will be cropped to a 200x200px square"
-}: ImageUploaderProps) {
+}: ImageUploaderProps, ref: ForwardedRef<HTMLInputElement>) => {
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const imageInputRef = useRef<HTMLInputElement>(null);
-  const [resizeOptions, setResizeOptions] = useState({
+  const internalImageInputRef = useRef<HTMLInputElement>(null);
+  const [resizeOptions] = useState({
     size: 200,
     quality: 0.8,
   });
@@ -247,11 +246,44 @@ export function ImageUploader({
           {label}
         </label>
       )}
-      <div className="flex gap-2">
+      <div className="flex gap-4">
+        {/* Image/Upload Button Area */}
+        <div 
+          onClick={() => fileInputRef.current?.click()}
+          className="relative cursor-pointer group"
+          style={{ minWidth: `${previewSize}px`, height: `${previewSize}px` }}
+        >
+          {imageUrl ? (
+            <>
+              <img
+                src={imageUrl}
+                alt="Preview"
+                className="object-cover w-full h-full rounded-md"
+                onError={(e) => {
+                  (e.target as HTMLImageElement).style.display = "none";
+                }}
+              />
+              <div className="absolute inset-0 bg-black bg-opacity-50 rounded-md opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                <Plus className="w-6 h-6 text-white" />
+              </div>
+            </>
+          ) : (
+            <div className="w-full h-full border-2 border-dashed border-gray-300 rounded-md flex items-center justify-center bg-gray-50 hover:bg-gray-100 transition-colors">
+              <Plus className="w-6 h-6 text-gray-400" />
+            </div>
+          )}
+          {isUploading && (
+            <div className="absolute inset-0 bg-black bg-opacity-50 rounded-md flex items-center justify-center">
+              <Loader className="h-6 w-6 text-white" />
+            </div>
+          )}
+        </div>
+
+        {/* Input Area */}
         <div className="flex-1">
           <div className="flex gap-2">
             <Input
-              ref={imageInputRef}
+              ref={ref}
               type="text"
               value={imageUrl || ""}
               onChange={(e) => onImageChange(e.target.value)}
@@ -265,21 +297,6 @@ export function ImageUploader({
               accept="image/*"
               onChange={handleImageUpload}
             />
-            <Button
-              variant="outline"
-              onClick={() => fileInputRef.current?.click()}
-              disabled={isUploading}
-              type="button">
-              {isUploading ? (
-                <span className="flex items-center gap-1">
-                  <Loader className="h-4 w-4 text-current" /> Uploading...
-                </span>
-              ) : (
-                <span className="flex items-center gap-1">
-                  <Upload className="h-4 w-4" /> {buttonText}
-                </span>
-              )}
-            </Button>
           </div>
           {helpText && (
             <p className="mt-1 text-xs text-gray-500">
@@ -287,19 +304,10 @@ export function ImageUploader({
             </p>
           )}
         </div>
-        {showPreview && imageUrl && (
-          <div className="relative" style={{ width: `${previewSize}px`, height: `${previewSize}px` }}>
-            <img
-              src={imageUrl}
-              alt="Preview"
-              className="object-cover w-full h-full rounded-md"
-              onError={(e) => {
-                (e.target as HTMLImageElement).style.display = "none";
-              }}
-            />
-          </div>
-        )}
       </div>
     </div>
   );
-} 
+});
+
+// Add display name
+ImageUploader.displayName = "ImageUploader"; 

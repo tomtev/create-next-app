@@ -42,7 +42,9 @@ export default function EditPageContent({
       const newIndex = items.findIndex((item) => item.id === target.id);
 
       const newItems = [...items];
-      const [movedItem] = newItems.splice(oldIndex, 1);
+      const movedItem = newItems.splice(oldIndex, 1)[0];
+      if (!movedItem) return;
+      
       newItems.splice(newIndex, 0, movedItem);
 
       const reorderedItems = newItems.map((item, index) => ({
@@ -50,6 +52,8 @@ export default function EditPageContent({
         order: index,
       }));
 
+      console.log('Items reordered:', reorderedItems.map(item => ({ id: item.id, title: item.title, order: item.order })));
+      
       onItemsReorder?.(reorderedItems);
     }
   };
@@ -64,7 +68,7 @@ export default function EditPageContent({
               <img
                 className="pf-page__image cursor-pointer hover:opacity-90"
                 src={pageData.image}
-                alt={pageData.title}
+                alt={pageData.title || "Page image"}
                 onClick={onImageClick}
                 onError={(e) => {
                   (e.target as HTMLImageElement).style.display = "none";
