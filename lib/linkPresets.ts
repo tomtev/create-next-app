@@ -8,6 +8,7 @@ import {
   FacebookIcon,
   GitHubIcon,
   InstagramIcon,
+  TimeFunIcon,
 } from "./icons";
 import { Link } from "lucide-react";
 
@@ -41,6 +42,16 @@ export const LINK_PRESETS: Record<string, LinkPreset> = {
     title: "Custom Link",
     defaultUrl: "https://myurl.com",
     icon: Link,
+    options: {
+      requiresUrl: true,
+      canBeTokenGated: true,
+    },
+  },
+  timefun: {
+    id: "timefun",
+    title: "Time.fun Profile",
+    defaultUrl: "https://time.fun/",
+    icon: TimeFunIcon,
     options: {
       requiresUrl: true,
       canBeTokenGated: true,

@@ -190,10 +190,10 @@ export default function PageLink({
           )}
           <button 
             onClick={handleShareClick}
-            className="pf-link__share-button flex-shrink-0 flex items-center justify-center w-6 h-6 rounded-full hover:bg-[var(--pf-link-background)] transition opacity-75 hover:opacity-100"
+            className="pf-link__share-button flex-shrink-0 flex items-center justify-center w-10 h-[var(--pf-link-min-height)] -mr-4 group focus:outline-none"
             aria-label="Share"
           >
-            <EllipsisVertical className="h-3 w-3" />
+            <EllipsisVertical className="h-3 w-3 opacity-50 group-hover:opacity-100 transition" />
           </button>
         </div>
       </div>
