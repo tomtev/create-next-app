@@ -7,6 +7,7 @@ import { PrismaNeonHTTP } from '@prisma/adapter-neon';
 import { neon } from '@neondatabase/serverless';
 import { encryptUrl, decryptUrl } from '@/lib/encryption';
 import { invalidatePageCache } from '@/lib/redis';
+import { sanitizeHtml, sanitizeUrl } from '@/lib/sanitize';
 
 // Initialize Prisma client with Neon adapter - using edge-compatible initialization
 const sql = neon(process.env.DATABASE_URL!);
@@ -23,6 +24,46 @@ const prisma = new PrismaClient({ adapter }).$extends({
 // Validation schemas
 const urlPattern = /^[a-zA-Z0-9-]+$/;
 const urlRegex = /^https?:\/\/[^\s/$.?#].[^\s]*$/i;
+
+// Security patterns to detect potentially malicious content
+const scriptTagPattern = /<script[\s\S]*?>[\s\S]*?<\/script>/gi;
+const onEventPattern = /\son\w+\s*=/gi;
+const dataUrlPattern = /data:(?!image\/(png|jpe?g|gif|webp|svg\+xml))/i;
+const javascriptUrlPattern = /javascript:/i;
+
+// Helper function to check for potentially malicious content
+function containsMaliciousContent(str: string | null | undefined): boolean {
+  if (!str) return false;
+  
+  return (
+    scriptTagPattern.test(str) || 
+    onEventPattern.test(str) || 
+    dataUrlPattern.test(str) || 
+    javascriptUrlPattern.test(str)
+  );
+}
+
+// Helper function to sanitize strings
+function sanitizeString(str: string | null | undefined): string | null {
+  if (!str) return null;
+  
+  try {
+    // Use our new sanitizeHtml function for more thorough sanitization
+    return sanitizeHtml(str);
+  } catch (error) {
+    console.error('Error sanitizing string:', error);
+    // Fallback to basic sanitization if DOMPurify fails
+    return str
+      .replace(/<script[\s\S]*?>[\s\S]*?<\/script>/gi, '')
+      .replace(/\son\w+\s*=/gi, ' data-removed-event=')
+      .replace(/javascript:/gi, 'removed:')
+      .replace(/<iframe[\s\S]*?>[\s\S]*?<\/iframe>/gi, '')
+      .replace(/<form[\s\S]*?>[\s\S]*?<\/form>/gi, '')
+      .replace(/<object[\s\S]*?>[\s\S]*?<\/object>/gi, '')
+      .replace(/<embed[\s\S]*?>[\s\S]*?<\/embed>/gi, '')
+      .replace(/<link[\s\S]*?>/gi, '');
+  }
+}
 
 type TokenHolding = {
   tokenAddress: string;
@@ -69,10 +110,22 @@ const RESERVED_SLUGS = [
 
 const FontsSchema = z
   .object({
-    global: z.string().nullable(),
-    heading: z.string().nullable(),
-    paragraph: z.string().nullable(),
-    links: z.string().nullable(),
+    global: z.string().nullable().refine(
+      (val) => !val || !containsMaliciousContent(val),
+      { message: "Contains potentially unsafe content" }
+    ),
+    heading: z.string().nullable().refine(
+      (val) => !val || !containsMaliciousContent(val),
+      { message: "Contains potentially unsafe content" }
+    ),
+    paragraph: z.string().nullable().refine(
+      (val) => !val || !containsMaliciousContent(val),
+      { message: "Contains potentially unsafe content" }
+    ),
+    links: z.string().nullable().refine(
+      (val) => !val || !containsMaliciousContent(val),
+      { message: "Contains potentially unsafe content" }
+    ),
   })
   .optional();
 
@@ -80,7 +133,10 @@ const PageItemSchema = z
   .object({
     id: z.string().min(1),
     presetId: z.string().min(1),
-    title: z.string().optional(),
+    title: z.string().optional().refine(
+      (val) => !val || !containsMaliciousContent(val),
+      { message: "Title contains potentially unsafe content" }
+    ),
     url: z
       .string()
       .optional()
@@ -88,7 +144,10 @@ const PageItemSchema = z
     order: z.number().int().min(0),
     tokenGated: z.boolean().optional(),
     requiredTokens: z.array(z.string()).optional(),
-    customIcon: z.string().optional().nullable(),
+    customIcon: z.string().optional().nullable().refine(
+      (val) => !val || !containsMaliciousContent(val) || urlRegex.test(val || ''),
+      { message: "Icon URL contains potentially unsafe content" }
+    ),
   })
   .refine(
     (data) => {
@@ -105,18 +164,45 @@ const PageDataSchema = z.object({
   walletAddress: z.string().min(1),
   slug: z.string().min(1),
   connectedToken: z.string().nullable().optional(),
-  tokenSymbol: z.string().nullable().optional(),
-  title: z.string().max(100).optional(),
-  description: z.string().max(500).optional(),
-  image: z.string().regex(urlRegex).nullable().optional(),
+  tokenSymbol: z.string().nullable().optional().refine(
+    (val) => !val || !containsMaliciousContent(val),
+    { message: "Token symbol contains potentially unsafe content" }
+  ),
+  title: z.string().max(100).optional().refine(
+    (val) => !val || !containsMaliciousContent(val),
+    { message: "Title contains potentially unsafe content" }
+  ),
+  description: z.string().max(500).optional().refine(
+    (val) => !val || !containsMaliciousContent(val),
+    { message: "Description contains potentially unsafe content" }
+  ),
+  image: z.string().regex(urlRegex).nullable().optional().refine(
+    (val) => !val || !containsMaliciousContent(val),
+    { message: "Image URL contains potentially unsafe content" }
+  ),
   items: z.array(PageItemSchema).optional(),
-  theme: z.string().optional(),
+  theme: z.string().optional().refine(
+    (val) => !val || !containsMaliciousContent(val),
+    { message: "Theme contains potentially unsafe content" }
+  ),
   themeFonts: FontsSchema,
   themeColors: z.object({
-    primary: z.string().nullable(),
-    secondary: z.string().nullable(),
-    background: z.string().nullable(),
-    text: z.string().nullable(),
+    primary: z.string().nullable().refine(
+      (val) => !val || !containsMaliciousContent(val),
+      { message: "Color value contains potentially unsafe content" }
+    ),
+    secondary: z.string().nullable().refine(
+      (val) => !val || !containsMaliciousContent(val),
+      { message: "Color value contains potentially unsafe content" }
+    ),
+    background: z.string().nullable().refine(
+      (val) => !val || !containsMaliciousContent(val),
+      { message: "Color value contains potentially unsafe content" }
+    ),
+    text: z.string().nullable().refine(
+      (val) => !val || !containsMaliciousContent(val),
+      { message: "Color value contains potentially unsafe content" }
+    ),
   }).optional(),
   createdAt: z.string().optional(),
   updatedAt: z.string().optional(),
@@ -136,19 +222,46 @@ const CreatePageSchema = z.object({
     ),
   walletAddress: z.string().min(1),
   isSetupWizard: z.boolean().optional(),
-  title: z.string().max(100).optional(),
-  description: z.string().max(500).optional(),
+  title: z.string().max(100).optional().refine(
+    (val) => !val || !containsMaliciousContent(val),
+    { message: "Title contains potentially unsafe content" }
+  ),
+  description: z.string().max(500).optional().refine(
+    (val) => !val || !containsMaliciousContent(val),
+    { message: "Description contains potentially unsafe content" }
+  ),
   items: z.array(PageItemSchema).optional(),
   connectedToken: z.string().nullable().optional(),
-  tokenSymbol: z.string().nullable().optional(),
-  image: z.string().regex(urlRegex).nullable().optional(),
-  theme: z.string().optional(),
+  tokenSymbol: z.string().nullable().optional().refine(
+    (val) => !val || !containsMaliciousContent(val),
+    { message: "Token symbol contains potentially unsafe content" }
+  ),
+  image: z.string().regex(urlRegex).nullable().optional().refine(
+    (val) => !val || !containsMaliciousContent(val),
+    { message: "Image URL contains potentially unsafe content" }
+  ),
+  theme: z.string().optional().refine(
+    (val) => !val || !containsMaliciousContent(val),
+    { message: "Theme contains potentially unsafe content" }
+  ),
   themeFonts: FontsSchema,
   themeColors: z.object({
-    primary: z.string().nullable(),
-    secondary: z.string().nullable(),
-    background: z.string().nullable(),
-    text: z.string().nullable(),
+    primary: z.string().nullable().refine(
+      (val) => !val || !containsMaliciousContent(val),
+      { message: "Color value contains potentially unsafe content" }
+    ),
+    secondary: z.string().nullable().refine(
+      (val) => !val || !containsMaliciousContent(val),
+      { message: "Color value contains potentially unsafe content" }
+    ),
+    background: z.string().nullable().refine(
+      (val) => !val || !containsMaliciousContent(val),
+      { message: "Color value contains potentially unsafe content" }
+    ),
+    text: z.string().nullable().refine(
+      (val) => !val || !containsMaliciousContent(val),
+      { message: "Color value contains potentially unsafe content" }
+    ),
   }).optional(),
   pageType: z.enum(["personal", "meme", "ai-bot"]).optional(),
 });
@@ -266,12 +379,63 @@ function sanitizePageData(pageData: any | null, isOwner: boolean = false): PageD
   // If user is the owner, return full data
   if (isOwner) return pageData;
 
-  // Clone the data to avoid mutating the original
-  const sanitized = { ...pageData };
+  try {
+    // Clone the data to avoid mutating the original
+    const sanitized = { ...pageData };
 
-  // For non-owners, we don't need to sanitize URLs here anymore
-  // This will be handled in [page].tsx
-  return sanitized;
+    // For non-owners, sanitize all text fields
+    if (sanitized.title) {
+      sanitized.title = sanitizeHtml(sanitized.title);
+    }
+    
+    if (sanitized.description) {
+      sanitized.description = sanitizeHtml(sanitized.description);
+    }
+    
+    if (sanitized.image) {
+      sanitized.image = sanitizeUrl(sanitized.image);
+    }
+    
+    // Sanitize items if they exist
+    if (sanitized.items && Array.isArray(sanitized.items)) {
+      sanitized.items = sanitized.items.map((item: any) => {
+        try {
+          return {
+            ...item,
+            title: item.title ? sanitizeHtml(item.title) : item.title,
+            url: item.url ? sanitizeUrl(item.url) : item.url,
+            customIcon: item.customIcon ? sanitizeUrl(item.customIcon) : item.customIcon
+          };
+        } catch (error) {
+          console.error('Error sanitizing item:', error);
+          // Return item with basic sanitization if advanced sanitization fails
+          return {
+            ...item,
+            title: item.title ? item.title.replace(/<[^>]*>/g, '') : item.title,
+            url: item.url,
+            customIcon: item.customIcon
+          };
+        }
+      });
+    }
+
+    return sanitized;
+  } catch (error) {
+    console.error('Error in sanitizePageData:', error);
+    // If sanitization fails, return the original data but with basic HTML stripping
+    // This is a fallback to ensure we don't block the API completely
+    const basicSanitized = { ...pageData };
+    
+    if (typeof basicSanitized.title === 'string') {
+      basicSanitized.title = basicSanitized.title.replace(/<[^>]*>/g, '');
+    }
+    
+    if (typeof basicSanitized.description === 'string') {
+      basicSanitized.description = basicSanitized.description.replace(/<[^>]*>/g, '');
+    }
+    
+    return basicSanitized;
+  }
 }
 
 // Helper function to check rate limit
@@ -492,12 +656,12 @@ export default async function handler(
       const pageData = {
         slug,
         walletAddress: walletAddress.toLowerCase(),
-        title: title || null,
-        description: description || null,
+        title: title ? sanitizeString(title) : null,
+        description: description ? sanitizeString(description) : null,
         connectedToken: connectedToken || null,
-        tokenSymbol: tokenSymbol || null,
+        tokenSymbol: tokenSymbol ? sanitizeString(tokenSymbol) : null,
         image: image || null,
-        theme: theme || null,
+        theme: theme ? sanitizeString(theme) : null,
         themeFonts: themeFonts || undefined,
         themeColors: themeColors || undefined,
         pageType: pageType || null,
@@ -662,17 +826,39 @@ export default async function handler(
         });
       }
 
+      // Validate the data before updating
+      const validationResult = PageDataSchema.safeParse({
+        walletAddress: currentPage.walletAddress,
+        slug,
+        connectedToken,
+        tokenSymbol,
+        title,
+        description,
+        image,
+        items,
+        theme,
+        themeFonts,
+        themeColors
+      });
+
+      if (!validationResult.success) {
+        return res.status(400).json({
+          error: "Invalid request data",
+          details: validationResult.error.issues,
+        });
+      }
+
       try {
-        // Update the page
+        // Update the page with sanitized data
         await prisma.page.update({
           where: { slug },
           data: {
             connectedToken: connectedToken || null,
-            tokenSymbol: tokenSymbol || null,
-            title: title || null,
-            description: description || null,
+            tokenSymbol: tokenSymbol ? sanitizeString(tokenSymbol) : null,
+            title: title ? sanitizeString(title) : null,
+            description: description ? sanitizeString(description) : null,
             image: image || null,
-            theme: theme || "default",
+            theme: theme ? sanitizeString(theme) : "default",
             themeFonts: themeFonts ? JSON.stringify(themeFonts) : undefined,
             themeColors: themeColors ? JSON.stringify(themeColors) : undefined,
           },
@@ -680,12 +866,21 @@ export default async function handler(
 
         // Update items if provided
         if (items) {
+          // Validate items array
+          const itemsValidation = z.array(PageItemSchema).safeParse(items);
+          if (!itemsValidation.success) {
+            return res.status(400).json({
+              error: "Invalid items data",
+              details: itemsValidation.error.issues,
+            });
+          }
+
           // Delete existing items
           await prisma.pageItem.deleteMany({
             where: { pageId: currentPage.id }
           });
 
-          // Create new items
+          // Create new items with sanitized data
           if (items.length > 0) {
             await Promise.all(items.map(async (item: any) => {
               try {
@@ -693,12 +888,12 @@ export default async function handler(
                   data: {
                     pageId: currentPage.id,
                     presetId: item.presetId,
-                    title: item.title || null,
+                    title: item.title ? sanitizeString(item.title) : null,
                     url: item.tokenGated && item.url ? encryptUrl(item.url) : item.url,
                     order: item.order,
                     tokenGated: item.tokenGated || false,
                     requiredTokens: item.requiredTokens || [],
-                    customIcon: item.customIcon || null,
+                    customIcon: item.customIcon ? sanitizeString(item.customIcon) : null,
                   }
                 });
               } catch (itemError) {
