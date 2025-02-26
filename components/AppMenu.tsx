@@ -97,6 +97,19 @@ export default function AppMenu({ className }: AppMenuProps) {
     };
   }, []);
 
+  // Add a public method to open the menu
+  useEffect(() => {
+    // Expose a method to open the menu from outside
+    window.openAppMenuDrawer = () => {
+      setOpen(true);
+    };
+    
+    return () => {
+      // Clean up
+      delete window.openAppMenuDrawer;
+    };
+  }, []);
+
   // Close menu when route changes
   useEffect(() => {
     const handleRouteChange = () => {
@@ -115,13 +128,15 @@ export default function AppMenu({ className }: AppMenuProps) {
 
   return (
     <div className={className}>
-      {/* Menu Trigger Button */}
-      <Button
-        variant="theme"
-        className={cn("px-2")}
-        onClick={() => setOpen(true)}>
-        <Menu className="h-5 w-5" />
-      </Button>
+      {/* Menu Trigger Button - Only show when authenticated */}
+      {ready && authenticated && (
+        <Button
+          variant="theme"
+          className={cn("px-2")}
+          onClick={() => setOpen(true)}>
+          <Menu className="h-5 w-5" />
+        </Button>
+      )}
 
       {/* Main Menu Drawer */}
       <Drawer open={open} onOpenChange={setOpen} direction="left">

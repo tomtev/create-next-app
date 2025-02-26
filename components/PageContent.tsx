@@ -233,11 +233,17 @@ export default function PageContent({
         </div>
       )}
       <div className="flex mt-10 items-center justify-center gap-1 text-sm opacity-50 hover:opacity-100 transition-opacity">
-        <Link href="/" className="flex items-center gap-0.5">
+        <button 
+          onClick={() => {
+            // Dispatch the event to open the menu
+            window.dispatchEvent(new Event('openAppMenu'));
+          }}
+          className="flex items-center gap-0.5 hover:underline cursor-pointer"
+        >
           <span>page.fun</span>
           <span className="opacity-50"> / </span>
           <span>{pageData.slug}</span>
-        </Link>
+        </button>
       </div>
     </div>
   );

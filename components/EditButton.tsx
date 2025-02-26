@@ -17,7 +17,7 @@ const EditButton = ({ slug }: EditButtonProps) => {
   };
 
   return (
-    <div className="-mt-10">
+    <div className="-mt-10 animate-slide-up">
       <Button
         onClick={handleEdit}
         size="sm"
