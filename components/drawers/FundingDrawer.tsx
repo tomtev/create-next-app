@@ -227,7 +227,7 @@ export function FundingDrawer({
       icon={<Coins className="h-5 w-5" />}
     >
       <div className="space-y-3">
-        <div className="p-4 border bg-muted border-primary rounded-lg space-y-3">
+        <div className="space-y-3">
           <div className="text-sm font-medium mb-2">Add SOL to your wallet</div>
           
           {isFunding && (
@@ -241,26 +241,26 @@ export function FundingDrawer({
           </div>
           
           {/* Amount selection buttons */}
-          <div className="mb-4">
+          <div className="mb-6">
             <div className="text-xs text-muted-foreground mb-2">
               Select amount to add:
             </div>
             <div className="flex gap-2">
-              {["0.1", "0.5", "1", "2"].map((amount) => {
+              {["0.5", "1", "5", "10"].map((amount) => {
                 // Calculate USD value for this amount
                 const usdValue = (parseFloat(amount) * solPrice).toFixed(2);
                 
                 return (
                   <Button
                     key={amount}
-                    variant={fundingAmount === amount ? "theme" : "outline"}
+                    variant={fundingAmount === amount ? "secondary" : "outline"}
                     size="sm"
                     onClick={() => setFundingAmount(amount)}
                     disabled={isFunding}
                     className="flex-1 flex flex-col py-2 h-auto"
                   >
                     <span>{amount} SOL</span>
-                    <span className="text-xs text-muted-foreground">${usdValue}</span>
+                    <span className="text-xs opacity-75 font-bold">${usdValue}</span>
                   </Button>
                 );
               })}
@@ -268,10 +268,10 @@ export function FundingDrawer({
           </div>
 
           <Button
-            variant="theme"
             onClick={handleFundWallet}
             disabled={isFunding || !walletAddress}
-            className="w-full"
+            className="w-full mt-5"
+            size="lg"
           >
             <Image
               src="/images/sol.avif"
@@ -281,9 +281,9 @@ export function FundingDrawer({
               className="rounded-full mr-2"
             />
             {isFunding ? "Processing..." : (
-              <span className="flex flex-col items-center">
+              <span className="flex items-center gap-5">
                 <span>Add {fundingAmount} SOL</span>
-                <span className="text-xs">
+                <span className="opacity-50">
                   ${(parseFloat(fundingAmount) * solPrice).toFixed(2)}
                 </span>
               </span>

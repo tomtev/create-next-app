@@ -1,13 +1,17 @@
 import { Drawer } from "@/components/ui/drawer";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { usePrivy, useSolanaWallets, useLinkAccount } from "@privy-io/react-auth";
+import {
+  usePrivy,
+  useSolanaWallets,
+  useLinkAccount,
+} from "@privy-io/react-auth";
 import { WalletWithMetadata } from "@privy-io/react-auth";
 import { isSolanaWallet, truncateWalletAddress } from "@/utils/wallet";
 import { useState, useCallback, useEffect, useMemo } from "react";
 import { useGlobalContext } from "@/lib/context";
 import Image from "next/image";
-import { WalletMinimal, Download, Plus, User, RefreshCw } from "lucide-react";
+import { WalletMinimal, Download, Plus, User, RefreshCw, Copy } from "lucide-react";
 import { TwitterIcon } from "@/lib/icons";
 import { FundingDrawer } from "./FundingDrawer";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -53,7 +57,13 @@ export function AccountDrawer({
   const [activeTab, setActiveTab] = useState("profile");
   const [showAllTokens, setShowAllTokens] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
-  const { tokenHoldings, walletAddress, userPages, refreshTokens, isLoadingTokens } = useGlobalContext();
+  const {
+    tokenHoldings,
+    walletAddress,
+    userPages,
+    refreshTokens,
+    isLoadingTokens,
+  } = useGlobalContext();
   // Add state to track if we should reopen the drawer
   const [shouldReopenDrawer, setShouldReopenDrawer] = useState(false);
   // Add state for SOL price
@@ -70,7 +80,7 @@ export function AccountDrawer({
 
   // Get SOL balance from token holdings
   const solBalance = useMemo(() => {
-    const solToken = tokenHoldings.find(t => t.tokenAddress === 'native');
+    const solToken = tokenHoldings.find((t) => t.tokenAddress === "native");
     return solToken?.balance || "0";
   }, [tokenHoldings]);
 
@@ -80,16 +90,20 @@ export function AccountDrawer({
       setIsLoadingPrice(true);
       try {
         // Use our internal API that handles caching with Redis
-        const response = await fetch('/api/crypto/sol-price');
-        
+        const response = await fetch("/api/crypto/sol-price");
+
         if (!response.ok) {
           throw new Error(`API error: ${response.status}`);
         }
-        
+
         const data = await response.json();
         if (data.price) {
           setSolPrice(data.price);
-          console.log("SOL price:", data.price, data.fromCache ? "(from cache)" : "(fresh)");
+          console.log(
+            "SOL price:",
+            data.price,
+            data.fromCache ? "(from cache)" : "(fresh)"
+          );
         } else {
           console.warn("Using fallback SOL price");
           setSolPrice(FALLBACK_SOL_PRICE_USD);
@@ -104,11 +118,11 @@ export function AccountDrawer({
     };
 
     fetchSolPrice();
-    
+
     // Refresh price every 5 minutes, but our API will serve cached data
     // This ensures UI stays updated if the user keeps the app open for a long time
     const intervalId = setInterval(fetchSolPrice, 5 * 60 * 1000);
-    
+
     return () => clearInterval(intervalId);
   }, []);
 
@@ -170,14 +184,17 @@ export function AccountDrawer({
   };
 
   // Function to handle when the funding drawer is closed
-  const handleFundingDrawerClose = (open: boolean, fundingInProgress?: boolean) => {
+  const handleFundingDrawerClose = (
+    open: boolean,
+    fundingInProgress?: boolean
+  ) => {
     setFundingDrawerOpen(open);
-    
+
     // Update funding in progress state
     if (fundingInProgress !== undefined) {
       setIsFundingInProgress(fundingInProgress);
     }
-    
+
     if (!open) {
       // Only reopen the wallet drawer when funding drawer is closed
       // AND funding is not in progress
@@ -193,15 +210,15 @@ export function AccountDrawer({
   const handleLinkTwitter = async () => {
     try {
       setIsLinkingTwitter(true);
-      
+
       // Close the drawer before opening the Twitter auth flow
       onOpenChange(false);
       // Set flag to reopen drawer when Twitter linking completes
       setShouldReopenDrawer(true);
-      
+
       // Use Privy's linkTwitter method
       await linkTwitter();
-      
+
       // Reopen the drawer after linking completes
       setTimeout(() => {
         onOpenChange(true);
@@ -221,7 +238,7 @@ export function AccountDrawer({
   const calculateUsdValue = (solAmount: string): string => {
     const amount = parseFloat(solAmount);
     if (isNaN(amount)) return "$0.00";
-    
+
     const usdValue = amount * solPrice;
     return `$${usdValue.toFixed(2)}`;
   };
@@ -229,10 +246,10 @@ export function AccountDrawer({
   // Handle tab change - restore refresh when wallet tab is selected
   const handleTabChange = (value: string) => {
     setActiveTab(value);
-    
+
     // Refresh token holdings when switching to wallet tab
     if (value === "wallet" && walletAddress) {
-      console.log('Wallet tab opened, refreshing token holdings');
+      console.log("Wallet tab opened, refreshing token holdings");
       refreshTokens();
     }
   };
@@ -240,13 +257,13 @@ export function AccountDrawer({
   // Function to manually refresh token holdings
   const handleRefreshTokens = async () => {
     if (isRefreshing) return;
-    
+
     setIsRefreshing(true);
     try {
-      console.log('Manually refreshing token holdings');
+      console.log("Manually refreshing token holdings");
       await refreshTokens();
     } catch (error) {
-      console.error('Error refreshing token holdings:', error);
+      console.error("Error refreshing token holdings:", error);
     } finally {
       setIsRefreshing(false);
     }
@@ -254,20 +271,22 @@ export function AccountDrawer({
 
   // Render the profile tab content
   const renderProfileTab = () => {
-    if (!user) return (
-      <div className="text-center p-4">
-        <p className="text-muted-foreground mb-4">
-          Please log in to view your profile.
-        </p>
-      </div>
-    );
+    if (!user)
+      return (
+        <div className="text-center p-4">
+          <p className="text-muted-foreground mb-4">
+            Please log in to view your profile.
+          </p>
+        </div>
+      );
 
     // Get display name from available user properties
-    const displayName = user.email?.address || 
-                       user.twitter?.username || 
-                       user.google?.email || 
-                       "User";
-    
+    const displayName =
+      user.email?.address ||
+      user.twitter?.username ||
+      user.google?.email ||
+      "User";
+
     // Get avatar URL from available user properties
     const avatarUrl = user.twitter?.profilePictureUrl || null;
 
@@ -275,32 +294,34 @@ export function AccountDrawer({
       <div className="space-y-5">
         {/* Profile header - horizontal layout */}
         <div className="flex items-center gap-4 p-4 bg-background border border-primary rounded-lg">
-          <Avatar className="h-16 w-16 shrink-0">
-            {avatarUrl && <AvatarImage src={avatarUrl} alt={typeof displayName === 'string' ? displayName : 'User'} />}
-            <AvatarFallback>{typeof displayName === 'string' ? displayName.charAt(0).toUpperCase() : 'U'}</AvatarFallback>
+          <Avatar className="h-12 w-12 shrink-0">
+            {avatarUrl && (
+              <AvatarImage
+                src={avatarUrl}
+                alt={typeof displayName === "string" ? displayName : "User"}
+              />
+            )}
+            <AvatarFallback>
+              {typeof displayName === "string"
+                ? displayName.charAt(0).toUpperCase()
+                : "U"}
+            </AvatarFallback>
           </Avatar>
           <div className="flex-1 min-w-0">
-            <h3 className="text-base font-medium truncate">{displayName}</h3>
-            {address && (
-              <div className="flex items-center gap-1.5 mt-1">
-                <div className="w-1.5 h-1.5 rounded-full bg-green-500"></div>
-                <p className="text-xs text-muted-foreground truncate">
-                  {truncateWalletAddress(address)}
-                </p>
-              </div>
-            )}
             {!user.twitter && (
               <Button
                 variant="outline"
                 size="sm"
                 onClick={handleLinkTwitter}
                 disabled={isLinkingTwitter}
-                className="mt-2 h-8 text-xs"
+                className="mt-2 h-8 text-xs mb-2"
               >
                 <TwitterIcon size={14} className="mr-1.5" />
                 {isLinkingTwitter ? "Connecting..." : "Connect Twitter / X"}
               </Button>
             )}
+
+            <h3 className="text-xs truncate">{displayName}</h3>
           </div>
         </div>
 
@@ -310,29 +331,39 @@ export function AccountDrawer({
             <h3 className="text-sm font-medium mb-2">Your Pages</h3>
             <div className="space-y-2">
               {userPages.map((page) => (
-                <Card key={page.slug} className="p-2.5 hover:bg-muted/50 transition-colors">
+                <Card
+                  key={page.slug}
+                  className="p-2.5 hover:bg-muted/50 transition-colors"
+                >
                   <a href={`/${page.slug}`} className="flex items-center gap-3">
                     {page.image ? (
                       <div className="w-8 h-8 rounded overflow-hidden shrink-0">
-                        <Image 
-                          src={page.image} 
-                          alt={page.title || page.slug} 
+                        <Image
+                          src={page.image}
+                          alt={page.title || page.slug}
                           width={32}
                           height={32}
                           className="w-full h-full object-cover"
                           onError={(e) => {
-                            (e.target as HTMLImageElement).style.display = "none";
+                            (e.target as HTMLImageElement).style.display =
+                              "none";
                           }}
                         />
                       </div>
                     ) : (
                       <div className="w-8 h-8 rounded bg-primary/10 flex items-center justify-center shrink-0">
-                        <span className="text-xs font-medium">{page.title?.charAt(0) || page.slug.charAt(0)}</span>
+                        <span className="text-xs font-medium">
+                          {page.title?.charAt(0) || page.slug.charAt(0)}
+                        </span>
                       </div>
                     )}
                     <div className="flex-1 min-w-0">
-                      <div className="text-sm font-medium truncate">{page.title || page.slug}</div>
-                      <div className="text-xs text-muted-foreground truncate">page.fun/{page.slug}</div>
+                      <div className="text-sm font-medium truncate">
+                        {page.title || page.slug}
+                      </div>
+                      <div className="text-xs text-muted-foreground truncate">
+                        page.fun/{page.slug}
+                      </div>
                     </div>
                   </a>
                 </Card>
@@ -357,24 +388,37 @@ export function AccountDrawer({
 
   // Render the wallet tab content
   const renderWalletTab = () => {
-    if (!address) return (
-      <div className="text-center p-4">
-        <p className="text-muted-foreground mb-4">
-          Please log in to access your wallet.
-        </p>
-      </div>
-    );
+    if (!address)
+      return (
+        <div className="text-center p-4">
+          <p className="text-muted-foreground mb-4">
+            Please log in to access your wallet.
+          </p>
+        </div>
+      );
 
     return (
       <div className="space-y-4">
         <div className=" space-y-3">
           <div>
             <div className="text-xs font-medium mb-2 flex items-center">
-              <WalletMinimal className="h-4 w-4 mr-2" />
               Your Wallet
             </div>
-            <div className="text-sm text-muted-foreground">
-              <Input readOnly value={address || ""} />
+            <div className="text-sm text-muted-foreground flex gap-2">
+              <Input readOnly value={address || ""} className="flex-1" />
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => {
+                  if (address) {
+                    navigator.clipboard.writeText(address);
+                  }
+                }}
+                className="shrink-0"
+                title="Copy wallet address"
+              >
+                <Copy className="h-4 w-4" />
+              </Button>
             </div>
           </div>
 
@@ -382,14 +426,18 @@ export function AccountDrawer({
           <div className="space-y-1.5 mt-4">
             <div className="text-sm font-medium flex items-center justify-between">
               <span>Holdings</span>
-              <Button 
-                variant="ghost" 
-                size="sm" 
+              <Button
+                variant="ghost"
+                size="sm"
                 className="h-6 px-2"
                 onClick={handleRefreshTokens}
                 disabled={isRefreshing || isLoadingTokens}
               >
-                <RefreshCw className={`h-3.5 w-3.5 ${isRefreshing || isLoadingTokens ? 'animate-spin' : ''}`} />
+                <RefreshCw
+                  className={`h-3.5 w-3.5 ${
+                    isRefreshing || isLoadingTokens ? "animate-spin" : ""
+                  }`}
+                />
               </Button>
             </div>
             <div className="space-y-1">
@@ -411,9 +459,7 @@ export function AccountDrawer({
                           coinColor="#9945FF" // Purple color for SOL
                           shineEffect={true}
                         />
-                        <span className="font-medium">
-                          {mainToken.symbol}
-                        </span>
+                        <span className="font-medium">{mainToken.symbol}</span>
                       </div>
                       <div className="font-medium flex flex-col items-end">
                         <span>{solBalance}</span>
@@ -424,7 +470,7 @@ export function AccountDrawer({
                     </div>
                   );
                 }
-                
+
                 // For other tokens like USDC
                 const token = tokenHoldings.find(
                   (t) => t.tokenAddress === mainToken.address
@@ -443,13 +489,9 @@ export function AccountDrawer({
                         height={20}
                         className="rounded-full"
                       />
-                      <span className="font-medium">
-                        {mainToken.symbol}
-                      </span>
+                      <span className="font-medium">{mainToken.symbol}</span>
                     </div>
-                    <div className="font-medium">
-                      {token?.balance || "0"}
-                    </div>
+                    <div className="font-medium">{token?.balance || "0"}</div>
                   </div>
                 );
               })}
@@ -462,8 +504,7 @@ export function AccountDrawer({
             onClick={handleOpenFundingDrawer}
             className="w-full"
           >
-            <Plus className="h-4 w-4 mr-2" />
-            Add Funding
+            Add Funds
           </Button>
 
           <Button
@@ -472,13 +513,11 @@ export function AccountDrawer({
             disabled={isExporting}
             className="w-full"
           >
-            <Download className="h-4 w-4 mr-1" />
             {isExporting ? "Exporting..." : "Export Wallet"}
           </Button>
 
           <div className="text-xs text-muted-foreground mt-1">
-            Export your private key to use in other wallet apps like
-            Phantom.
+            Export your private key to use in other wallet apps like Phantom.
           </div>
         </div>
       </div>
@@ -498,7 +537,12 @@ export function AccountDrawer({
         icon={<User className="h-5 w-5" />}
       >
         <div className="space-y-4">
-          <Tabs defaultValue="profile" value={activeTab} onValueChange={handleTabChange} className="w-full">
+          <Tabs
+            defaultValue="profile"
+            value={activeTab}
+            onValueChange={handleTabChange}
+            className="w-full"
+          >
             <TabsList className="grid grid-cols-2 w-full">
               <TabsTrigger value="profile">
                 <User className="h-4 w-4 mr-2" />
@@ -510,12 +554,8 @@ export function AccountDrawer({
               </TabsTrigger>
             </TabsList>
             <div className="mt-4">
-              <TabsContent value="profile">
-                {renderProfileTab()}
-              </TabsContent>
-              <TabsContent value="wallet">
-                {renderWalletTab()}
-              </TabsContent>
+              <TabsContent value="profile">{renderProfileTab()}</TabsContent>
+              <TabsContent value="wallet">{renderWalletTab()}</TabsContent>
             </div>
           </Tabs>
         </div>
@@ -539,4 +579,4 @@ export function AccountDrawer({
       />
     </>
   );
-} 
+}
