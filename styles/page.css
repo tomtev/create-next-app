@@ -211,6 +211,12 @@
   color: var(--pf-link-color);
 }
 
+.pf-link__title-text {
+  display: inline-block;
+  text-align: center;
+  padding: .5rem;
+}
+
 .pf-page__title--has-gradient span {
   background: var(--pf-title-gradient, linear-gradient(45deg, var(--pf-title-color) 40%, var(--pf-title-color-to, #555) 100%));
   background-clip: text;

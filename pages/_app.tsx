@@ -35,8 +35,8 @@ function MyApp(props: AppProps) {
         config={{
           appearance: {
             // Defaults to true
-            showWalletLoginFirst: true,
             walletChainType: "solana-only",
+            walletList: ["phantom", "solflare"],
             theme: "light",
             accentColor: "#86EFAC",
           },
@@ -49,7 +49,7 @@ function MyApp(props: AppProps) {
           ],
           embeddedWallets: {
             solana: {
-              createOnLogin: "users-without-wallets"
+              createOnLogin: "all-users"
             },
           },
           externalWallets: {

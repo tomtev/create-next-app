@@ -240,8 +240,6 @@ export default function PageContent({
           }}
           className="flex items-center gap-0.5 hover:underline cursor-pointer"
         >
-          <span>page.fun</span>
-          <span className="opacity-50"> / </span>
           <span>{pageData.slug}</span>
         </button>
       </div>

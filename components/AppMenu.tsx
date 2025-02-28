@@ -1,8 +1,7 @@
 import { useRouter } from "next/router";
-import { usePrivy, useLogin, useSolanaWallets } from "@privy-io/react-auth";
+import { usePrivy, useLogin } from "@privy-io/react-auth";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Plus, Menu, WalletMinimal } from "lucide-react";
+import { Plus, Menu, WalletMinimal, Edit } from "lucide-react";
 import Link from "next/link";
 import { Drawer } from "@/components/ui/drawer";
 import { PageData } from "@/types";
@@ -13,31 +12,19 @@ import { cn } from "@/lib/utils";
 import CreatePageModal from "./CreatePageModal";
 import { useGlobalContext } from "@/lib/context";
 import { Skeleton } from "./ui/skeleton";
-import Image from "next/image";
+import { WalletDrawer } from "./drawers/WalletDrawer";
 
 type AppMenuProps = {
   className?: string;
   showLogoName?: boolean;
 };
 
-type TokenInfo = {
-  symbol: string;
-  logo: string;
-  address: string;
-};
-
-const MAIN_TOKENS: TokenInfo[] = [
-  {
-    symbol: "USDT",
-    logo: "/images/usdt.avif",
-    address: "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB",
-  },
-  {
-    symbol: "SOL",
-    logo: "/images/sol.avif",
-    address: "So11111111111111111111111111111111111111112",
-  },
-];
+// Extend Window interface to include our custom property
+declare global {
+  interface Window {
+    openAppMenuDrawer?: () => void;
+  }
+}
 
 // Helper function to check if page is incomplete
 export const isPageIncomplete = (mapping: PageData | undefined) => {
@@ -64,8 +51,7 @@ const PageSkeleton = () => {
 };
 
 export default function AppMenu({ className }: AppMenuProps) {
-  const { ready, authenticated, linkWallet, user, logout, unlinkWallet } =
-    usePrivy();
+  const { ready, authenticated, user } = usePrivy();
   const { login } = useLogin({
     onComplete: () => {
       // Refresh the page to update the state
@@ -75,16 +61,15 @@ export default function AppMenu({ className }: AppMenuProps) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [walletDrawerOpen, setWalletDrawerOpen] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const [showAllTokens, setShowAllTokens] = useState(false);
+  const [isPageOwner, setIsPageOwner] = useState(false);
+  const [currentSlug, setCurrentSlug] = useState<string | null>(null);
+  const [isEditPage, setIsEditPage] = useState(false);
+  const [isPage, setIsPage] = useState(false);
+  const [pageTitle, setPageTitle] = useState<string | null>(null);
 
-  const { userPages, isLoadingPages, tokenHoldings } = useGlobalContext();
+  const { userPages, isLoadingPages } = useGlobalContext();
   const solanaWallet = user?.linkedAccounts?.find(isSolanaWallet);
-  const numAccounts = user?.linkedAccounts?.length || 0;
-  const canRemoveAccount = numAccounts > 1;
-
-  const { exportWallet } = useSolanaWallets();
 
   useEffect(() => {
     const handleOpenMenu = () => {
@@ -103,7 +88,7 @@ export default function AppMenu({ className }: AppMenuProps) {
     window.openAppMenuDrawer = () => {
       setOpen(true);
     };
-    
+
     return () => {
       // Clean up
       delete window.openAppMenuDrawer;
@@ -119,23 +104,83 @@ export default function AppMenu({ className }: AppMenuProps) {
       }
     };
 
-    router.events.on('routeChangeStart', handleRouteChange);
-    
+    router.events.on("routeChangeStart", handleRouteChange);
+
     return () => {
-      router.events.off('routeChangeStart', handleRouteChange);
+      router.events.off("routeChangeStart", handleRouteChange);
     };
   }, [router, ready]);
+
+  // Check page context - whether we're on a page or edit page
+  useEffect(() => {
+    // Check if we're on a page
+    const isOnPage = router.pathname === "/[page]";
+    setIsPage(isOnPage);
+    
+    // Get the current slug
+    let slug = null;
+    if (isOnPage) {
+      slug = router.query.page as string;
+    }
+    
+    if (slug) {
+      setCurrentSlug(slug);
+      
+      // Find the page in userPages to get the title
+      if (userPages && userPages.length > 0) {
+        const currentPage = userPages.find((page) => page.slug === slug);
+        if (currentPage) {
+          setIsPageOwner(true);
+          setPageTitle(currentPage.title || slug);
+        } else {
+          setIsPageOwner(false);
+          setPageTitle(null);
+        }
+      } else {
+        setIsPageOwner(false);
+        setPageTitle(null);
+      }
+    } else {
+      setCurrentSlug(null);
+      setPageTitle(null);
+      setIsPageOwner(false);
+    }
+  }, [router.pathname, router.query, userPages]);
+
+  // Add Edit Button component
+  const EditButton = () => {
+    if (!currentSlug) return null;
+
+    // Only show edit button on page view (not edit page) and only if user is owner
+    if (isPage && isPageOwner) {
+      return (
+        <Button
+          variant="theme"
+          onClick={() => router.push(`/edit/${currentSlug}`)}
+        >
+          <Edit className="h-5 w-5 mr-2" />
+          Edit Page
+        </Button>
+      );
+    }
+
+    return null;
+  };
 
   return (
     <div className={className}>
       {/* Menu Trigger Button - Only show when authenticated */}
       {ready && authenticated && (
-        <Button
-          variant="theme"
-          className={cn("px-2")}
-          onClick={() => setOpen(true)}>
-          <Menu className="h-5 w-5" />
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="theme"
+            className={cn("px-2")}
+            onClick={() => setOpen(true)}
+          >
+            <Menu className="h-5 w-5" />
+          </Button>
+          <EditButton />
+        </div>
       )}
 
       {/* Main Menu Drawer */}
@@ -155,7 +200,8 @@ export default function AppMenu({ className }: AppMenuProps) {
                     onClick={() => {
                       setOpen(false);
                       setWalletDrawerOpen(true);
-                    }}>
+                    }}
+                  >
                     <WalletMinimal className="h-4 w-4" />
                     {truncateWalletAddress(solanaWallet?.address)}
                   </Button>
@@ -164,7 +210,7 @@ export default function AppMenu({ className }: AppMenuProps) {
             </div>
             {ready && authenticated && (
               <div className="flex items-center gap-2">
-                <div className="text-sm mr-auto">My pages</div>
+                <div className="text-sm mr-auto">My Pages</div>
               </div>
             )}
 
@@ -189,10 +235,12 @@ export default function AppMenu({ className }: AppMenuProps) {
                         .map((page) => (
                           <div
                             key={page.slug}
-                            className="border border-primary rounded-md p-2 bg-background hover:bg-muted transition-colors relative">
+                            className="border border-primary rounded-md p-2 bg-background hover:bg-muted transition-colors relative"
+                          >
                             <Link
                               href={`/${page.slug}`}
-                              className="absolute inset-0 z-20"></Link>
+                              className="absolute inset-0 z-20"
+                            ></Link>
                             <div className="flex items-start justify-between gap-3">
                               <div className="flex gap-3 min-w-0 flex-1">
                                 {page.image && (
@@ -221,7 +269,8 @@ export default function AppMenu({ className }: AppMenuProps) {
                               <Link href={`/edit/${page.slug}`} passHref>
                                 <Button
                                   variant="outline"
-                                  className="shrink-0 z-30 relative">
+                                  className="shrink-0 z-30 relative"
+                                >
                                   Edit
                                 </Button>
                               </Link>
@@ -250,149 +299,25 @@ export default function AppMenu({ className }: AppMenuProps) {
                 onClick={() => {
                   setShowCreateModal(true);
                   setOpen(false);
-                }}>
+                }}
+              >
                 <Plus className="h-4 w-4" />
-                New Page
+                New Page.fun
               </Button>
             </div>
           )}
         </div>
       </Drawer>
 
-      {/* Wallet Settings Drawer */}
-      <Drawer
-        open={walletDrawerOpen}
+      {/* Use the new WalletDrawer component */}
+      <WalletDrawer 
+        open={walletDrawerOpen} 
         onOpenChange={setWalletDrawerOpen}
-        direction="left"
-        title="Wallet Settings"
-        backButton
         onBack={() => {
           setWalletDrawerOpen(false);
           setOpen(true);
-        }}>
-        <div className="space-y-3">
-          {solanaWallet && (
-            <>
-              <div className="p-4 border bg-muted border-primary rounded-lg space-y-3">
-                <div>
-                  <div className="text-sm text-muted-foreground">
-                    <Input readOnly value={solanaWallet.address} />
-                  </div>
-                </div>
-
-                {solanaWallet.walletClientType === "privy" && (
-                  <>
-                    <Button
-                      variant="outline"
-                      onClick={() =>
-                        exportWallet({ address: solanaWallet.address })
-                      }
-                      className="w-full">
-                      Export Wallet
-                    </Button>
-
-                    <Button
-                      variant="outline"
-                      onClick={linkWallet}
-                      className="w-full">
-                      Connect External Wallet
-                    </Button>
-                  </>
-                )}
-
-                {tokenHoldings.length > 0 && (
-                  <div className="space-y-1.5">
-                    <div className="text-sm font-medium">Holdings</div>
-                    <div className="space-y-1">
-                      {/* Show main tokens first */}
-                      {MAIN_TOKENS.map((mainToken) => {
-                        const token = tokenHoldings.find(
-                          (t) => t.tokenAddress === mainToken.address
-                        );
-
-                        return (
-                          <div
-                            key={mainToken.address}
-                            className="flex items-center justify-between text-sm py-1">
-                            <div className="flex items-center gap-2 flex-1">
-                              <Image
-                                src={mainToken.logo}
-                                alt={mainToken.symbol}
-                                width={20}
-                                height={20}
-                                className="rounded-full"
-                              />
-                              <span className="font-medium">
-                                {mainToken.symbol}
-                              </span>
-                            </div>
-                            <div className="font-medium">
-                              {token?.balance || "0"}
-                            </div>
-                          </div>
-                        );
-                      })}
-
-                      {/* Show other tokens if toggled */}
-                      {showAllTokens &&
-                        tokenHoldings
-                          .filter(
-                            (token) =>
-                              !MAIN_TOKENS.some(
-                                (mt) => mt.address === token.tokenAddress
-                              )
-                          )
-                          .map((token) => (
-                            <div
-                              key={token.tokenAddress}
-                              className="flex justify-between items-center text-sm py-1">
-                              <div className="text-muted-foreground truncate pr-4 flex-1">
-                                {token.tokenAddress}
-                              </div>
-                              <div className="font-medium">{token.balance}</div>
-                            </div>
-                          ))}
-
-                      {/* Toggle button */}
-                      {tokenHoldings.length > MAIN_TOKENS.length && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => setShowAllTokens(!showAllTokens)}
-                          className="w-full mt-2 text-xs">
-                          {showAllTokens ? "Show Less" : "Show All Tokens"}
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              <div className="space-y-2">
-                <Button
-                  variant="outline"
-                  onClick={logout}
-                  className="w-full shrink-0 text-destructive hover:text-destructive hover:bg-destructive/10">
-                  Logout
-                </Button>
-                {canRemoveAccount && (
-                  <Button
-                    variant="outline"
-                    onClick={() => unlinkWallet(solanaWallet.address)}
-                    className="w-full">
-                    Disconnect Wallet
-                  </Button>
-                )}
-              </div>
-            </>
-          )}
-          {!solanaWallet && (
-            <Button onClick={linkWallet} className="w-full">
-              Connect Wallet
-            </Button>
-          )}
-        </div>
-      </Drawer>
+        }}
+      />
 
       {showCreateModal && solanaWallet && (
         <CreatePageModal

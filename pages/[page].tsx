@@ -17,11 +17,6 @@ const PageContent = dynamic(() => import("../components/PageContent"), {
   loading: () => <div className="pf-page__loading">Loading...</div>
 });
 
-const EditButton = dynamic(() => import("@/components/EditButton"), {
-  ssr: false,
-});
-
-
 // Initialize Prisma client with Neon adapter
 const sql = neon(process.env.DATABASE_URL!);
 const adapter = new PrismaNeonHTTP(sql);
@@ -466,7 +461,8 @@ export default function Page({ pageData, slug, error, isOwner, ogImageUrl }: Pag
         />
       </div>
 
-      {isOwner && <EditButton slug={slug} />}
+      {/* Remove the EditButton component from here */}
+      {/* Pass isOwner and slug to AppMenu via global state or URL */}
     </>
   );
 }

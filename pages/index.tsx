@@ -43,7 +43,7 @@ export default function HomePage() {
               The fun between your socials.
             </h1>
             <p className="text-base opacity-75 mb-6">
-              A link-in-bio page for you, memes and AI agents.
+              A link-in-bio page for you and AI agents.
             </p>
 
             {typeof isAuthenticated === "undefined" ? (
@@ -70,7 +70,7 @@ export default function HomePage() {
                   ? "Loading..."
                   : userPages.length > 0
                   ? "My Pages"
-                  : "Create Page"}
+                  : "Create your page.fun"}
               </Button>
             ) : (
               <Button variant="secondary" size="lg" onClick={login}>
