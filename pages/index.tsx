@@ -43,7 +43,7 @@ export default function HomePage() {
               The fun between your socials.
             </h1>
             <p className="text-base opacity-75 mb-6">
-              A link-in-bio page for you and AI agents.
+              A link-in-bio page for You, Creator Coins and AI agents.
             </p>
 
             {typeof isAuthenticated === "undefined" ? (

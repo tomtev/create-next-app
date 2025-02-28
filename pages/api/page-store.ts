@@ -263,7 +263,7 @@ const CreatePageSchema = z.object({
       { message: "Color value contains potentially unsafe content" }
     ),
   }).optional(),
-  pageType: z.enum(["personal", "meme", "ai-bot"]).optional(),
+  pageType: z.enum(["personal", "creator", "agent"]).optional(),
 });
 
 type PageItem = {

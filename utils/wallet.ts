@@ -12,7 +12,7 @@ export function isSolanaWallet(account: WalletWithMetadata | any): account is So
   );
 }
 
-export function truncateWalletAddress(address: string | undefined): string {
+export function truncateWalletAddress(address: string | undefined, length: number = 5): string {
   if (!address) return '';
-  return address.slice(0, 5);
+  return address.slice(0, length);
 } 

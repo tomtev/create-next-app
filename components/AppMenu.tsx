@@ -1,7 +1,7 @@
 import { useRouter } from "next/router";
 import { usePrivy, useLogin } from "@privy-io/react-auth";
 import { Button } from "@/components/ui/button";
-import { Plus, Menu, WalletMinimal, Edit } from "lucide-react";
+import { Plus, Menu, WalletMinimal, Edit, User } from "lucide-react";
 import Link from "next/link";
 import { Drawer } from "@/components/ui/drawer";
 import { PageData } from "@/types";
@@ -12,7 +12,8 @@ import { cn } from "@/lib/utils";
 import CreatePageModal from "./CreatePageModal";
 import { useGlobalContext } from "@/lib/context";
 import { Skeleton } from "./ui/skeleton";
-import { WalletDrawer } from "./drawers/WalletDrawer";
+import { AccountDrawer } from "./drawers/AccountDrawer";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
 type AppMenuProps = {
   className?: string;
@@ -50,6 +51,16 @@ const PageSkeleton = () => {
   );
 };
 
+export function truncateMiddle(
+  str: string | undefined,
+  startChars: number = 4,
+  endChars: number = 4
+): string {
+  if (!str) return "";
+  if (str.length <= startChars + endChars) return str;
+  return `${str.slice(0, startChars)}...${str.slice(-endChars)}`;
+}
+
 export default function AppMenu({ className }: AppMenuProps) {
   const { ready, authenticated, user } = usePrivy();
   const { login } = useLogin({
@@ -60,7 +71,7 @@ export default function AppMenu({ className }: AppMenuProps) {
   });
   const router = useRouter();
   const [open, setOpen] = useState(false);
-  const [walletDrawerOpen, setWalletDrawerOpen] = useState(false);
+  const [accountDrawerOpen, setAccountDrawerOpen] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [isPageOwner, setIsPageOwner] = useState(false);
   const [currentSlug, setCurrentSlug] = useState<string | null>(null);
@@ -100,7 +111,7 @@ export default function AppMenu({ className }: AppMenuProps) {
     const handleRouteChange = () => {
       if (ready) {
         setOpen(false);
-        setWalletDrawerOpen(false);
+        setAccountDrawerOpen(false);
       }
     };
 
@@ -116,16 +127,16 @@ export default function AppMenu({ className }: AppMenuProps) {
     // Check if we're on a page
     const isOnPage = router.pathname === "/[page]";
     setIsPage(isOnPage);
-    
+
     // Get the current slug
     let slug = null;
     if (isOnPage) {
       slug = router.query.page as string;
     }
-    
+
     if (slug) {
       setCurrentSlug(slug);
-      
+
       // Find the page in userPages to get the title
       if (userPages && userPages.length > 0) {
         const currentPage = userPages.find((page) => page.slug === slug);
@@ -171,13 +182,16 @@ export default function AppMenu({ className }: AppMenuProps) {
     <div className={className}>
       {/* Menu Trigger Button - Only show when authenticated */}
       {ready && authenticated && (
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 animate-slide-down">
           <Button
             variant="theme"
             className={cn("px-2")}
             onClick={() => setOpen(true)}
           >
             <Menu className="h-5 w-5" />
+            {router.pathname === "/" && (
+              <span className="hidden md:block">Dashboard</span>
+            )}
           </Button>
           <EditButton />
         </div>
@@ -199,11 +213,18 @@ export default function AppMenu({ className }: AppMenuProps) {
                     variant="outline"
                     onClick={() => {
                       setOpen(false);
-                      setWalletDrawerOpen(true);
+                      setAccountDrawerOpen(true);
                     }}
+                    className="flex items-center gap-1.5 px-2 h-8"
                   >
-                    <WalletMinimal className="h-4 w-4" />
-                    {truncateWalletAddress(solanaWallet?.address)}
+                    <Avatar className="h-5 w-5">
+                      <AvatarFallback className="text-[10px] bg-primary/10 text-primary">
+                        {user?.email?.address?.charAt(0).toUpperCase() ||
+                          user?.twitter?.username?.charAt(0).toUpperCase() ||
+                          "U"}
+                      </AvatarFallback>
+                    </Avatar>
+                    <span className="ml-1">Account</span>
                   </Button>
                 </div>
               )}
@@ -309,12 +330,12 @@ export default function AppMenu({ className }: AppMenuProps) {
         </div>
       </Drawer>
 
-      {/* Use the new WalletDrawer component */}
-      <WalletDrawer 
-        open={walletDrawerOpen} 
-        onOpenChange={setWalletDrawerOpen}
+      {/* Use the new AccountDrawer component */}
+      <AccountDrawer
+        open={accountDrawerOpen}
+        onOpenChange={setAccountDrawerOpen}
         onBack={() => {
-          setWalletDrawerOpen(false);
+          setAccountDrawerOpen(false);
           setOpen(true);
         }}
       />

@@ -78,6 +78,8 @@ export function WalletDrawer({
   const [isLoadingPrice, setIsLoadingPrice] = useState(false);
   // Add state for funding drawer
   const [fundingDrawerOpen, setFundingDrawerOpen] = useState(false);
+  // Add state to track if funding is in progress
+  const [isFundingInProgress, setIsFundingInProgress] = useState(false);
 
   // Fetch SOL price from our Redis-cached API endpoint
   useEffect(() => {
@@ -196,16 +198,27 @@ export function WalletDrawer({
     onOpenChange(false);
     // Open the funding drawer
     setFundingDrawerOpen(true);
+    // Reset funding in progress state
+    setIsFundingInProgress(false);
   };
 
   // Function to handle when the funding drawer is closed
-  const handleFundingDrawerClose = (open: boolean) => {
+  const handleFundingDrawerClose = (open: boolean, fundingInProgress?: boolean) => {
     setFundingDrawerOpen(open);
+    
+    // Update funding in progress state
+    if (fundingInProgress !== undefined) {
+      setIsFundingInProgress(fundingInProgress);
+    }
+    
     if (!open) {
-      // Reopen the wallet drawer when funding drawer is closed
-      setTimeout(() => {
-        onOpenChange(true);
-      }, 100);
+      // Only reopen the wallet drawer when funding drawer is closed
+      // AND funding is not in progress
+      if (!isFundingInProgress && !fundingInProgress) {
+        setTimeout(() => {
+          onOpenChange(true);
+        }, 100);
+      }
     }
   };
 
@@ -406,10 +419,14 @@ export function WalletDrawer({
         open={fundingDrawerOpen}
         onOpenChange={handleFundingDrawerClose}
         onBack={() => {
+          // Close the funding drawer
           setFundingDrawerOpen(false);
-          setTimeout(() => {
-            onOpenChange(true);
-          }, 100);
+          // Only reopen the wallet drawer if funding is not in progress
+          if (!isFundingInProgress) {
+            setTimeout(() => {
+              onOpenChange(true);
+            }, 100);
+          }
         }}
         walletAddress={address}
       />

@@ -12,7 +12,7 @@ import { Coins } from "lucide-react";
 
 interface FundingDrawerProps {
   open: boolean;
-  onOpenChange: (open: boolean) => void;
+  onOpenChange: (open: boolean, isFunding?: boolean) => void;
   onBack: () => void;
   walletAddress?: string;
 }
@@ -98,7 +98,7 @@ export function FundingDrawer({
       if (shouldReopenDrawer) {
         // Increased delay to ensure the Privy modal is fully closed
         setTimeout(() => {
-          onOpenChange(true);
+          onOpenChange(true, false); // Pass false for isFunding since it's completed
           setShouldReopenDrawer(false);
         }, 500);
       }
@@ -125,7 +125,7 @@ export function FundingDrawer({
       if (shouldReopenDrawer) {
         // Increased delay to ensure the Privy modal is fully closed
         setTimeout(() => {
-          onOpenChange(true);
+          onOpenChange(true, false); // Pass false for isFunding since it's completed
           setShouldReopenDrawer(false);
         }, 500);
       }
@@ -150,7 +150,8 @@ export function FundingDrawer({
     }
     
     // Otherwise, proceed with normal close behavior
-    onOpenChange(open);
+    // Pass the funding state to the parent component
+    onOpenChange(open, isFunding);
   };
 
   // Function to handle funding the wallet using Privy's useFundWallet hook
@@ -160,7 +161,7 @@ export function FundingDrawer({
         setFundingExitMessage(null);
 
         // Close the drawer before opening the funding modal
-        onOpenChange(false);
+        onOpenChange(false, true); // Pass true to indicate funding is starting
         // Set flag to reopen drawer when funding flow completes
         setShouldReopenDrawer(true);
 
@@ -200,7 +201,7 @@ export function FundingDrawer({
         }
 
         // Reopen the drawer if there was an error
-        onOpenChange(true);
+        onOpenChange(true, false); // Pass false since funding failed
         setShouldReopenDrawer(false);
       }
     }

@@ -12,7 +12,7 @@ import { useGlobalContext } from "@/lib/context";
 import { useToast } from "@/hooks/use-toast";
 import { motion, AnimatePresence } from "framer-motion";
 
-type PageType = "personal" | "meme" | "ai-bot";
+type PageType = "personal" | "creator" | "agent";
 type Step = "type" | "details";
 
 interface CreatePageModalProps {
@@ -123,6 +123,9 @@ export default function CreatePageModal({
   };
 
   const handlePageTypeSelect = (type: PageType) => {
+    // Don't allow selecting the "agent" type since it's coming soon
+    if (type === "agent") return;
+    
     setPageType(type);
     setSelectedDrawer(type);
   };
@@ -162,7 +165,7 @@ export default function CreatePageModal({
         <Card
           hasHover
           className="p-4"
-          onClick={() => handlePageTypeSelect("meme")}>
+          onClick={() => handlePageTypeSelect("creator")}>
           <div className="flex items-center gap-3">
             <div className="p-2 bg-pink-100 rounded-lg">
               <svg
@@ -179,9 +182,9 @@ export default function CreatePageModal({
               </svg>
             </div>
             <div>
-              <h4 className="font-medium">Meme</h4>
+              <h4 className="font-medium">Creator & Meme Coins</h4>
               <p className="text-sm text-gray-500">
-                Perfect for meme tokens and communities. Token gate links and
+                Perfect for creator and meme coins. Token gate links and
                 more to reward holders.
               </p>
             </div>
@@ -189,13 +192,12 @@ export default function CreatePageModal({
         </Card>
 
         <Card
-          hasHover
-          className="p-4"
-          onClick={() => handlePageTypeSelect("ai-bot")}>
+          className="p-4 opacity-70 bg-gray-50 border-dashed"
+          >
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-purple-100 rounded-lg">
+            <div className="p-2 bg-gray-100 rounded-lg">
               <svg
-                className="w-5 h-5 text-purple-600"
+                className="w-5 h-5 text-gray-400"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24">
@@ -208,8 +210,11 @@ export default function CreatePageModal({
               </svg>
             </div>
             <div>
-              <h4 className="font-medium">AI Agent</h4>
-              <p className="text-sm text-gray-500">
+              <div className="flex items-center gap-2">
+                <h4 className="font-medium text-gray-500">AI Agent</h4>
+                <span className="text-xs bg-gray-200 text-gray-600 px-2 py-0.5 rounded-full">Coming Soon</span>
+              </div>
+              <p className="text-sm text-gray-400">
                 Create a page for tokenized AI Agents. Give access to gated
                 content to token holders. Create content using APIs
               </p>
@@ -465,7 +470,8 @@ export default function CreatePageModal({
         open={open && !selectedDrawer}
         onOpenChange={(isOpen: boolean) => !isOpen && onClose()}
         direction="left"
-        title="Create New Page">
+        title="Create New Page"
+        closeButton={true}>
         {userPages.length > 0 && !hasPageTokenAccess && (
           <p className="text-sm text-amber-600 mb-4">
             Note: You need to hold at least{" "}
@@ -482,18 +488,20 @@ export default function CreatePageModal({
         direction="left"
         title="Create Personal Page"
         backButton
+        closeButton={true}
         onBack={() => setSelectedDrawer(null)}>
         {renderPersonalDrawer()}
       </Drawer>
 
       <Drawer
-        open={selectedDrawer === "meme" || selectedDrawer === "ai-bot"}
+        open={selectedDrawer === "creator" || selectedDrawer === "agent"}
         onOpenChange={(isOpen: boolean) => !isOpen && setSelectedDrawer(null)}
         direction="left"
         title={
-          selectedDrawer === "meme" ? "Create Meme Page" : "Create AI Bot Page"
+          selectedDrawer === "creator" ? "Create Creator & Meme Coins Page" : "Create AI Agent Page"
         }
         backButton
+        closeButton={true}
         onBack={() => setSelectedDrawer(null)}>
         {renderTokenBasedDrawer()}
       </Drawer>
