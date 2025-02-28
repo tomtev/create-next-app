@@ -4,15 +4,16 @@ import { Button } from "@/components/ui/button";
 import { usePrivy, useSolanaWallets, useLinkAccount } from "@privy-io/react-auth";
 import { WalletWithMetadata } from "@privy-io/react-auth";
 import { isSolanaWallet, truncateWalletAddress } from "@/utils/wallet";
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useMemo } from "react";
 import { useGlobalContext } from "@/lib/context";
 import Image from "next/image";
-import { WalletMinimal, Download, Plus, User } from "lucide-react";
+import { WalletMinimal, Download, Plus, User, RefreshCw } from "lucide-react";
 import { TwitterIcon } from "@/lib/icons";
 import { FundingDrawer } from "./FundingDrawer";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { RotatingCoin } from "@/components/ui/RotatingCoin";
 
 interface AccountDrawerProps {
   open: boolean;
@@ -52,11 +53,10 @@ export function AccountDrawer({
   const [activeTab, setActiveTab] = useState("profile");
   const [showAllTokens, setShowAllTokens] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
-  const { tokenHoldings, walletAddress, userPages } = useGlobalContext();
+  const { tokenHoldings, walletAddress, userPages, refreshTokens, isLoadingTokens } = useGlobalContext();
   // Add state to track if we should reopen the drawer
   const [shouldReopenDrawer, setShouldReopenDrawer] = useState(false);
-  // Add state for SOL balance and price
-  const [solBalance, setSolBalance] = useState("0");
+  // Add state for SOL price
   const [solPrice, setSolPrice] = useState(FALLBACK_SOL_PRICE_USD);
   const [isLoadingPrice, setIsLoadingPrice] = useState(false);
   // Add state for funding drawer
@@ -65,6 +65,14 @@ export function AccountDrawer({
   const [isFundingInProgress, setIsFundingInProgress] = useState(false);
   // Add state for Twitter linking
   const [isLinkingTwitter, setIsLinkingTwitter] = useState(false);
+  // Add state for refreshing token holdings
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  // Get SOL balance from token holdings
+  const solBalance = useMemo(() => {
+    const solToken = tokenHoldings.find(t => t.tokenAddress === 'native');
+    return solToken?.balance || "0";
+  }, [tokenHoldings]);
 
   // Fetch SOL price from our Redis-cached API endpoint
   useEffect(() => {
@@ -103,32 +111,6 @@ export function AccountDrawer({
     
     return () => clearInterval(intervalId);
   }, []);
-
-  // Fetch SOL balance when wallet address changes
-  useEffect(() => {
-    const fetchSolBalance = async () => {
-      if (!walletAddress) return;
-      
-      try {
-        // In a real app, you would fetch this from a Solana RPC endpoint
-        // For now, we'll use a mock value or check if it's in tokenHoldings
-        const nativeSolToken = tokenHoldings.find(t => 
-          t.tokenAddress === "native" || t.tokenAddress === "SOL"
-        );
-        
-        if (nativeSolToken) {
-          setSolBalance(nativeSolToken.balance);
-        } else {
-          // Default to 0 balance when no SOL token is found
-          setSolBalance("0");
-        }
-      } catch (error) {
-        console.error("Error fetching SOL balance:", error);
-      }
-    };
-
-    fetchSolBalance();
-  }, [walletAddress, tokenHoldings]);
 
   // Find the embedded wallet from user's linked accounts
   const embeddedWallet = user?.linkedAccounts?.find(
@@ -235,11 +217,6 @@ export function AccountDrawer({
     }
   };
 
-  // Function to render social accounts
-  const renderSocialAccounts = () => {
-    return null;
-  };
-
   // Function to calculate USD value from SOL
   const calculateUsdValue = (solAmount: string): string => {
     const amount = parseFloat(solAmount);
@@ -247,6 +224,32 @@ export function AccountDrawer({
     
     const usdValue = amount * solPrice;
     return `$${usdValue.toFixed(2)}`;
+  };
+
+  // Handle tab change - restore refresh when wallet tab is selected
+  const handleTabChange = (value: string) => {
+    setActiveTab(value);
+    
+    // Refresh token holdings when switching to wallet tab
+    if (value === "wallet" && walletAddress) {
+      console.log('Wallet tab opened, refreshing token holdings');
+      refreshTokens();
+    }
+  };
+
+  // Function to manually refresh token holdings
+  const handleRefreshTokens = async () => {
+    if (isRefreshing) return;
+    
+    setIsRefreshing(true);
+    try {
+      console.log('Manually refreshing token holdings');
+      await refreshTokens();
+    } catch (error) {
+      console.error('Error refreshing token holdings:', error);
+    } finally {
+      setIsRefreshing(false);
+    }
   };
 
   // Render the profile tab content
@@ -377,7 +380,18 @@ export function AccountDrawer({
 
           {/* Show token holdings section regardless of tokenHoldings.length */}
           <div className="space-y-1.5 mt-4">
-            <div className="text-sm font-medium">Holdings</div>
+            <div className="text-sm font-medium flex items-center justify-between">
+              <span>Holdings</span>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="h-6 px-2"
+                onClick={handleRefreshTokens}
+                disabled={isRefreshing || isLoadingTokens}
+              >
+                <RefreshCw className={`h-3.5 w-3.5 ${isRefreshing || isLoadingTokens ? 'animate-spin' : ''}`} />
+              </Button>
+            </div>
             <div className="space-y-1">
               {/* Show SOL and USD (USDC) */}
               {MAIN_TOKENS.map((mainToken) => {
@@ -389,12 +403,13 @@ export function AccountDrawer({
                       className="flex items-center justify-between text-sm py-1"
                     >
                       <div className="flex items-center gap-2 flex-1">
-                        <Image
+                        <RotatingCoin
                           src={mainToken.logo}
                           alt={mainToken.symbol}
-                          width={20}
-                          height={20}
-                          className="rounded-full"
+                          size="sm"
+                          rotationSpeed="slow"
+                          coinColor="#9945FF" // Purple color for SOL
+                          shineEffect={true}
                         />
                         <span className="font-medium">
                           {mainToken.symbol}
@@ -483,7 +498,7 @@ export function AccountDrawer({
         icon={<User className="h-5 w-5" />}
       >
         <div className="space-y-4">
-          <Tabs defaultValue="profile" value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <Tabs defaultValue="profile" value={activeTab} onValueChange={handleTabChange} className="w-full">
             <TabsList className="grid grid-cols-2 w-full">
               <TabsTrigger value="profile">
                 <User className="h-4 w-4 mr-2" />
