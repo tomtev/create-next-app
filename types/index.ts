@@ -37,6 +37,7 @@ export interface PageData {
   theme?: string | null;
   themeFonts?: ThemeFonts | null;
   themeColors?: ThemeColors | null;
+  customCssVariables?: Record<string, string>;
   items?: PageItem[];
   createdAt: string;
   updatedAt?: string;

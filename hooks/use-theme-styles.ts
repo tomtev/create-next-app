@@ -17,6 +17,13 @@ export function useThemeStyles(pageData: PageData | null) {
     const currentTheme = pageData.theme || 'default';
     const themeStyles = themes[currentTheme]?.styles || {};
     const themeFonts = pageData.themeFonts || defaultFonts;
+    const customCssVariables = pageData.customCssVariables || {};
+    
+    // Combine theme styles with custom variables (custom variables override theme styles)
+    const combinedStyles = {
+      ...themeStyles,
+      ...customCssVariables
+    };
     
     return `
       :root {
@@ -24,7 +31,7 @@ export function useThemeStyles(pageData: PageData | null) {
         --pf-font-family-heading: ${themeFonts.heading ? `'${themeFonts.heading}', sans-serif` : 'var(--pf-font-family-default)'};
         --pf-font-family-paragraph: ${themeFonts.paragraph ? `'${themeFonts.paragraph}', sans-serif` : 'var(--pf-font-family-default)'};
         --pf-font-family-links: ${themeFonts.links ? `'${themeFonts.links}', sans-serif` : 'var(--pf-font-family-default)'};
-        ${Object.entries(themeStyles)
+        ${Object.entries(combinedStyles)
           .map(([key, value]) => `${key}: ${value};`)
           .join('\n        ')}
       }
