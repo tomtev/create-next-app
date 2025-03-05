@@ -470,7 +470,7 @@ export default function CreatePageModal({
         open={open && !selectedDrawer}
         onOpenChange={(isOpen: boolean) => !isOpen && onClose()}
         direction="left"
-        title="Create New Page"
+        title="Create a new Pagefun"
         closeButton={true}>
         {userPages.length > 0 && !hasPageTokenAccess && (
           <p className="text-sm text-amber-600 mb-4">
